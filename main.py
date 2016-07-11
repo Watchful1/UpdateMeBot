@@ -2,7 +2,9 @@ import praw
 import OAuth2Util
 import sqlite3
 import time
+import database
 
+'''
 r = praw.Reddit("subsbot:gr.watchful.subsbot (by /u/Watchful1)")
 o = OAuth2Util.OAuth2Util(r)
 o.refresh(force=True)
@@ -14,21 +16,14 @@ for key, val in subs.items():
         user = r.get_redditor(val['user'])
         for comment in user.get_comments():
             print(str(comment.score)+': '+comment.body)
+'''
 
-conn = sqlite3.connect('database.db')
-c = conn.cursor()
-c.execute('''CREATE TABLE stocks
-             (date text, trans text, symbol text, qty real, price real)''')
-
-# Insert a row of data
-c.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
-
-# Save (commit) the changes
-conn.commit()
-
-# We can also close the connection if we are done with it.
-# Just be sure any changes have been committed or they will be lost.`
-conn.close()
+database.init()
+#database.addSubsciption('Watchful1','Watchful12','testingground4bots')
+for row in database.getSubscriptions():
+	database.checkSubscription(row[0])
+database.printSubscriptions()
+database.close()
 
 
 

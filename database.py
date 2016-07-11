@@ -1,5 +1,4 @@
 import sqlite3
-import os.path
 
 dbConn = 0
 
@@ -12,16 +11,66 @@ def init():
 	setup()
 
 
+def close():
+	dbConn.commit()
+	dbConn.close()
+
+
 def setup():
 	c = dbConn.cursor()
 	c.execute('''
 		CREATE TABLE IF NOT EXISTS subscriptions (
-			ID int(11) NOT NULL AUTO_INCREMENT,
+			ID INTEGER PRIMARY KEY AUTOINCREMENT,
 			Subscriber varchar(80) NOT NULL,
 			SubscribedTo varchar(80) NOT NULL,
-			Subreddit varchar(80) NOT NULL,
+			Subreddit varchar(80),
 			LastChecked timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (ID),
-			UNIQUE KEY (Subscriber, SubscribedTo, Subreddit)
+			UNIQUE (Subscriber, SubscribedTo, Subreddit)
 		)
 	''')
+	dbConn.commit()
+
+
+def printSubscriptions():
+	c = dbConn.cursor()
+	for row in c.execute('''
+		SELECT *
+		FROM subscriptions
+			'''):
+		print(row)
+
+
+def getSubscriptions():
+	c = dbConn.cursor()
+	return c.execute('''
+		SELECT *
+		FROM subscriptions
+			''')
+
+
+def addSubsciption(Subscriber, SubscribedTo, Subreddit):
+	c = dbConn.cursor()
+	c.execute('''
+		INSERT INTO subscriptions
+		(Subscriber, SubscribedTo, Subreddit)
+		VALUES (?, ?, ?)
+	''', (Subscriber, SubscribedTo, Subreddit))
+
+
+def checkSubscription(ID):
+	c = dbConn.cursor()
+	c.execute('''
+		UPDATE subscriptions
+		SET LastChecked = CURRENT_TIMESTAMP
+		WHERE ID = ?
+	''', (ID,))
+
+
+def deleteSubscription(Subscriber, SubscribedTo, Subreddit):
+	c = dbConn.cursor()
+	c.execute('''
+    		DELETE FROM subscriptions
+    		WHERE Subscriber = ?
+    		    AND SubscribedTo = ?
+    		    AND Subreddit = ?
+    	''', (Subscriber, SubscribedTo, Subreddit))
