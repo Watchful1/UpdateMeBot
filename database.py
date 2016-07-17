@@ -43,8 +43,10 @@ def printSubscriptions():
 def getSubscriptions():
 	c = dbConn.cursor()
 	return c.execute('''
-		SELECT *
+		SELECT ID, Subscriber, SubscribedTo, Subreddit, LastChecked
 		FROM subscriptions
+		GROUP BY Subreddit, SubscribedTo, Subscriber
+		ORDER BY Subreddit, LastChecked
 			''')
 
 
@@ -64,6 +66,15 @@ def checkSubscription(ID):
 		SET LastChecked = CURRENT_TIMESTAMP
 		WHERE ID = ?
 	''', (ID,))
+
+
+def checkSubreddit(Subreddit):
+	c = dbConn.cursor()
+	c.execute('''
+		UPDATE subscriptions
+		SET LastChecked = CURRENT_TIMESTAMP
+		WHERE Subreddit = ?
+	''', (Subreddit,))
 
 
 def deleteSubscription(Subscriber, SubscribedTo, Subreddit):

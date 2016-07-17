@@ -4,30 +4,34 @@ import sqlite3
 import time
 import database
 
-'''
+
 r = praw.Reddit("subsbot:gr.watchful.subsbot (by /u/Watchful1)")
 o = OAuth2Util.OAuth2Util(r)
 o.refresh(force=True)
 
-subs = {'Watchful1': {'user': 'thisisredditfacts'}}
-
-for key, val in subs.items():
-    if 'user' in val:
-        user = r.get_redditor(val['user'])
-        for comment in user.get_comments():
-            print(str(comment.score)+': '+comment.body)
-'''
+ID_NUM = 0
+SUBSCRIBER_NUM = 1
+SUBSCRIBEDTO_NUM = 2
+SUBREDDIT_NUM = 3
+LASTCHECKED_NUM = 4
 
 database.init()
-#database.addSubsciption('Watchful1','Watchful12','testingground4bots')
+subs = {}
+prevSubreddit = None
 for row in database.getSubscriptions():
-	database.checkSubscription(row[0])
-database.printSubscriptions()
+	if row[SUBREDDIT_NUM] != prevSubreddit:
+		if subs != {}:
+			for post in praw.helpers.submissions_between(r, prevSubreddit, oldestTimestamp):
+				print(post)
+
+		subs = {}
+		oldestTimestamp = row[LASTCHECKED_NUM]
+
+	if row[SUBSCRIBEDTO_NUM] not in subs:
+		subs[row[SUBSCRIBEDTO_NUM]] = {}
+
+	subs[row[SUBSCRIBEDTO_NUM]][row[SUBSCRIBER_NUM]] = row[LASTCHECKED_NUM]
+
+	prevSubreddit = row[SUBREDDIT_NUM]
+
 database.close()
-
-
-
-# filters
-# user: username of submitter, accepts any string
-# type: comment or thread, do not include for both
-# subreddit: subreddit the item was submitted to. Accepts multiple
