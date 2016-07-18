@@ -1,7 +1,7 @@
 import praw
 import OAuth2Util
-import sqlite3
 import time
+import datetime
 import database
 
 
@@ -21,7 +21,9 @@ prevSubreddit = None
 for row in database.getSubscriptions():
 	if row[SUBREDDIT_NUM] != prevSubreddit:
 		if subs != {}:
-			for post in praw.helpers.submissions_between(r, prevSubreddit, oldestTimestamp):
+			time = time.mktime(datetime.datetime.strptime(oldestTimestamp, "%Y-%m-%d %H:%M:%S").timetuple())
+			print(time)
+			for post in praw.helpers.submissions_between(r, prevSubreddit, time):
 				print(post)
 
 		subs = {}
