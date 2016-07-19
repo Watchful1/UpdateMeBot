@@ -84,4 +84,19 @@ def deleteSubscription(Subscriber, SubscribedTo, Subreddit):
     		WHERE Subscriber = ?
     		    AND SubscribedTo = ?
     		    AND Subreddit = ?
-    	''', (Subscriber, SubscribedTo, Subreddit))
+    ''', (Subscriber, SubscribedTo, Subreddit))
+
+
+def clearSubscriptions():
+	c = dbConn.cursor()
+	c.execute('''
+		DELETE FROM subscriptions
+    ''')
+
+
+def resetAllSubscriptionTimes():
+	c = dbConn.cursor()
+	c.execute('''
+		UPDATE subscriptions
+		SET LastChecked = '2016-07-18 17:00:00'
+    ''')
