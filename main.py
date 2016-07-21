@@ -1,14 +1,14 @@
 import praw
 import OAuth2Util
 import time
-import datetime
+from datetime import datetime
 import database
 import logging
 import logging.handlers
 import os
 
 ### Global variables ###
-USER_AGENT = "subsbot:gr.watchful.subsbot (by /u/Watchful1)"
+USER_AGENT = "UpdatedMe/Subscribe (by /u/Watchful1)"
 
 
 ### Constants ###
@@ -42,23 +42,39 @@ if LOG_FILENAME is not None:
 	log.addHandler(log_fileHandler)
 
 
+### Functions ###
+
+def searchSubreddit(subreddit, authorHash, oldestTimestamp):
+	if authorHash == {}: return
+	oldestSeconds = time.mktime(datetime.strptime(oldestTimestamp, "%Y-%m-%d %H:%M:%S").timetuple())
+	log.info("Getting posts in %s newer than %s", subreddit, oldestTimestamp)
+
+	# retrieving submissions takes some time, but starts with the newest first
+	# so we want to cache the time we start, but don't reset the timestamps until we know we aren't going to crash
+	# better to send two notifications than none
+	startTimestamp = datetime.now()
+	for post in praw.helpers.submissions_between(r, subreddit, oldestSeconds, verbosity=0):
+		if str(post.author) in authorHash:
+			for key in authorHash[str(post.author)]:
+				if datetime.fromtimestamp(post.created_utc) >= datetime.strptime(authorHash[str(post.author)][key], "%Y-%m-%d %H:%M:%S"):
+					log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s",key,str(post.author),subreddit)
+
+	database.checkSubreddit(subreddit, startTimestamp)
+
+
 ### Main ###
 log.info("Connecting to reddit")
-r = praw.Reddit(USER_AGENT)
+r = praw.Reddit(user_agent=USER_AGENT, log_request=0)
 o = OAuth2Util.OAuth2Util(r)
 o.refresh(force=True)
 
 database.init()
-subs = {}
 prevSubreddit = None
+subs = {}
+oldestTimestamp = None
 for row in database.getSubscriptions():
 	if row[SUBREDDIT_NUM] != prevSubreddit:
-		if subs != {}:
-			oldestSeconds = time.mktime(datetime.datetime.strptime(oldestTimestamp, "%Y-%m-%d %H:%M:%S").timetuple())
-			log.info("Getting posts in %s newer than %s",prevSubreddit,oldestTimestamp)
-			for post in praw.helpers.submissions_between(r, prevSubreddit, oldestSeconds):
-				print(post)
-
+		searchSubreddit(prevSubreddit, subs, oldestTimestamp)
 		subs = {}
 		oldestTimestamp = row[LASTCHECKED_NUM]
 
@@ -68,5 +84,7 @@ for row in database.getSubscriptions():
 	subs[row[SUBSCRIBEDTO_NUM]][row[SUBSCRIBER_NUM]] = row[LASTCHECKED_NUM]
 
 	prevSubreddit = row[SUBREDDIT_NUM]
+
+searchSubreddit(prevSubreddit, subs, oldestTimestamp)
 
 database.close()

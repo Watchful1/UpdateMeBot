@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 dbConn = 0
 
@@ -59,22 +60,22 @@ def addSubsciption(Subscriber, SubscribedTo, Subreddit):
 	''', (Subscriber, SubscribedTo, Subreddit))
 
 
-def checkSubscription(ID):
+def checkSubscription(ID, date = datetime.now()):
 	c = dbConn.cursor()
 	c.execute('''
 		UPDATE subscriptions
-		SET LastChecked = CURRENT_TIMESTAMP
+		SET LastChecked = ?
 		WHERE ID = ?
-	''', (ID,))
+	''', (date.strftime("%Y-%m-%d %H:%M:%S"), ID))
 
 
-def checkSubreddit(Subreddit):
+def checkSubreddit(Subreddit, date = datetime.now()):
 	c = dbConn.cursor()
 	c.execute('''
 		UPDATE subscriptions
-		SET LastChecked = CURRENT_TIMESTAMP
+		SET LastChecked = ?
 		WHERE Subreddit = ?
-	''', (Subreddit,))
+	''', (date.strftime("%Y-%m-%d %H:%M:%S"), Subreddit))
 
 
 def deleteSubscription(Subscriber, SubscribedTo, Subreddit):
