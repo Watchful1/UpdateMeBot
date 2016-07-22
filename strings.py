@@ -11,6 +11,10 @@ confirmationMessage = ()
 
 couldNotSubscribeMessage = ()
 
+alreadySubscribedMessage = ()
+
+updatedSubscriptionMessage = ()
+
 deleteUpdatesConfirmationMessage = ()
 
 deleteAllUpdatesConfirmationMessage = ()
