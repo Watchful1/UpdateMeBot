@@ -31,6 +31,10 @@ couldNotSubscribeMessage = (
 	"Sorry, I only work in these subreddits. Explanation"
 )
 
+alreadySubscribedMessage = ()
+
+updatedSubscriptionMessage = ()
+
 couldNotUnderstandMessage = (
 	"Sorry, I couldn't understand your message."
 )
