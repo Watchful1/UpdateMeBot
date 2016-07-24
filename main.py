@@ -6,6 +6,7 @@ import database
 import logging
 import logging.handlers
 import os
+import strings
 
 ### Global variables ###
 USER_AGENT = "UpdatedMe/Subscribe (by /u/Watchful1)"
@@ -58,6 +59,11 @@ def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 			for key in authorHash[str(post.author)]:
 				if datetime.fromtimestamp(post.created_utc) >= datetime.strptime(authorHash[str(post.author)][key], "%Y-%m-%d %H:%M:%S"):
 					log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s",key,str(post.author),subreddit)
+					r.send_message(
+						recipient=key,
+						subject=strings.messageSubject(key),
+						message=strings.alertMessage(str(post.author),subreddit,"LINK")
+					)
 
 	database.checkSubreddit(subreddit, startTimestamp)
 

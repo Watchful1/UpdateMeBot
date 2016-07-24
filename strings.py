@@ -1,18 +1,49 @@
-alertMessage = (
-	"UpdateMeBot here!"
-	"\n\n/u/AUTHOR has posted a new thread in /r/SUBREDDIT"
-	"\n\nYou can find it here:"
-	"\n\nLINK"
-) # are you still subscribed? do you want to be?
+def messageSubject(user):
+	return (
+		"Hello {user}, UpdateMeBot Here!"
+	).format(
+		user=user
+	)
 
-yourUpdatesMessage = ()
+def alertMessage(subscribedTo, subreddit, link):
+	return (
+		"UpdateMeBot here!"
+		"\n\n/u/{subscribedTo} has posted a new thread in /r/{subreddit}"
+		"\n\nYou can find it here:"
+		"\n\n{link}"
+	).format(
+		subscribedTo=subscribedTo,
+		subreddit=subreddit,
+		link=link
+	)
 
-confirmationMessage = ()
+	# are you still subscribed? do you want to be?
 
-couldNotSubscribeMessage = ()
+yourUpdatesMessage = (
+	"Here are the people you asked me to update you on"
+)
 
-deleteUpdatesConfirmationMessage = ()
+confirmationMessage = (
+	"I'll update you next time /u/ posts in /r/"
+)
 
-deleteAllUpdatesConfirmationMessage = ()
+couldNotSubscribeMessage = (
+	"Sorry, I only work in these subreddits. Explanation"
+)
 
-confirmationComment = ()
+couldNotUnderstandMessage = (
+	"Sorry, I couldn't understand your message."
+)
+
+deleteUpdatesConfirmationMessage = (
+	"Okay, I won't remind you of any posts by /u/ in /r/. If you change your mind, do this"
+)
+
+deleteAllUpdatesConfirmationMessage = (
+	"Okay, I won't remind you of any posts by anyone. If you change your mind, message me all or part of this list"
+)
+
+confirmationComment = (
+	"I'll update you next time /u/ posts in /r/"
+	"\n\nX people have clicked here to also be updated"
+)
