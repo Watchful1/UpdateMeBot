@@ -76,7 +76,12 @@ o.refresh(force=True)
 
 database.init()
 
+for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
+	# checks to see as some comments might be replys and non PMs
+	if isinstance(message, praw.objects.Message):
+		if "updateme" in message.body.lower():
 
+			message.mark_as_read()
 
 prevSubreddit = None
 subs = {}
