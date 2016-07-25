@@ -75,6 +75,9 @@ o = OAuth2Util.OAuth2Util(r)
 o.refresh(force=True)
 
 database.init()
+
+
+
 prevSubreddit = None
 subs = {}
 oldestTimestamp = None
