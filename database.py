@@ -22,10 +22,11 @@ def setup():
 	c.execute('''
 		CREATE TABLE IF NOT EXISTS subscriptions (
 			ID INTEGER PRIMARY KEY AUTOINCREMENT,
-			Subscriber varchar(80) NOT NULL,
-			SubscribedTo varchar(80) NOT NULL,
-			Subreddit varchar(80),
-			LastChecked timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			Subscriber VARCHAR(80) NOT NULL,
+			SubscribedTo VARCHAR(80) NOT NULL,
+			Subreddit VARCHAR(80),
+			LastChecked TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			Single BOOLEAN DEFAULT 1,
 			UNIQUE (Subscriber, SubscribedTo, Subreddit)
 		)
 	''')
@@ -51,13 +52,44 @@ def getSubscriptions():
 			''')
 
 
-def addSubsciption(Subscriber, SubscribedTo, Subreddit):
+def addSubsciption(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), single = True):
+	c = dbConn.cursor()
+	try:
+		c.execute('''
+			INSERT INTO subscriptions
+			(Subscriber, SubscribedTo, Subreddit, LastChecked, Single)
+			VALUES (?, ?, ?, ?, ?)
+		''', (Subscriber, SubscribedTo, Subreddit, date.strftime("%Y-%m-%d %H:%M:%S"), single))
+	except sqlite3.IntegrityError:
+		return getSubscriptionType(Subscriber, SubscribedTo, Subreddit)
+
+	return Subscriber, SubscribedTo, Subreddit, date, single
+
+
+def getSubscriptionType(Subscriber, SubscribedTo, Subreddit):
+	c = dbConn.cursor()
+	result = c.execute('''
+		SELECT Single FROM subscriptions
+		WHERE Subscriber = ?
+			and SubscribedTo = ?
+			and Subreddit = ?
+	''', (Subscriber, SubscribedTo, Subreddit))
+
+	if result.fetchone()[0] == 1:
+		return True
+	else:
+		return False
+
+
+def setSubscriptionType(Subscriber, SubscribedTo, Subreddit, single):
 	c = dbConn.cursor()
 	c.execute('''
-		INSERT INTO subscriptions
-		(Subscriber, SubscribedTo, Subreddit)
-		VALUES (?, ?, ?)
-	''', (Subscriber, SubscribedTo, Subreddit))
+		UPDATE subscriptions
+		SET Single = ?
+		WHERE Subscriber = ?
+			and SubscribedTo = ?
+			and Subreddit = ?
+	''', (single, Subscriber, SubscribedTo, Subreddit))
 
 
 def checkSubscription(ID, date = datetime.now()):

@@ -7,6 +7,7 @@ import logging
 import logging.handlers
 import os
 import strings
+import re
 
 ### Global variables ###
 USER_AGENT = "UpdatedMe/Subscribe (by /u/Watchful1)"
@@ -43,6 +44,7 @@ if LOG_FILENAME is not None:
 	log.addHandler(log_fileHandler)
 
 
+
 ### Functions ###
 
 def searchSubreddit(subreddit, authorHash, oldestTimestamp):
@@ -68,6 +70,18 @@ def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 	database.checkSubreddit(subreddit, startTimestamp)
 
 
+def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), single = True):
+	result = database.addSubsciption(Subscriber, SubscribedTo, Subreddit, date, single)
+	if type(result) is tuple:
+		return result
+	elif result is not single:
+		database.setSubscriptionType(Subscriber, SubscribedTo, Subreddit, single)
+		return single
+	else:
+		return None
+
+
+
 ### Main ###
 log.info("Connecting to reddit")
 r = praw.Reddit(user_agent=USER_AGENT, log_request=0)
@@ -77,11 +91,36 @@ o.refresh(force=True)
 database.init()
 
 for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
+	replies = {}
+
 	# checks to see as some comments might be replys and non PMs
 	if isinstance(message, praw.objects.Message):
-		if "updateme" in message.body.lower():
+		log.info("Parsing message from /u/"+str(message.author))
+		for line in message.body.lower().splitlines():
+			if line.startswith("updateme"):
+				if "added" not in replies:
+					replies["added"] = {}
 
-			message.mark_as_read()
+				log.info("line: "+line)
+				users = re.findall('(?:/u/)(\w*)', line)
+				subs = re.findall('(?:/r/)(\w*)', line)
+				links = re.findall('(?:reddit.com/r/\w*/comments/)(\w*)', line)
+
+				if len(links) != 0:
+					submission = r.get_submission(submission_id=links[0])
+					log.info(str(submission.author)+" : "+str(submission.subreddit)+" : "+str(datetime.fromtimestamp(submission.created_utc)))
+					result = addUpdateSubscription(str(message.author), str(submission.author), str(submission.subreddit), datetime.fromtimestamp(message.created_utc))
+					if result is None:
+						log.info("Subscription already exists")
+					elif type(result) is bool:
+						log.info("Updated subscription type to: "+str(result))
+					else:
+						log.info("Added subscription: "+str(result))
+
+				elif len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
+					log.info(str(users[0])+" : "+str(subs[0]))
+
+		# message.mark_as_read()
 
 prevSubreddit = None
 subs = {}
