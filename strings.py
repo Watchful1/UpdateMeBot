@@ -21,27 +21,27 @@ def alertMessage(subscribedTo, subreddit, link):
 	# are you still subscribed? do you want to be?
 
 
-yourUpdatesMessage = (
+yourUpdatesSection = (
 	"Here are the people you asked me to update you on"
 )
 
 
-confirmationMessage = (
+confirmationSection = (
 	"I'll update you next time /u/ posts in /r/"
 )
 
 
-couldNotSubscribeMessage = (
+couldNotSubscribeSection = (
 	"Sorry, I only work in these subreddits. Explanation"
 )
 
 
-alreadySubscribedMessage = (
+alreadySubscribedSection = (
 	""
 )
 
 
-updatedSubscriptionMessage = (
+updatedSubscriptionSection = (
 	""
 )
 

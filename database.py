@@ -38,7 +38,7 @@ def printSubscriptions():
 	for row in c.execute('''
 		SELECT *
 		FROM subscriptions
-			'''):
+	'''):
 		print(row)
 
 
@@ -49,7 +49,23 @@ def getSubscriptions():
 		FROM subscriptions
 		GROUP BY Subreddit, SubscribedTo, Subscriber
 		ORDER BY Subreddit, LastChecked
-			''')
+	''')
+
+
+def getSubscriptions(Subscriber):
+	c = dbConn.cursor()
+	output = c.execute('''
+		SELECT SubscribedTo, Subreddit
+		FROM subscriptions
+		WHERE Subscriber = ?
+	''', (Subscriber,))
+
+	results = []
+
+	for row in output:
+		results.append(row)
+
+	return row
 
 
 def addSubsciption(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), single = True):
@@ -61,9 +77,9 @@ def addSubsciption(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), s
 			VALUES (?, ?, ?, ?, ?)
 		''', (Subscriber, SubscribedTo, Subreddit, date.strftime("%Y-%m-%d %H:%M:%S"), single))
 	except sqlite3.IntegrityError:
-		return getSubscriptionType(Subscriber, SubscribedTo, Subreddit)
+		return False
 
-	return Subscriber, SubscribedTo, Subreddit, date, single
+	return True
 
 
 def getSubscriptionType(Subscriber, SubscribedTo, Subreddit):
@@ -110,14 +126,27 @@ def checkSubreddit(Subreddit, date = datetime.now()):
 	''', (date.strftime("%Y-%m-%d %H:%M:%S"), Subreddit))
 
 
-def deleteSubscription(Subscriber, SubscribedTo, Subreddit):
+def removeSubscription(Subscriber, SubscribedTo, Subreddit):
 	c = dbConn.cursor()
-	c.execute('''
+	result = c.execute('''
     		DELETE FROM subscriptions
     		WHERE Subscriber = ?
     		    AND SubscribedTo = ?
     		    AND Subreddit = ?
     ''', (Subscriber, SubscribedTo, Subreddit))
+
+	if c.rowcount == 1:
+		return True
+	else:
+		return False
+
+
+def removeAllSubscriptions(Subscriber):
+	c = dbConn.cursor()
+	result = c.execute('''
+    		DELETE FROM subscriptions
+    		WHERE Subscriber = ?
+    ''', (Subscriber,))
 
 
 def clearSubscriptions():
