@@ -231,6 +231,10 @@ def subredditActivatedMessage(activations):
 	return strList
 
 
+def subredditNoticeThresholdMessage(subreddit, count):
+	return ["/r/", subreddit, " has hit the notice threshold, which is ", str(count)]
+
+
 couldNotUnderstandSection = (
 	"Well, I got your message, but I didn't understand anything in it. "
 	"If I should have, message /u/"+globals.OWNER_NAME+" and he'll look into it."

@@ -35,8 +35,9 @@ def setup():
 		CREATE TABLE IF NOT EXISTS subredditWhitelist (
 			ID INTEGER PRIMARY KEY AUTOINCREMENT,
 			Subreddit VARCHAR(80) NOT NULL,
-			Unrestricted BOOLEAN DEFAULT 0,
+			Status INTEGER DEFAULT 0,
 			DefaultSubscribe BOOLEAN DEFAULT 0,
+			NextNotice INTEGER DEFAULT 5,
 			UNIQUE (Subreddit)
 		)
 	''')
@@ -196,6 +197,7 @@ def isSubredditWhitelisted(Subreddit):
 	c.execute('''
 		SELECT * FROM subredditWhitelist
 		WHERE Subreddit = ?
+			and Status <> 0
 	''', (Subreddit,))
 
 	if c.rowcount >= 1:
@@ -241,8 +243,8 @@ def activateSubreddit(Subreddit):
 	c = dbConn.cursor()
 	c.execute('''
 		INSERT INTO subredditWhitelist
-		(Subreddit)
-		VALUES (?)
+		(Subreddit, Status)
+		VALUES (?, 1)
 	''', (Subreddit,))
 	c.execute('''
 		UPDATE subscriptions
@@ -254,11 +256,55 @@ def activateSubreddit(Subreddit):
 def subredditDefaultSubscribe(Subreddit):
 	c = dbConn.cursor()
 	result = c.execute('''
-		SELECT DefaultSubscribe FROM subredditWhitelist
+		SELECT DefaultSubscribe
+		FROM subredditWhitelist
 		WHERE Subreddit = ?
-	''', (Subreddit))
+	''', (Subreddit,))
 
 	if result.fetchone()[0] == 1:
+		return True
+	else:
+		return False
+
+
+def getDeniedRequestsCount(Subreddit):
+	c = dbConn.cursor()
+	result = c.execute('''
+		SELECT count(*)
+		FROM subscriptions
+		WHERE Approved = 0
+			AND Subreddit = ?
+	''', (Subreddit,))
+
+	return result.fetchone()[0]
+
+
+def checkUpdateDeniedRequestsNotice(Subreddit, current):
+	c = dbConn.cursor()
+	c.execute('''
+		SELECT NextNotice
+		FROM subredditWhitelist
+		WHERE Subreddit = ?
+	''', (Subreddit,))
+
+	results = c.fetchall()
+
+	if len(results) == 0:
+		c.execute('''
+			INSERT INTO subredditWhitelist
+			(Subreddit, Status)
+			VALUES (?, 0)
+		''', (Subreddit,))
+		notice = 5
+	else:
+		notice = results[0][0]
+
+	if current >= notice:
+		c.execute('''
+			UPDATE subredditWhitelist
+			SET NextNotice = ?
+			WHERE Subreddit = ?
+		''', (current*2, Subreddit))
 		return True
 	else:
 		return False

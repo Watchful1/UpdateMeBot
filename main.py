@@ -9,6 +9,7 @@ import os
 import strings
 import re
 import globals
+import traceback
 
 
 ### Constants ###
@@ -72,7 +73,7 @@ def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 							message=''.join(strList)
 						)
 					except Exception as err:
-						log.warn("Could not send message to /u/%s when sending update", key)
+						log.warning("Could not send message to /u/%s when sending update", key)
 
 	database.checkSubreddit(subreddit, startTimestamp)
 
@@ -81,7 +82,7 @@ def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date = datetime.n
 	data = {'subscriber': Subscriber.lower(), 'subscribedTo': SubscribedTo.lower(), 'subreddit': Subreddit.lower(), 'single': single}
 
 	if not database.isSubredditWhitelisted(data['subreddit']):
-		database.addDeniedRequest(data['subscriber'], data['subscribedTo'], data['subreddit'], date, single)
+		database.addDeniedRequest(data['subscriber'], data['subscribedTo'], data['subreddit'], date, data['single'])
 		replies["couldnotadd"].append(data)
 		return
 
@@ -192,7 +193,7 @@ try:
 									message=''.join(strList)
 								)
 							except Exception as err:
-								log.warn("Could not send message to /u/%s when activating subreddit", user)
+								log.warning("Could not send message to /u/%s when activating subreddit", user)
 						replies['subredditsAdded'].append({'subreddit': sub, 'subscribers': len(deniedRequests)})
 
 						database.activateSubreddit(sub)
@@ -226,6 +227,29 @@ try:
 				sectionCount += 1
 				strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
 				strList.append("\n\n*****\n\n")
+
+				subreddits = set()
+				for request in replies['couldnotadd']:
+					subreddits.add(request['subreddit'])
+
+				for subreddit in subreddits:
+					count = database.getDeniedRequestsCount(subreddit)
+					if database.checkUpdateDeniedRequestsNotice(subreddit, count):
+						log.info("Messaging owner that that requests for /r/%s have hit %d", subreddit, count)
+						noticeStrList = strings.subredditNoticeThresholdMessage(subreddit, count)
+						noticeStrList.append("\n\n*****\n\n")
+						noticeStrList.append(strings.footer)
+						log.debug(''.join(noticeStrList))
+						try:
+							r.send_message(
+								recipient=globals.OWNER_NAME,
+								subject=strings.messageSubject(user),
+								message=''.join(noticeStrList)
+							)
+						except Exception as err:
+							log.warning("Could not send message to owner when notifying on threshold")
+
+
 			if replies['subredditsAdded']:
 				sectionCount += 1
 				strList.extend(strings.subredditActivatedMessage(replies['subredditsAdded']))
@@ -243,9 +267,11 @@ try:
 			try:
 				message.reply(''.join(strList))
 			except Exception as err:
-				log.warn("Exception sending confirmation message")
+				log.warning("Exception sending confirmation message")
 except Exception as err:
-	log.warn("Exception reading messages")
+	log.warning("Exception reading messages")
+	log.warning(str(err))
+	traceback.print_exc()
 
 
 prevSubreddit = None
