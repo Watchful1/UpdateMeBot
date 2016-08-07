@@ -10,6 +10,8 @@ import strings
 import re
 import globals
 import traceback
+import sys
+import signal
 
 
 ### Constants ###
@@ -45,6 +47,12 @@ if LOG_FILENAME is not None:
 
 ### Functions ###
 
+def signal_handler(signal, frame):
+	log.info("Handling interupt")
+	database.close()
+	sys.exit(0)
+
+
 def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 	if authorHash == {}: return
 	oldestSeconds = time.mktime(datetime.strptime(oldestTimestamp, "%Y-%m-%d %H:%M:%S").timetuple())
@@ -76,6 +84,26 @@ def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 						log.warning("Could not send message to /u/%s when sending update", key)
 
 	database.checkSubreddit(subreddit, startTimestamp)
+
+
+def processSubreddits():
+	prevSubreddit = None
+	subs = {}
+	oldestTimestamp = None
+	for row in database.getSubscriptions():
+		if row[SUBREDDIT_NUM] != prevSubreddit:
+			searchSubreddit(prevSubreddit, subs, oldestTimestamp)
+			subs = {}
+			oldestTimestamp = row[LASTCHECKED_NUM]
+
+		if row[SUBSCRIBEDTO_NUM] not in subs:
+			subs[row[SUBSCRIBEDTO_NUM]] = {}
+
+		subs[row[SUBSCRIBEDTO_NUM]][row[SUBSCRIBER_NUM]] = row[LASTCHECKED_NUM]
+
+		prevSubreddit = row[SUBREDDIT_NUM]
+
+	searchSubreddit(prevSubreddit, subs, oldestTimestamp)
 
 
 def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), single = True, replies = {}):
@@ -112,6 +140,162 @@ def removeSubscription(Subscriber, SubscribedTo, Subreddit, replies = {}):
 		replies["notremoved"].append(data)
 
 
+def processMessages():
+	try:
+		for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
+			# checks to see as some comments might be replys and non PMs
+			if isinstance(message, praw.objects.Message):
+				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [], 'subredditsAdded': [], 'list': False}
+				log.info("Parsing message from /u/"+str(message.author))
+				for line in message.body.lower().splitlines():
+					log.debug("line: "+line)
+					if line.startswith("updateme") or line.startswith("subscribeme"):
+						users = re.findall('(?: /u/)(\w*)', line)
+						subs = re.findall('(?: /r/)(\w*)', line)
+						links = re.findall('(?:reddit.com/r/\w*/comments/)(\w*)', line)
+
+						if len(links) != 0:
+							log.debug("Parsing link")
+							try:
+								submission = r.get_submission(submission_id=links[0])
+								users.append(str(submission.author))
+								subs.append(str(submission.subreddit))
+							except Exception as err:
+								log.debug("Exception parsing link")
+
+						if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
+							subscriptionType = True if line.startswith("updateme") else False
+							if len(users) > 1:
+								for user in users:
+									addUpdateSubscription(str(message.author), user, subs[0], datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
+							elif len(subs) > 1:
+								for sub in subs:
+									addUpdateSubscription(str(message.author), users[0], sub, datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
+							else:
+								addUpdateSubscription(str(message.author), users[0], subs[0], datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
+
+					elif line.startswith("removeall"):
+						log.info("Removing all subscriptions for /u/"+str(message.author).lower())
+						replies['removed'].extend(database.getMySubscriptions(str(message.author).lower()))
+						database.removeAllSubscriptions(str(message.author).lower())
+
+					elif line.startswith("remove"):
+						users = re.findall('(?:/u/)(\w*)', line)
+						subs = re.findall('(?:/r/)(\w*)', line)
+
+						if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
+							if len(users) > 1:
+								for user in users:
+									removeSubscription(str(message.author), user, subs[0], replies)
+							elif len(subs) > 1:
+								for sub in subs:
+									removeSubscription(str(message.author), users[0], sub, replies)
+							else:
+								removeSubscription(str(message.author), users[0], subs[0], replies)
+
+					elif (line.startswith("mysubscriptions") or line.startswith("myupdates")) and not replies['list']:
+						replies['list'] = True
+
+					elif line.startswith("addsubreddit") and str(message.author).lower() == globals.OWNER_NAME.lower():
+						subs = re.findall('(?:/r/)(\w*)', line)
+						for sub in subs:
+							log.info("Whitelisting subreddit /r/"+sub)
+							deniedRequests = database.getDeniedSubscriptions(sub.lower())
+
+							for user in deniedRequests:
+								log.info("Messaging /u/%s that their subscriptions in /r/%s have been activated", user, sub)
+								strList = strings.activatingSubredditMessage(sub.lower(), deniedRequests[user])
+								strList.append("\n\n*****\n\n")
+								strList.append(strings.footer)
+								log.debug(''.join(strList))
+								try:
+									r.send_message(
+										recipient=user,
+										subject=strings.messageSubject(user),
+										message=''.join(strList)
+									)
+								except Exception as err:
+									log.warning("Could not send message to /u/%s when activating subreddit", user)
+							replies['subredditsAdded'].append({'subreddit': sub, 'subscribers': len(deniedRequests)})
+
+							database.activateSubreddit(sub)
+
+				message.mark_as_read()
+
+				strList = []
+				sectionCount = 0
+
+				if replies['added']:
+					sectionCount += 1
+					strList.extend(strings.confirmationSection(replies['added']))
+					strList.append("\n\n*****\n\n")
+				if replies['updated']:
+					sectionCount += 1
+					strList.extend(strings.updatedSubscriptionSection(replies['updated']))
+					strList.append("\n\n*****\n\n")
+				if replies['exist']:
+					sectionCount += 1
+					strList.extend(strings.alreadySubscribedSection(replies['exist']))
+					strList.append("\n\n*****\n\n")
+				if replies['removed']:
+					sectionCount += 1
+					strList.extend(strings.removeUpdatesConfirmationSection(replies['removed']))
+					strList.append("\n\n*****\n\n")
+				if replies['list']:
+					sectionCount += 1
+					strList.extend(strings.yourUpdatesSection(database.getMySubscriptions(str(message.author).lower())))
+					strList.append("\n\n*****\n\n")
+				if replies['couldnotadd']:
+					sectionCount += 1
+					strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
+					strList.append("\n\n*****\n\n")
+
+					subreddits = set()
+					for request in replies['couldnotadd']:
+						subreddits.add(request['subreddit'])
+
+					for subreddit in subreddits:
+						count = database.getDeniedRequestsCount(subreddit)
+						if database.checkUpdateDeniedRequestsNotice(subreddit, count):
+							log.info("Messaging owner that that requests for /r/%s have hit %d", subreddit, count)
+							noticeStrList = strings.subredditNoticeThresholdMessage(subreddit, count)
+							noticeStrList.append("\n\n*****\n\n")
+							noticeStrList.append(strings.footer)
+							log.debug(''.join(noticeStrList))
+							try:
+								r.send_message(
+									recipient=globals.OWNER_NAME,
+									subject=strings.messageSubject(user),
+									message=''.join(noticeStrList)
+								)
+							except Exception as err:
+								log.warning("Could not send message to owner when notifying on threshold")
+
+
+				if replies['subredditsAdded']:
+					sectionCount += 1
+					strList.extend(strings.subredditActivatedMessage(replies['subredditsAdded']))
+					strList.append("\n\n*****\n\n")
+
+				if sectionCount == 0:
+					log.info("Nothing found in message")
+					strList.append(strings.couldNotUnderstandSection)
+					strList.append("\n\n*****\n\n")
+
+				strList.append(strings.footer)
+
+				log.debug("Sending message:")
+				log.debug(''.join(strList))
+				try:
+					message.reply(''.join(strList))
+				except Exception as err:
+					log.warning("Exception sending confirmation message")
+	except Exception as err:
+		log.warning("Exception reading messages")
+		log.warning(str(err))
+		traceback.print_exc()
+
+
 ### Main ###
 log.debug("Connecting to reddit")
 r = praw.Reddit(user_agent=globals.USER_AGENT, log_request=0)
@@ -119,177 +303,21 @@ o = OAuth2Util.OAuth2Util(r)
 o.refresh(force=True)
 
 database.init()
-try:
-	for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
-		# checks to see as some comments might be replys and non PMs
-		if isinstance(message, praw.objects.Message):
-			replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [], 'subredditsAdded': [], 'list': False}
-			log.info("Parsing message from /u/"+str(message.author))
-			for line in message.body.lower().splitlines():
-				log.debug("line: "+line)
-				if line.startswith("updateme") or line.startswith("subscribeme"):
-					users = re.findall('(?: /u/)(\w*)', line)
-					subs = re.findall('(?: /r/)(\w*)', line)
-					links = re.findall('(?:reddit.com/r/\w*/comments/)(\w*)', line)
 
-					if len(links) != 0:
-						log.debug("Parsing link")
-						try:
-							submission = r.get_submission(submission_id=links[0])
-							users.append(str(submission.author))
-							subs.append(str(submission.subreddit))
-						except Exception as err:
-							log.debug("Exception parsing link")
+signal.signal(signal.SIGINT, signal_handler)
 
-					if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
-						subscriptionType = True if line.startswith("updateme") else False
-						if len(users) > 1:
-							for user in users:
-								addUpdateSubscription(str(message.author), user, subs[0], datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
-						elif len(subs) > 1:
-							for sub in subs:
-								addUpdateSubscription(str(message.author), users[0], sub, datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
-						else:
-							addUpdateSubscription(str(message.author), users[0], subs[0], datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
+once = False
+if len(sys.argv) > 1 and sys.argv[1] == 'once':
+	once = True
 
-				elif line.startswith("removeall"):
-					log.info("Removing all subscriptions for /u/"+str(message.author).lower())
-					replies['removed'].extend(database.getMySubscriptions(str(message.author).lower()))
-					database.removeAllSubscriptions(str(message.author).lower())
+while True:
+	processMessages()
 
-				elif line.startswith("remove"):
-					users = re.findall('(?:/u/)(\w*)', line)
-					subs = re.findall('(?:/r/)(\w*)', line)
+	processSubreddits()
 
-					if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
-						if len(users) > 1:
-							for user in users:
-								removeSubscription(str(message.author), user, subs[0], replies)
-						elif len(subs) > 1:
-							for sub in subs:
-								removeSubscription(str(message.author), users[0], sub, replies)
-						else:
-							removeSubscription(str(message.author), users[0], subs[0], replies)
+	if once:
+		break
+	time.sleep(globals.SLEEP_TIME)
 
-				elif (line.startswith("mysubscriptions") or line.startswith("myupdates")) and not replies['list']:
-					replies['list'] = True
-
-				elif line.startswith("addsubreddit") and str(message.author).lower() == globals.OWNER_NAME.lower():
-					subs = re.findall('(?:/r/)(\w*)', line)
-					for sub in subs:
-						log.info("Whitelisting subreddit /r/"+sub)
-						deniedRequests = database.getDeniedSubscriptions(sub.lower())
-
-						for user in deniedRequests:
-							log.info("Messaging /u/%s that their subscriptions in /r/%s have been activated", user, sub)
-							strList = strings.activatingSubredditMessage(sub.lower(), deniedRequests[user])
-							strList.append("\n\n*****\n\n")
-							strList.append(strings.footer)
-							log.debug(''.join(strList))
-							try:
-								r.send_message(
-									recipient=user,
-									subject=strings.messageSubject(user),
-									message=''.join(strList)
-								)
-							except Exception as err:
-								log.warning("Could not send message to /u/%s when activating subreddit", user)
-						replies['subredditsAdded'].append({'subreddit': sub, 'subscribers': len(deniedRequests)})
-
-						database.activateSubreddit(sub)
-
-			message.mark_as_read()
-
-			strList = []
-			sectionCount = 0
-
-			if replies['added']:
-				sectionCount += 1
-				strList.extend(strings.confirmationSection(replies['added']))
-				strList.append("\n\n*****\n\n")
-			if replies['updated']:
-				sectionCount += 1
-				strList.extend(strings.updatedSubscriptionSection(replies['updated']))
-				strList.append("\n\n*****\n\n")
-			if replies['exist']:
-				sectionCount += 1
-				strList.extend(strings.alreadySubscribedSection(replies['exist']))
-				strList.append("\n\n*****\n\n")
-			if replies['removed']:
-				sectionCount += 1
-				strList.extend(strings.removeUpdatesConfirmationSection(replies['removed']))
-				strList.append("\n\n*****\n\n")
-			if replies['list']:
-				sectionCount += 1
-				strList.extend(strings.yourUpdatesSection(database.getMySubscriptions(str(message.author).lower())))
-				strList.append("\n\n*****\n\n")
-			if replies['couldnotadd']:
-				sectionCount += 1
-				strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
-				strList.append("\n\n*****\n\n")
-
-				subreddits = set()
-				for request in replies['couldnotadd']:
-					subreddits.add(request['subreddit'])
-
-				for subreddit in subreddits:
-					count = database.getDeniedRequestsCount(subreddit)
-					if database.checkUpdateDeniedRequestsNotice(subreddit, count):
-						log.info("Messaging owner that that requests for /r/%s have hit %d", subreddit, count)
-						noticeStrList = strings.subredditNoticeThresholdMessage(subreddit, count)
-						noticeStrList.append("\n\n*****\n\n")
-						noticeStrList.append(strings.footer)
-						log.debug(''.join(noticeStrList))
-						try:
-							r.send_message(
-								recipient=globals.OWNER_NAME,
-								subject=strings.messageSubject(user),
-								message=''.join(noticeStrList)
-							)
-						except Exception as err:
-							log.warning("Could not send message to owner when notifying on threshold")
-
-
-			if replies['subredditsAdded']:
-				sectionCount += 1
-				strList.extend(strings.subredditActivatedMessage(replies['subredditsAdded']))
-				strList.append("\n\n*****\n\n")
-
-			if sectionCount == 0:
-				log.info("Nothing found in message")
-				strList.append(strings.couldNotUnderstandSection)
-				strList.append("\n\n*****\n\n")
-
-			strList.append(strings.footer)
-
-			log.debug("Sending message:")
-			log.debug(''.join(strList))
-			try:
-				message.reply(''.join(strList))
-			except Exception as err:
-				log.warning("Exception sending confirmation message")
-except Exception as err:
-	log.warning("Exception reading messages")
-	log.warning(str(err))
-	traceback.print_exc()
-
-
-prevSubreddit = None
-subs = {}
-oldestTimestamp = None
-for row in database.getSubscriptions():
-	if row[SUBREDDIT_NUM] != prevSubreddit:
-		searchSubreddit(prevSubreddit, subs, oldestTimestamp)
-		subs = {}
-		oldestTimestamp = row[LASTCHECKED_NUM]
-
-	if row[SUBSCRIBEDTO_NUM] not in subs:
-		subs[row[SUBSCRIBEDTO_NUM]] = {}
-
-	subs[row[SUBSCRIBEDTO_NUM]][row[SUBSCRIBER_NUM]] = row[LASTCHECKED_NUM]
-
-	prevSubreddit = row[SUBREDDIT_NUM]
-
-searchSubreddit(prevSubreddit, subs, oldestTimestamp)
 
 database.close()
