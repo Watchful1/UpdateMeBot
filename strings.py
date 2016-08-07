@@ -239,7 +239,7 @@ couldNotUnderstandSection = (
 footer = (
 	"|[^(FAQs)](https://www.reddit.com/r/UpdateMeBot/comments/4wirnm/updatemebot_info/)"
 	"|[^(Request An Update)](http://np.reddit.com/message/compose/?to="+globals.ACCOUNT_NAME+"&subject=Update&message="
-		"Replace this text with either a link to a thread, or a line starting with UpdateMe and then a username and subreddit."
+		"Replace this text with a line starting with UpdateMe and then either a username and subreddit, or a link to a thread."
 		"You can also use SubscribeMe to get a message each time that user posts instead of just the next time"
 	    ")"
 	"|[^(Your Updates)](http://np.reddit.com/message/compose/?to="+globals.ACCOUNT_NAME+"&subject=List Of Updates&message=MyUpdates)"

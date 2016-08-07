@@ -36,6 +36,7 @@ def setup():
 			ID INTEGER PRIMARY KEY AUTOINCREMENT,
 			Subreddit VARCHAR(80) NOT NULL,
 			Unrestricted BOOLEAN DEFAULT 0,
+			DefaultSubscribe BOOLEAN DEFAULT 0,
 			UNIQUE (Subreddit)
 		)
 	''')
@@ -248,3 +249,16 @@ def activateSubreddit(Subreddit):
 		SET Approved = 1
 		WHERE subreddit = ?
 	''', (Subreddit,))
+
+
+def subredditDefaultSubscribe(Subreddit):
+	c = dbConn.cursor()
+	result = c.execute('''
+		SELECT DefaultSubscribe FROM subredditWhitelist
+		WHERE Subreddit = ?
+	''', (Subreddit))
+
+	if result.fetchone()[0] == 1:
+		return True
+	else:
+		return False
