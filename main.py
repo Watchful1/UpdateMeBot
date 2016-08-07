@@ -265,11 +265,11 @@ def processMessages():
 							try:
 								r.send_message(
 									recipient=globals.OWNER_NAME,
-									subject=strings.messageSubject(user),
+									subject="Subreddit Threshold",
 									message=''.join(noticeStrList)
 								)
 							except Exception as err:
-								log.warning("Could not send message to owner when notifying on threshold")
+								log.warning("Could not send message to owner when notifying on subreddit threshold")
 
 
 				if replies['subredditsAdded']:
@@ -311,9 +311,27 @@ if len(sys.argv) > 1 and sys.argv[1] == 'once':
 	once = True
 
 while True:
+	startTime = time.perf_counter()
+
 	processMessages()
 
 	processSubreddits()
+
+	elapsedTime = time.perf_counter() - startTime
+	if elapsedTime > globals.WARNING_RUN_TIME:
+		log.warning("Messaging owner that that the process took too long to run: %d", int(elapsedTime))
+		noticeStrList = strings.longRunMessage(int(elapsedTime))
+		noticeStrList.append("\n\n*****\n\n")
+		noticeStrList.append(strings.footer)
+		log.debug(''.join(noticeStrList))
+		try:
+			r.send_message(
+				recipient=globals.OWNER_NAME,
+				subject="Long Run",
+				message=''.join(noticeStrList)
+			)
+		except Exception as err:
+			log.warning("Could not send message to owner when notifying on long run")
 
 	if once:
 		break

@@ -235,6 +235,10 @@ def subredditNoticeThresholdMessage(subreddit, count):
 	return ["/r/", subreddit, " has hit the notice threshold, which is ", str(count)]
 
 
+def longRunMessage(seconds):
+	return ["Loop run took too long: ", str(seconds)]
+
+
 couldNotUnderstandSection = (
 	"Well, I got your message, but I didn't understand anything in it. "
 	"If I should have, message /u/"+globals.OWNER_NAME+" and he'll look into it."
