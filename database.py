@@ -52,20 +52,21 @@ def getSubscriptions():
 	''')
 
 
-def getSubscriptions(Subscriber):
+def getMySubscriptions(Subscriber):
 	c = dbConn.cursor()
 	output = c.execute('''
-		SELECT SubscribedTo, Subreddit
+		SELECT SubscribedTo, Subreddit, Single
 		FROM subscriptions
 		WHERE Subscriber = ?
+		ORDER BY Subreddit, Single, SubscribedTo
 	''', (Subscriber,))
 
 	results = []
 
 	for row in output:
-		results.append(row)
+		results.append({'subscribedTo': row[0], 'subreddit': row[1], 'single': row[2] == 1})
 
-	return row
+	return results
 
 
 def addSubsciption(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), single = True):

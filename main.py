@@ -8,9 +8,7 @@ import logging.handlers
 import os
 import strings
 import re
-
-### Global variables ###
-USER_AGENT = "UpdatedMe/Subscribe (by /u/Watchful1)"
+import globals
 
 
 ### Constants ###
@@ -62,11 +60,11 @@ def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 			for key in authorHash[author]:
 				if datetime.fromtimestamp(post.created_utc) >= datetime.strptime(authorHash[author][key], "%Y-%m-%d %H:%M:%S"):
 					log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s",key,author,subreddit)
-					#r.send_message(
-					#	recipient=key,
-					#	subject=strings.messageSubject(key),
-					#	message=strings.alertMessage(str(post.author),subreddit,"LINK")
-					#)
+					r.send_message(
+						recipient=key,
+						subject=strings.messageSubject(key),
+						message=strings.alertMessage(str(post.author),subreddit,"LINK")
+					)
 
 	database.checkSubreddit(subreddit, startTimestamp)
 
@@ -90,6 +88,7 @@ def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date = datetime.n
 
 def removeSubscription(Subscriber, SubscribedTo, Subreddit, replies = {}):
 	data = {'subscriber': Subscriber.lower(), 'subscribedTo': SubscribedTo.lower(), 'subreddit': Subreddit.lower()}
+	data['single'] = database.getSubscriptionType(data['subscriber'], data['subscribedTo'], data['subreddit'])
 	if database.removeSubscription(data['subscriber'], data['subscribedTo'], data['subreddit']):
 		log.info("/u/"+data['subscriber']+"'s removed /u/"+data['subscribedTo']+" in /r/"+data['subreddit'])
 		replies["removed"].append(data)
@@ -100,17 +99,16 @@ def removeSubscription(Subscriber, SubscribedTo, Subreddit, replies = {}):
 
 ### Main ###
 log.debug("Connecting to reddit")
-r = praw.Reddit(user_agent=USER_AGENT, log_request=0)
+r = praw.Reddit(user_agent=globals.USER_AGENT, log_request=0)
 o = OAuth2Util.OAuth2Util(r)
 o.refresh(force=True)
 
 database.init()
 
 for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
-	replies = {'added': [], 'updated': [], 'exist': [], 'removed': [], 'notremoved': [], 'list': False, 'removeall': False}
-
 	# checks to see as some comments might be replys and non PMs
 	if isinstance(message, praw.objects.Message):
+		replies = {'added': [], 'updated': [], 'exist': [], 'removed': [], 'notremoved': [], 'list': False}
 		log.info("Parsing message from /u/"+str(message.author))
 		for line in message.body.lower().splitlines():
 			log.debug("line: "+line)
@@ -127,7 +125,6 @@ for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
 
 				if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
 					subscriptionType = True if line.startswith("updateme") else False
-					log.debug(str(users)+" : "+str(subs))
 					if len(users) > 1:
 						for user in users:
 							addUpdateSubscription(str(message.author), user, subs[0], datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
@@ -136,6 +133,11 @@ for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
 							addUpdateSubscription(str(message.author), users[0], sub, datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
 					else:
 						addUpdateSubscription(str(message.author), users[0], subs[0], datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
+
+			elif line.startswith("removeall"):
+				log.info("Removing all subscriptions for /u/"+str(message.author).lower())
+				replies['removed'].extend(database.getMySubscriptions(str(message.author).lower()))
+				database.removeAllSubscriptions(str(message.author).lower())
 
 			elif line.startswith("remove"):
 				users = re.findall('(?:/u/)(\w*)', line)
@@ -151,16 +153,48 @@ for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
 					else:
 						removeSubscription(str(message.author), users[0], subs[0], replies)
 
-			elif line.startswith("removeall"):
-				if not replies['removeall']:
-					replies['removeall'] = database.getSubscriptions(str(message.author).lower())
-					database.removeAllSubscriptions(str(message.author).lower())
+			elif (line.startswith("mysubscriptions") or line.startswith("myupdates")) and not replies['list']:
+				replies['list'] = True
 
-			elif line.startswith("mysubscriptions") or line.startswith("myupdates"):
-				replies['list'] = database.getSubscriptions(str(message.author).lower())
+		#message.mark_as_read()
+
+		strList = []
+		sectionCount = 0
+
+		if replies['added']:
+			sectionCount += 1
+			strList.extend(strings.confirmationSection(replies['added']))
+			strList.append("\n\n*****\n\n")
+		if replies['updated']:
+			sectionCount += 1
+			strList.extend(strings.updatedSubscriptionSection(replies['updated']))
+			strList.append("\n\n*****\n\n")
+		if replies['exist']:
+			sectionCount += 1
+			strList.extend(strings.alreadySubscribedSection(replies['exist']))
+			strList.append("\n\n*****\n\n")
+		if replies['removed']:
+			sectionCount += 1
+			strList.extend(strings.removeUpdatesConfirmationMessage(replies['removed']))
+			strList.append("\n\n*****\n\n")
+		if replies['list']:
+			sectionCount += 1
+			strList.extend(strings.yourUpdatesSection(database.getMySubscriptions(str(message.author).lower())))
+			strList.append("\n\n*****\n\n")
+
+		if sectionCount == 0:
+			log.info("Nothing found in message")
+			strList.append(strings.couldNotUnderstandMessage)
+			strList.append("\n\n*****\n\n")
+
+		strList.append(strings.footer)
+
+		log.debug("Sending message:")
+		log.debug(''.join(strList))
+		message.reply(''.join(strList))
 
 
-		# message.mark_as_read()
+
 
 
 
