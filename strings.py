@@ -9,19 +9,61 @@ def messageSubject(user):
 	)
 
 
-def alertMessage(subscribedTo, subreddit, link):
-	return (
-		"UpdateMeBot here!"
-		"\n\n/u/{subscribedTo} has posted a new thread in /r/{subreddit}"
-		"\n\nYou can find it here:"
-		"\n\n{link}"
-	).format(
-		subscribedTo=subscribedTo,
-		subreddit=subreddit,
-		link=link
-	)
+def alertMessage(subscribedTo, subreddit, link, single):
+	strList = [globals.ACCOUNT_NAME]
+	strList.append(" here!\n\n")
+	strList.append("/u/")
+	strList.append(subscribedTo)
+	strList.append(" has posted a new thread in /r/")
+	strList.append(subreddit)
+	strList.append("\n\n")
+	strList.append("You can find it here:")
+	strList.append("\n\n")
+	strList.append(link)
 
-	# are you still subscribed? do you want to be?
+	strList.append("\n\n*****\n\n")
+
+	if single:
+		strList.append("[Click here](")
+		strList.append("http://np.reddit.com/message/compose/?to=")
+		strList.append(globals.ACCOUNT_NAME)
+		strList.append("&subject=Update&message=UpdateMe /u/")
+		strList.append(subscribedTo)
+		strList.append(" /r/")
+		strList.append(subreddit)
+		strList.append(") if you want to be updated the next time /u/")
+		strList.append(subscribedTo)
+		strList.append(" posts in /r/")
+		strList.append(subreddit)
+		strList.append("  \n")
+
+		strList.append("[Click here](")
+		strList.append("http://np.reddit.com/message/compose/?to=")
+		strList.append(globals.ACCOUNT_NAME)
+		strList.append("&subject=Subscribe&message=SubscribeMe /u/")
+		strList.append(subscribedTo)
+		strList.append(" /r/")
+		strList.append(subreddit)
+		strList.append(") if you want to be updated every time /u/")
+		strList.append(subscribedTo)
+		strList.append(" posts in /r/")
+		strList.append(subreddit)
+
+	else:
+		strList.append("[Click here](")
+		strList.append("http://np.reddit.com/message/compose/?to=")
+		strList.append(globals.ACCOUNT_NAME)
+		strList.append("&subject=Remove&message=Remove /u/")
+		strList.append(subscribedTo)
+		strList.append(" /r/")
+		strList.append(subreddit)
+		strList.append(") to remove your subscription to /u/")
+		strList.append(subscribedTo)
+		strList.append(" posts in /r/")
+		strList.append(subreddit)
+		strList.append("  ")
+
+	return strList
 
 
 def eachHelper(item, includeMessageType = True):
@@ -82,9 +124,37 @@ def confirmationSection(addedList):
 	return strList
 
 
-couldNotSubscribeSection = (
-	"Sorry, I only work in these subreddits. Explanation"
-)
+def couldNotSubscribeSection(couldNotSubscribeList):
+	subreddits = set()
+	for request in couldNotSubscribeList:
+		subreddits.add(request['subreddit'])
+
+	strList = []
+
+	strList.append("Unfortunately I couldn't process your request")
+	if len(subreddits) > 1:
+		strList.append("'s")
+
+	strList.append(" for ")
+
+	i = 0
+	length = len(subreddits)
+	for subreddit in subreddits:
+		strList.append("/r/")
+		strList.append(subreddit)
+		if length != 1 and i+2 == length:
+			strList.append(" or ")
+		elif length != 1 and i+1 != length:
+			strList.append(", ")
+		i += 1
+
+	strList.append(".\n\n")
+	strList.append("This bot works by checking every subreddit that someone is subscribed to every few minutes. ")
+	strList.append("Each subreddit it checks takes several seconds, so I have to limit the number of subreddits or the bot will get overloaded. ")
+	strList.append("If you think this would be a good subreddit for this bot, message /u/"+globals.OWNER_NAME+" and he'll take a look. ")
+	strList.append("I've also logged your request, so if the subreddit does get added, I'll automatically start sending your updates.")
+
+	return strList
 
 
 def alreadySubscribedSection(alreadyList):
@@ -119,7 +189,7 @@ def updatedSubscriptionSection(updatedList):
 	return strList
 
 
-def removeUpdatesConfirmationMessage(removedList):
+def removeUpdatesConfirmationSection(removedList):
 	strList = ["I will no longer message when the following happens. "
 			   "If you change your mind, you can copy the below section into a message to me"]
 
@@ -130,7 +200,38 @@ def removeUpdatesConfirmationMessage(removedList):
 	return strList
 
 
-couldNotUnderstandMessage = (
+def activatingSubredditMessage(subreddit, subscriptions):
+	strList = ["/r/",subreddit," has been added to this bot. Following is the list of users you requested to be subscribed to.\n\n"]
+
+	for subscription in subscriptions:
+		if subscription['single']:
+			strList.append("UpdateMe")
+		else:
+			strList.append("SubscribeMe")
+		strList.append(" /u/")
+		strList.append(subscription['subscribedTo'])
+		strList.append("  \n")
+
+	strList.append("\n\nNote, your subscription automatically starts at the time of your original request, so if it's been a while you might get a flood of messages.")
+
+	return strList
+
+
+def subredditActivatedMessage(activations):
+	strList = []
+
+	for activation in activations:
+		strList.append("/r/")
+		strList.append(activation['subreddit'])
+		strList.append(" has been activated and ")
+		strList.append(str(activation['subscribers']))
+		strList.append(" users have been notified.")
+		strList.append("  \n")
+
+	return strList
+
+
+couldNotUnderstandSection = (
 	"Well, I got your message, but I didn't understand anything in it. "
 	"If I should have, message /u/"+globals.OWNER_NAME+" and he'll look into it."
 )

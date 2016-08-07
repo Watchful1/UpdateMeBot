@@ -23,11 +23,20 @@ def setup():
 		CREATE TABLE IF NOT EXISTS subscriptions (
 			ID INTEGER PRIMARY KEY AUTOINCREMENT,
 			Subscriber VARCHAR(80) NOT NULL,
-			SubscribedTo VARCHAR(80) NOT NULL,
-			Subreddit VARCHAR(80),
+			SubscribedTo VARCHAR(80),
+			Subreddit VARCHAR(80) NOT NULL,
 			LastChecked TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			Single BOOLEAN DEFAULT 1,
+			Approved BOOLEAN DEFAULT 1,
 			UNIQUE (Subscriber, SubscribedTo, Subreddit)
+		)
+	''')
+	c.execute('''
+		CREATE TABLE IF NOT EXISTS subredditWhitelist (
+			ID INTEGER PRIMARY KEY AUTOINCREMENT,
+			Subreddit VARCHAR(80) NOT NULL,
+			Unrestricted BOOLEAN DEFAULT 0,
+			UNIQUE (Subreddit)
 		)
 	''')
 	dbConn.commit()
@@ -38,6 +47,7 @@ def printSubscriptions():
 	for row in c.execute('''
 		SELECT *
 		FROM subscriptions
+		WHERE Approved = 1
 	'''):
 		print(row)
 
@@ -47,6 +57,7 @@ def getSubscriptions():
 	return c.execute('''
 		SELECT ID, Subscriber, SubscribedTo, Subreddit, LastChecked
 		FROM subscriptions
+		WHERE Approved = 1
 		GROUP BY Subreddit, SubscribedTo, Subscriber
 		ORDER BY Subreddit, LastChecked
 	''')
@@ -58,6 +69,7 @@ def getMySubscriptions(Subscriber):
 		SELECT SubscribedTo, Subreddit, Single
 		FROM subscriptions
 		WHERE Subscriber = ?
+			AND Approved = 1
 		ORDER BY Subreddit, Single, SubscribedTo
 	''', (Subscriber,))
 
@@ -88,8 +100,9 @@ def getSubscriptionType(Subscriber, SubscribedTo, Subreddit):
 	result = c.execute('''
 		SELECT Single FROM subscriptions
 		WHERE Subscriber = ?
-			and SubscribedTo = ?
-			and Subreddit = ?
+			AND SubscribedTo = ?
+			AND Subreddit = ?
+			AND Approved = 1
 	''', (Subscriber, SubscribedTo, Subreddit))
 
 	if result.fetchone()[0] == 1:
@@ -104,8 +117,9 @@ def setSubscriptionType(Subscriber, SubscribedTo, Subreddit, single):
 		UPDATE subscriptions
 		SET Single = ?
 		WHERE Subscriber = ?
-			and SubscribedTo = ?
-			and Subreddit = ?
+			AND SubscribedTo = ?
+			AND Subreddit = ?
+			AND Approved = 1
 	''', (single, Subscriber, SubscribedTo, Subreddit))
 
 
@@ -115,6 +129,7 @@ def checkSubscription(ID, date = datetime.now()):
 		UPDATE subscriptions
 		SET LastChecked = ?
 		WHERE ID = ?
+			AND Approved = 1
 	''', (date.strftime("%Y-%m-%d %H:%M:%S"), ID))
 
 
@@ -124,16 +139,18 @@ def checkSubreddit(Subreddit, date = datetime.now()):
 		UPDATE subscriptions
 		SET LastChecked = ?
 		WHERE Subreddit = ?
+			AND Approved = 1
 	''', (date.strftime("%Y-%m-%d %H:%M:%S"), Subreddit))
 
 
 def removeSubscription(Subscriber, SubscribedTo, Subreddit):
 	c = dbConn.cursor()
-	result = c.execute('''
-    		DELETE FROM subscriptions
-    		WHERE Subscriber = ?
-    		    AND SubscribedTo = ?
-    		    AND Subreddit = ?
+	c.execute('''
+    	DELETE FROM subscriptions
+    	WHERE Subscriber = ?
+    	    AND SubscribedTo = ?
+    	    AND Subreddit = ?
+			AND Approved = 1
     ''', (Subscriber, SubscribedTo, Subreddit))
 
 	if c.rowcount == 1:
@@ -142,11 +159,19 @@ def removeSubscription(Subscriber, SubscribedTo, Subreddit):
 		return False
 
 
+def checkRemoveSubscription(Subscriber, SubscribedTo, Subreddit):
+	if getSubscriptionType(Subscriber, SubscribedTo, Subreddit):
+		return True
+	else:
+		removeSubscription(Subscriber, SubscribedTo, Subreddit)
+		return False
+
+
 def removeAllSubscriptions(Subscriber):
 	c = dbConn.cursor()
-	result = c.execute('''
-    		DELETE FROM subscriptions
-    		WHERE Subscriber = ?
+	c.execute('''
+    	DELETE FROM subscriptions
+    	WHERE Subscriber = ?
     ''', (Subscriber,))
 
 
@@ -163,3 +188,63 @@ def resetAllSubscriptionTimes():
 		UPDATE subscriptions
 		SET LastChecked = '2016-07-18 17:00:00'
     ''')
+
+
+def isSubredditWhitelisted(Subreddit):
+	c = dbConn.cursor()
+	c.execute('''
+		SELECT * FROM subredditWhitelist
+		WHERE Subreddit = ?
+	''', (Subreddit,))
+
+	if c.rowcount >= 1:
+		return True
+	else:
+		return False
+
+
+def addDeniedRequest(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), single = True):
+	c = dbConn.cursor()
+	try:
+		c.execute('''
+			INSERT INTO subscriptions
+			(Subscriber, SubscribedTo, Subreddit, LastChecked, Single, Approved)
+			VALUES (?, ?, ?, ?, ?, 0)
+		''', (Subscriber, SubscribedTo, Subreddit, date.strftime("%Y-%m-%d %H:%M:%S"), single))
+	except sqlite3.IntegrityError:
+		return False
+
+	return True
+
+
+def getDeniedSubscriptions(Subreddit):
+	c = dbConn.cursor()
+	output = c.execute('''
+		SELECT Subscriber, SubscribedTo, Single
+		FROM subscriptions
+		WHERE Subreddit = ?
+			AND Approved = 0
+	''', (Subreddit,))
+
+	results = {}
+
+	for row in output:
+		if row[0] not in results:
+			results[row[0]] = []
+		results[row[0]].append({'subscribedTo': row[1], 'single': True if row[2] == 1 else False})
+
+	return results
+
+
+def activateSubreddit(Subreddit):
+	c = dbConn.cursor()
+	c.execute('''
+		INSERT INTO subredditWhitelist
+		(Subreddit)
+		VALUES (?)
+	''', (Subreddit,))
+	c.execute('''
+		UPDATE subscriptions
+		SET Approved = 1
+		WHERE subreddit = ?
+	''', (Subreddit,))

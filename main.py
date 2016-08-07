@@ -59,11 +59,16 @@ def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 		if author in authorHash:
 			for key in authorHash[author]:
 				if datetime.fromtimestamp(post.created_utc) >= datetime.strptime(authorHash[author][key], "%Y-%m-%d %H:%M:%S"):
-					log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s",key,author,subreddit)
+					single = database.checkRemoveSubscription(key, str(post.author).lower(), subreddit)
+					log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",key,author,subreddit)
+					strList = strings.alertMessage(str(post.author), subreddit, post.url, single)
+					strList.append("\n\n*****\n\n")
+					strList.append(strings.footer)
+					log.debug(''.join(strList))
 					r.send_message(
 						recipient=key,
 						subject=strings.messageSubject(key),
-						message=strings.alertMessage(str(post.author),subreddit,"LINK")
+						message=''.join(strList)
 					)
 
 	database.checkSubreddit(subreddit, startTimestamp)
@@ -71,6 +76,12 @@ def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 
 def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), single = True, replies = {}):
 	data = {'subscriber': Subscriber.lower(), 'subscribedTo': SubscribedTo.lower(), 'subreddit': Subreddit.lower(), 'single': single}
+
+	if not database.isSubredditWhitelisted(data['subreddit']):
+		database.addDeniedRequest(data['subscriber'], data['subscribedTo'], data['subreddit'], date, single)
+		replies["couldnotadd"].append(data)
+		return
+
 	result = database.addSubsciption(data['subscriber'], data['subscribedTo'], data['subreddit'], date, single)
 	if result:
 		log.info("/u/"+data['subscriber']+" "+("updated" if single else "subscribed")+" to /u/"+data['subscribedTo']+" in /r/"+data['subreddit'])
@@ -108,7 +119,7 @@ database.init()
 for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
 	# checks to see as some comments might be replys and non PMs
 	if isinstance(message, praw.objects.Message):
-		replies = {'added': [], 'updated': [], 'exist': [], 'removed': [], 'notremoved': [], 'list': False}
+		replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [], 'subredditsAdded': [], 'list': False}
 		log.info("Parsing message from /u/"+str(message.author))
 		for line in message.body.lower().splitlines():
 			log.debug("line: "+line)
@@ -156,7 +167,28 @@ for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
 			elif (line.startswith("mysubscriptions") or line.startswith("myupdates")) and not replies['list']:
 				replies['list'] = True
 
-		#message.mark_as_read()
+			elif line.startswith("addsubreddit") and str(message.author).lower() == globals.OWNER_NAME.lower():
+				subs = re.findall('(?:/r/)(\w*)', line)
+				for sub in subs:
+					log.info("Whitelisting subreddit /r/"+sub)
+					deniedRequests = database.getDeniedSubscriptions(sub.lower())
+
+					for user in deniedRequests:
+						log.info("Messaging /u/%s that their subscriptions in /r/%s have been activated", user, sub)
+						strList = strings.activatingSubredditMessage(sub.lower(), deniedRequests[user])
+						strList.append("\n\n*****\n\n")
+						strList.append(strings.footer)
+						log.debug(''.join(strList))
+						r.send_message(
+							recipient=user,
+							subject=strings.messageSubject(user),
+							message=''.join(strList)
+						)
+					replies['subredditsAdded'].append({'subreddit': sub, 'subscribers': len(deniedRequests)})
+
+					database.activateSubreddit(sub)
+
+		message.mark_as_read()
 
 		strList = []
 		sectionCount = 0
@@ -175,16 +207,24 @@ for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
 			strList.append("\n\n*****\n\n")
 		if replies['removed']:
 			sectionCount += 1
-			strList.extend(strings.removeUpdatesConfirmationMessage(replies['removed']))
+			strList.extend(strings.removeUpdatesConfirmationSection(replies['removed']))
 			strList.append("\n\n*****\n\n")
 		if replies['list']:
 			sectionCount += 1
 			strList.extend(strings.yourUpdatesSection(database.getMySubscriptions(str(message.author).lower())))
 			strList.append("\n\n*****\n\n")
+		if replies['couldnotadd']:
+			sectionCount += 1
+			strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
+			strList.append("\n\n*****\n\n")
+		if replies['subredditsAdded']:
+			sectionCount += 1
+			strList.extend(strings.subredditActivatedMessage(replies['subredditsAdded']))
+			strList.append("\n\n*****\n\n")
 
 		if sectionCount == 0:
 			log.info("Nothing found in message")
-			strList.append(strings.couldNotUnderstandMessage)
+			strList.append(strings.couldNotUnderstandSection)
 			strList.append("\n\n*****\n\n")
 
 		strList.append(strings.footer)
@@ -192,10 +232,6 @@ for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
 		log.debug("Sending message:")
 		log.debug(''.join(strList))
 		message.reply(''.join(strList))
-
-
-
-
 
 
 prevSubreddit = None
