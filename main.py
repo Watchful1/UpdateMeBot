@@ -84,6 +84,7 @@ def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 						)
 					except Exception as err:
 						log.warning("Could not send message to /u/%s when sending update", key)
+						log.warning(traceback.format_exc())
 
 	database.checkSubreddit(subreddit, startTimestamp)
 
@@ -218,6 +219,7 @@ def processMessages():
 									)
 								except Exception as err:
 									log.warning("Could not send message to /u/%s when activating subreddit", user)
+									log.warning(traceback.format_exc())
 							replies['subredditsAdded'].append({'subreddit': sub, 'subscribers': len(deniedRequests)})
 
 							database.activateSubreddit(sub)
@@ -272,6 +274,7 @@ def processMessages():
 								)
 							except Exception as err:
 								log.warning("Could not send message to owner when notifying on subreddit threshold")
+								log.warning(traceback.format_exc())
 
 
 				if replies['subredditsAdded']:
@@ -292,10 +295,10 @@ def processMessages():
 					message.reply(''.join(strList))
 				except Exception as err:
 					log.warning("Exception sending confirmation message")
+					log.warning(traceback.format_exc())
 	except Exception as err:
 		log.warning("Exception reading messages")
-		log.warning(str(err))
-		traceback.print_exc()
+		log.warning(traceback.format_exc())
 
 
 ### Main ###
@@ -334,6 +337,7 @@ while True:
 			)
 		except Exception as err:
 			log.warning("Could not send message to owner when notifying on long run")
+			log.warning(traceback.format_exc())
 
 	if once:
 		break
