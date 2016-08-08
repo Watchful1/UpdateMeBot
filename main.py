@@ -341,5 +341,3 @@ while True:
 
 
 database.close()
-
-#test change
