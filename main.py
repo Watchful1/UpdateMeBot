@@ -4,6 +4,7 @@ import praw
 import OAuth2Util
 import time
 from datetime import datetime
+from datetime import timedelta
 import database
 import logging
 import logging.handlers
@@ -14,6 +15,7 @@ import globals
 import traceback
 import sys
 import signal
+import requests
 
 
 ### Constants ###
@@ -23,6 +25,9 @@ SUBSCRIBER_NUM = 1
 SUBSCRIBEDTO_NUM = 2
 SUBREDDIT_NUM = 3
 LASTCHECKED_NUM = 4
+# subscription types
+SUBSCRIPTION = "subscribeme"
+UPDATE = "updateme"
 
 
 ### Logging setup ###
@@ -55,6 +60,30 @@ def signal_handler(signal, frame):
 	sys.exit(0)
 
 
+def addDeniedRequest(deniedRequests):
+	subreddits = set()
+	for request in deniedRequests:
+		subreddits.add(request['subreddit'])
+
+	for subreddit in subreddits:
+		count = database.getDeniedRequestsCount(subreddit)
+		if database.checkUpdateDeniedRequestsNotice(subreddit, count):
+			log.info("Messaging owner that that requests for /r/%s have hit %d", subreddit, count)
+			noticeStrList = strings.subredditNoticeThresholdMessage(subreddit, count)
+			noticeStrList.append("\n\n*****\n\n")
+			noticeStrList.append(strings.footer)
+			log.debug(''.join(noticeStrList))
+			try:
+				r.send_message(
+					recipient=globals.OWNER_NAME,
+					subject="Subreddit Threshold",
+					message=''.join(noticeStrList)
+				)
+			except Exception as err:
+				log.warning("Could not send message to owner when notifying on subreddit threshold")
+				log.warning(traceback.format_exc())
+
+
 def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 	if authorHash == {}: return
 	oldestSeconds = time.mktime(datetime.strptime(oldestTimestamp, "%Y-%m-%d %H:%M:%S").timetuple())
@@ -73,9 +102,10 @@ def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 					single = database.checkRemoveSubscription(key, str(post.author).lower(), subreddit)
 					log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",key,author,subreddit)
 					strList = strings.alertMessage(str(post.author), subreddit, post.url, single)
+
 					strList.append("\n\n*****\n\n")
 					strList.append(strings.footer)
-					log.debug(''.join(strList))
+
 					try:
 						r.send_message(
 							recipient=key,
@@ -117,7 +147,7 @@ def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date = datetime.n
 		replies["couldnotadd"].append(data)
 		return
 
-	result = database.addSubsciption(data['subscriber'], data['subscribedTo'], data['subreddit'], date, single)
+	result = database.addSubscription(data['subscriber'], data['subscribedTo'], data['subreddit'], date, single)
 	if result:
 		log.info("/u/"+data['subscriber']+" "+("updated" if single else "subscribed")+" to /u/"+data['subscribedTo']+" in /r/"+data['subreddit'])
 		replies["added"].append(data)
@@ -210,7 +240,6 @@ def processMessages():
 								strList = strings.activatingSubredditMessage(sub.lower(), deniedRequests[user])
 								strList.append("\n\n*****\n\n")
 								strList.append(strings.footer)
-								log.debug(''.join(strList))
 								try:
 									r.send_message(
 										recipient=user,
@@ -254,29 +283,7 @@ def processMessages():
 					strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
 					strList.append("\n\n*****\n\n")
 
-					subreddits = set()
-					for request in replies['couldnotadd']:
-						subreddits.add(request['subreddit'])
-
-					for subreddit in subreddits:
-						count = database.getDeniedRequestsCount(subreddit)
-						if database.checkUpdateDeniedRequestsNotice(subreddit, count):
-							log.info("Messaging owner that that requests for /r/%s have hit %d", subreddit, count)
-							noticeStrList = strings.subredditNoticeThresholdMessage(subreddit, count)
-							noticeStrList.append("\n\n*****\n\n")
-							noticeStrList.append(strings.footer)
-							log.debug(''.join(noticeStrList))
-							try:
-								r.send_message(
-									recipient=globals.OWNER_NAME,
-									subject="Subreddit Threshold",
-									message=''.join(noticeStrList)
-								)
-							except Exception as err:
-								log.warning("Could not send message to owner when notifying on subreddit threshold")
-								log.warning(traceback.format_exc())
-
-
+					addDeniedRequest(replies['couldnotadd'])
 				if replies['subredditsAdded']:
 					sectionCount += 1
 					strList.extend(strings.subredditActivatedMessage(replies['subredditsAdded']))
@@ -290,7 +297,6 @@ def processMessages():
 				strList.append(strings.footer)
 
 				log.debug("Sending message:")
-				log.debug(''.join(strList))
 				try:
 					message.reply(''.join(strList))
 				except Exception as err:
@@ -301,8 +307,88 @@ def processMessages():
 		log.warning(traceback.format_exc())
 
 
+def searchComments(searchTerm):
+	if searchTerm == UPDATE:
+		subscriptionType = True
+	elif searchTerm == SUBSCRIPTION:
+		subscriptionType = False
+
+	comments = requests.get("https://api.pushshift.io/reddit/search?q="+searchTerm+"&limit=100",
+	                       headers={'User-Agent': globals.USER_AGENT}).json()['data']
+	timestamp = database.getCommentSearchTime(searchTerm)
+	if timestamp is None:
+		timestamp = START_TIME
+
+	# we want to start at the oldest. Since we update the current timestamp at each item,
+	# if we crash, we don't want to lose anything
+	oldestIndex = len(comments) - 1
+	for i, comment in enumerate(comments):
+		if datetime.fromtimestamp(comment['created_utc']) < timestamp:
+			oldestIndex = i - 1
+			break
+
+	if oldestIndex == -1: return
+
+	for comment in comments[oldestIndex::-1]:
+		if comment['author'].lower() != globals.ACCOUNT_NAME.lower():
+			replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': []}
+			addUpdateSubscription(comment['author'], comment['link_author'], comment['subreddit'],
+					datetime.fromtimestamp(comment['created_utc']), subscriptionType, replies)
+
+			strList = []
+			usePM = True
+			if len(replies['couldnotadd']) >= 1:
+				addDeniedRequest(replies['couldnotadd'])
+				strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
+			elif database.isThreadReplied(comment['link_id'][3:]):
+				if replies['added']:
+					strList.extend(strings.confirmationSection(replies['added']))
+				elif replies['updated']:
+					strList.extend(strings.updatedSubscriptionSection(replies['updated']))
+				elif replies['exist']:
+					strList.extend(strings.alreadySubscribedSection(replies['exist']))
+			else:
+				usePM = False
+				existingSubscribers = database.getAuthorSubscribersCount(comment['subreddit'].lower(), comment['link_author'].lower())
+				strList.extend(strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'], existingSubscribers))
+
+				database.addThread(comment['link_id'][3:], comment['id'], comment['link_author'].lower(), comment['subreddit'].lower(),
+				                   comment['author'].lower(), datetime.fromtimestamp(comment['created_utc']), existingSubscribers)
+
+			strList.append("\n\n*****\n\n")
+			strList.append(strings.footer)
+
+			if usePM:
+				log.info("Messaging confirmation for public comment to /u/%s for /u/%s in /r/%s:",comment['author'],comment['link_author'],comment['subreddit'])
+				try:
+					r.send_message(
+						recipient=comment['author'],
+						subject=strings.messageSubject(comment['author']),
+						message=''.join(strList)
+					)
+				except Exception as err:
+					log.warning("Could not send message to /u/%s when sending confirmation for public comment", comment['author'])
+					log.warning(traceback.format_exc())
+			else:
+				log.info("Publicly replying to /u/%s for /u/%s in /r/%s:",comment['author'],comment['link_author'],comment['subreddit'])
+				try:
+					r.get_info(thing_id='t1_' + comment['id']).reply(''.join(strList))
+				except Exception as err:
+					log.warning("Could not publicly reply to /u/%s", comment['author'])
+					log.warning(traceback.format_exc())
+
+		database.updateCommentSearchSeconds(searchTerm, datetime.fromtimestamp(comment['created_utc']) + timedelta(0,1))
+
+
+def updateExistingComments():
+	log.debug()
+
+
 ### Main ###
 log.debug("Connecting to reddit")
+
+START_TIME = datetime.now()
+
 r = praw.Reddit(user_agent=globals.USER_AGENT, log_request=0)
 o = OAuth2Util.OAuth2Util(r)
 o.refresh(force=True)
@@ -318,9 +404,12 @@ if len(sys.argv) > 1 and sys.argv[1] == 'once':
 while True:
 	startTime = time.perf_counter()
 
-	processMessages()
+	searchComments(UPDATE)
+	searchComments(SUBSCRIPTION)
 
-	processSubreddits()
+	#processMessages()
+
+	#processSubreddits()
 
 	elapsedTime = time.perf_counter() - startTime
 	if elapsedTime > globals.WARNING_RUN_TIME:

@@ -239,6 +239,44 @@ def longRunMessage(seconds):
 	return ["Loop run took too long: ", str(seconds)]
 
 
+def confirmationComment(subscriptionType, subscribeTo, subreddit, alreadySubscribed=0):
+	strList = []
+
+	strList.append("I will message you ")
+	strList.extend(eachHelper({'subscribedTo': subscribeTo,'subreddit': subreddit,'single': subscriptionType}, False))
+	strList.append(".\n\n")
+	strList.append("[Click this link](http://np.reddit.com/message/compose/?to="+globals.ACCOUNT_NAME+"&subject=Update&message=")
+	if subscriptionType:
+		strList.append("UpdateMe")
+	else:
+		strList.append("SubscribeMe")
+	strList.append(" /u/")
+	strList.append(subscribeTo)
+	strList.append(" /r/")
+	strList.append(subreddit)
+	strList.append(") ")
+	strList.append("to ")
+	if alreadySubscribed > 1:
+		strList.append("join ")
+		strList.append(str(alreadySubscribed))
+		strList.append(" others and")
+	else:
+		strList.append("also")
+	strList.append(" be messaged ")
+	if subscriptionType:
+		strList.append("next")
+	else:
+		strList.append("every")
+	strList.append(" time /u/")
+	strList.append(subscribeTo)
+	strList.append(" posts in /r/")
+	strList.append(subreddit)
+	strList.append(".")
+
+	return strList
+
+
+
 couldNotUnderstandSection = (
 	"Well, I got your message, but I didn't understand anything in it. "
 	"If I should have, message /u/"+globals.OWNER_NAME+" and he'll look into it."
@@ -255,9 +293,4 @@ footer = (
 	"|[^(Feedback)](http://np.reddit.com/message/compose/?to="+globals.OWNER_NAME+"&subject=UpdateMeBot Feedback)"
 	"|[^(Code)](https://github.com/Watchful1/RedditSubsBot)"
 	"\n|-|-|-|-|-|-|"
-)
-
-confirmationComment = (
-	"I'll update you next time /u/ posts in /r/"
-	"\n\nX people have clicked here to also be updated"
 )

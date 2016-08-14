@@ -41,6 +41,27 @@ def setup():
 			UNIQUE (Subreddit)
 		)
 	''')
+	c.execute('''
+		CREATE TABLE IF NOT EXISTS threads (
+			ID INTEGER PRIMARY KEY AUTOINCREMENT,
+			ThreadID VARCHAR(80) NOT NULL,
+			CommentID VARCHAR(80) NOT NULL,
+			SubscribedTo VARCHAR(80),
+			Subreddit VARCHAR(80) NOT NULL,
+			ParentAuthor VARCHAR(80) NOT NULL,
+			CommentCreated TIMESTAMP NOT NULL,
+			CurrentCount INTEGER DEFAULT 0,
+			UNIQUE (ThreadID)
+		)
+	''')
+	c.execute('''
+		CREATE TABLE IF NOT EXISTS commentSearch (
+			ID INTEGER PRIMARY KEY AUTOINCREMENT,
+			Type VARCHAR(80) NOT NULL,
+			Timestamp TIMESTAMP NOT NULL,
+			UNIQUE (Type)
+		)
+	''')
 	dbConn.commit()
 
 
@@ -83,7 +104,7 @@ def getMySubscriptions(Subscriber):
 	return results
 
 
-def addSubsciption(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), single = True):
+def addSubscription(Subscriber, SubscribedTo, Subreddit, date=datetime.now(), single=True):
 	c = dbConn.cursor()
 	try:
 		c.execute('''
@@ -194,13 +215,13 @@ def resetAllSubscriptionTimes():
 
 def isSubredditWhitelisted(Subreddit):
 	c = dbConn.cursor()
-	c.execute('''
+	result = c.execute('''
 		SELECT * FROM subredditWhitelist
 		WHERE Subreddit = ?
 			and Status <> 0
 	''', (Subreddit,))
 
-	if c.rowcount >= 1:
+	if result.fetchone():
 		return True
 	else:
 		return False
@@ -322,3 +343,68 @@ def checkUpdateDeniedRequestsNotice(Subreddit, current):
 		return True
 	else:
 		return False
+
+
+def addThread(threadID, commentID, subscribedTo, subreddit, parentAuthor, commentCreated, currentCount):
+	c = dbConn.cursor()
+	try:
+		c.execute('''
+			INSERT INTO threads
+			(ThreadID, CommentID, SubscribedTo, Subreddit, ParentAuthor, CommentCreated, CurrentCount)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
+		''', (threadID, commentID, subscribedTo, subreddit, parentAuthor, commentCreated.strftime("%Y-%m-%d %H:%M:%S"), currentCount))
+	except sqlite3.IntegrityError:
+		return False
+
+	return True
+
+
+def isThreadReplied(threadID):
+	c = dbConn.cursor()
+	result = c.execute('''
+		SELECT * FROM threads
+		WHERE ThreadID = ?
+	''', (threadID,))
+
+	if result.fetchone():
+		return True
+	else:
+		return False
+
+
+def getAuthorSubscribersCount(author, Subreddit):
+	c = dbConn.cursor()
+	result = c.execute('''
+		SELECT count(*)
+		FROM subscriptions
+		WHERE Approved = 0
+			AND Subreddit = ?
+			AND SubscribedTo = ?
+	''', (Subreddit, author))
+
+	return result.fetchone()[0]
+
+
+def getCommentSearchTime(searchType):
+	c = dbConn.cursor()
+	result = c.execute('''
+		SELECT Timestamp
+		FROM commentSearch
+		WHERE Type = ?
+	''', (searchType,))
+
+	stringTime = result.fetchone()
+
+	if not stringTime:
+		return None
+	else:
+		return datetime.strptime(stringTime[0], "%Y-%m-%d %H:%M:%S")
+
+
+def updateCommentSearchSeconds(searchType, date):
+	c = dbConn.cursor()
+	c.execute('''
+			INSERT OR REPLACE INTO commentSearch
+			(Type, Timestamp)
+			VALUES (?, ?)
+		''', (searchType, date.strftime("%Y-%m-%d %H:%M:%S")))
