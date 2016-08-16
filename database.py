@@ -51,6 +51,7 @@ def setup():
 			ParentAuthor VARCHAR(80) NOT NULL,
 			CommentCreated TIMESTAMP NOT NULL,
 			CurrentCount INTEGER DEFAULT 0,
+			Single BOOLEAN,
 			UNIQUE (ThreadID)
 		)
 	''')
@@ -345,14 +346,15 @@ def checkUpdateDeniedRequestsNotice(Subreddit, current):
 		return False
 
 
-def addThread(threadID, commentID, subscribedTo, subreddit, parentAuthor, commentCreated, currentCount):
+def addThread(threadID, commentID, subscribedTo, subreddit, parentAuthor, commentCreated, currentCount, single):
 	c = dbConn.cursor()
 	try:
 		c.execute('''
 			INSERT INTO threads
-			(ThreadID, CommentID, SubscribedTo, Subreddit, ParentAuthor, CommentCreated, CurrentCount)
-			VALUES (?, ?, ?, ?, ?, ?, ?)
-		''', (threadID, commentID, subscribedTo, subreddit, parentAuthor, commentCreated.strftime("%Y-%m-%d %H:%M:%S"), currentCount))
+			(ThreadID, CommentID, SubscribedTo, Subreddit, ParentAuthor, CommentCreated, CurrentCount, Single)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		''', (threadID, commentID, subscribedTo, subreddit, parentAuthor, commentCreated.strftime("%Y-%m-%d %H:%M:%S"),
+		      currentCount, single))
 	except sqlite3.IntegrityError:
 		return False
 
@@ -408,3 +410,44 @@ def updateCommentSearchSeconds(searchType, date):
 			(Type, Timestamp)
 			VALUES (?, ?)
 		''', (searchType, date.strftime("%Y-%m-%d %H:%M:%S")))
+
+
+def getIncorrectThreads(cutoffDate):
+	c = dbConn.cursor()
+	c.execute('''
+		SELECT threads.ThreadID
+			,threads.CommentID
+			,threads.SubscribedTo
+			,threads.Subreddit
+			,threads.Single
+			,subscriptionCount.Count
+		FROM threads
+		LEFT JOIN
+			(
+				SELECT SubscribedTo
+					,Subreddit
+					,count(*) as Count
+				FROM subscriptions
+				GROUP BY SubscribedTo, Subreddit
+			) AS subscriptionCount
+				ON threads.SubscribedTo = subscriptionCount.SubscribedTo
+					AND threads.Subreddit = subscriptionCount.Subreddit
+		WHERE threads.CurrentCount <> subscriptionCount.Count
+			AND threads.CommentCreated > ?
+	''', (cutoffDate.strftime("%Y-%m-%d %H:%M:%S"),))
+
+	output = []
+	for thread in c.fetchall():
+		output.append({'threadID': thread[0], 'commentID': thread[1], 'subscribedTo': thread[2],
+		               'subreddit': thread[3], 'single': True if thread[4] == 1 else False, 'currentCount': thread[5]})
+
+	return output
+
+
+def updateCurrentThreadCount(threadID, count):
+	c = dbConn.cursor()
+	c.execute('''
+		UPDATE threads
+		SET CurrentCount = ?
+		WHERE ThreadID = ?
+	''', (count, threadID))

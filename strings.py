@@ -262,16 +262,7 @@ def confirmationComment(subscriptionType, subscribeTo, subreddit, alreadySubscri
 		strList.append(" others and")
 	else:
 		strList.append("also")
-	strList.append(" be messaged ")
-	if subscriptionType:
-		strList.append("next")
-	else:
-		strList.append("every")
-	strList.append(" time /u/")
-	strList.append(subscribeTo)
-	strList.append(" posts in /r/")
-	strList.append(subreddit)
-	strList.append(".")
+	strList.append(" be messaged.")
 
 	return strList
 

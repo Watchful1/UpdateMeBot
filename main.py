@@ -381,7 +381,18 @@ def searchComments(searchTerm):
 
 
 def updateExistingComments():
-	log.debug()
+	for thread in database.getIncorrectThreads(datetime.now() - timedelta(days=globals.COMMENT_EDIT_DAYS_CUTOFF)):
+		strList = []
+		strList.extend(strings.confirmationComment(thread['single'], thread['subscribedTo'], thread['subreddit'], thread['currentCount']))
+		strList.append("\n\n*****\n\n")
+		strList.append(strings.footer)
+
+		try:
+			r.get_info(thing_id='t1_' + thread['commentID']).edit(''.join(strList))
+			database.updateCurrentThreadCount(thread['threadID'], thread['currentCount'])
+		except Exception as err:
+			log.warning("Could not update comment with ID %s/%s", thread['threadID'], thread['commentID'])
+			log.warning(traceback.format_exc())
 
 
 ### Main ###
@@ -401,15 +412,19 @@ once = False
 if len(sys.argv) > 1 and sys.argv[1] == 'once':
 	once = True
 
+i = 1
 while True:
 	startTime = time.perf_counter()
 
-	searchComments(UPDATE)
-	searchComments(SUBSCRIPTION)
+	#searchComments(UPDATE)
+	#searchComments(SUBSCRIPTION)
 
 	#processMessages()
 
 	#processSubreddits()
+
+	if i % globals.COMMENT_EDIT_ITERATIONS == 0:
+		updateExistingComments()
 
 	elapsedTime = time.perf_counter() - startTime
 	if elapsedTime > globals.WARNING_RUN_TIME:
@@ -430,6 +445,7 @@ while True:
 
 	if once:
 		break
+	i += 1
 	time.sleep(globals.SLEEP_TIME)
 
 
