@@ -395,6 +395,14 @@ def updateExistingComments():
 			log.warning(traceback.format_exc())
 
 
+def deleteLowKarmaComments():
+	user = r.get_redditor(globals.ACCOUNT_NAME)
+	for comment in user.get_comments(limit=100):
+		if comment.score <= -5:
+			log.info("Deleting low score comment")
+			comment.delete()
+
+
 ### Main ###
 log.debug("Connecting to reddit")
 
@@ -416,15 +424,16 @@ i = 1
 while True:
 	startTime = time.perf_counter()
 
-	#searchComments(UPDATE)
-	#searchComments(SUBSCRIPTION)
+	searchComments(UPDATE)
+	searchComments(SUBSCRIPTION)
 
-	#processMessages()
+	processMessages()
 
-	#processSubreddits()
+	processSubreddits()
 
 	if i % globals.COMMENT_EDIT_ITERATIONS == 0:
 		updateExistingComments()
+		deleteLowKarmaComments()
 
 	elapsedTime = time.perf_counter() - startTime
 	if elapsedTime > globals.WARNING_RUN_TIME:
