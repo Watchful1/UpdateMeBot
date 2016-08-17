@@ -178,7 +178,7 @@ def processMessages():
 		for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
 			# checks to see as some comments might be replys and non PMs
 			if isinstance(message, praw.objects.Message):
-				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [], 'subredditsAdded': [], 'list': False}
+				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [], 'subredditsAdded': [], 'commentsDeleted': [], 'list': False}
 				log.info("Parsing message from /u/"+str(message.author))
 				for line in message.body.lower().splitlines():
 					log.debug("line: "+line)
@@ -229,6 +229,22 @@ def processMessages():
 					elif (line.startswith("mysubscriptions") or line.startswith("myupdates")) and not replies['list']:
 						replies['list'] = True
 
+					elif line.startswith("deletecomment"):
+						threadID = re.findall('(?: t3_)(\w*)', line)
+
+						if len(threadID) == 0: continue
+
+						commentID = database.deleteComment(threadID, str(message.author).lower())
+						if commentID:
+							try:
+								log.info("Deleting comment with ID %s/%s", threadID, commentID)
+								r.get_info(thing_id='t1_' + commentID).delete()
+								replies['commentsDeleted'].append(threadID)
+							except Exception as err:
+								log.warning("Could not delete comment with ID %s/%s", threadID, commentID)
+								log.warning(traceback.format_exc())
+
+
 					elif line.startswith("addsubreddit") and str(message.author).lower() == globals.OWNER_NAME.lower():
 						subs = re.findall('(?:/r/)(\w*)', line)
 						for sub in subs:
@@ -273,6 +289,10 @@ def processMessages():
 				if replies['removed']:
 					sectionCount += 1
 					strList.extend(strings.removeUpdatesConfirmationSection(replies['removed']))
+					strList.append("\n\n*****\n\n")
+				if replies['commentsDeleted']:
+					sectionCount += 1
+					strList.extend(strings.deletedCommentSection(replies['commentsDeleted']))
 					strList.append("\n\n*****\n\n")
 				if replies['list']:
 					sectionCount += 1
@@ -350,7 +370,7 @@ def searchComments(searchTerm):
 			else:
 				usePM = False
 				existingSubscribers = database.getAuthorSubscribersCount(comment['subreddit'].lower(), comment['link_author'].lower())
-				strList.extend(strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'], existingSubscribers))
+				strList.extend(strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'], comment['link_id'][3:], existingSubscribers))
 
 				database.addThread(comment['link_id'][3:], comment['id'], comment['link_author'].lower(), comment['subreddit'].lower(),
 				                   comment['author'].lower(), datetime.fromtimestamp(comment['created_utc']), existingSubscribers)
@@ -383,7 +403,7 @@ def searchComments(searchTerm):
 def updateExistingComments():
 	for thread in database.getIncorrectThreads(datetime.now() - timedelta(days=globals.COMMENT_EDIT_DAYS_CUTOFF)):
 		strList = []
-		strList.extend(strings.confirmationComment(thread['single'], thread['subscribedTo'], thread['subreddit'], thread['currentCount']))
+		strList.extend(strings.confirmationComment(thread['single'], thread['subscribedTo'], thread['subreddit'], thread['threadID'], thread['currentCount']))
 		strList.append("\n\n*****\n\n")
 		strList.append(strings.footer)
 

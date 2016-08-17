@@ -231,6 +231,23 @@ def subredditActivatedMessage(activations):
 	return strList
 
 
+def deletedCommentSection(deletedComments):
+	strList = []
+
+	for deletedComment in deletedComments:
+		strList.append("Comment in thread ")
+		strList.append(deletedComment)
+		strList.append(" deleted.")
+		strList.append("  \n")
+
+	strList.append("\n\n")
+	strList.append("If this bot did something wrong or you have a suggestion, feel free to message /u/")
+	strList.append(globals.OWNER_NAME)
+	strList.append(".")
+
+	return strList
+
+
 def subredditNoticeThresholdMessage(subreddit, count):
 	return ["/r/", subreddit, " has hit the notice threshold, which is ", str(count)]
 
@@ -239,13 +256,15 @@ def longRunMessage(seconds):
 	return ["Loop run took too long: ", str(seconds)]
 
 
-def confirmationComment(subscriptionType, subscribeTo, subreddit, alreadySubscribed=0):
+def confirmationComment(subscriptionType, subscribeTo, subreddit, threadID, alreadySubscribed=0):
 	strList = []
 
 	strList.append("I will message you ")
 	strList.extend(eachHelper({'subscribedTo': subscribeTo,'subreddit': subreddit,'single': subscriptionType}, False))
 	strList.append(".\n\n")
-	strList.append("[Click this link](http://np.reddit.com/message/compose/?to="+globals.ACCOUNT_NAME+"&subject=Update&message=")
+	strList.append("[Click this link](http://np.reddit.com/message/compose/?to=")
+	strList.append(globals.ACCOUNT_NAME)
+	strList.append("&subject=Update&message=")
 	if subscriptionType:
 		strList.append("UpdateMe")
 	else:
@@ -263,6 +282,13 @@ def confirmationComment(subscriptionType, subscribeTo, subreddit, alreadySubscri
 	else:
 		strList.append("also")
 	strList.append(" be messaged.")
+
+	strList.append("The parent author can [delete this post]")
+	strList.append("(http://np.reddit.com/message/compose/?to=")
+	strList.append(globals.ACCOUNT_NAME)
+	strList.append("&subject=Delete&message=DeleteComment ")
+	strList.append(threadID)
+	strList.append(")")
 
 	return strList
 

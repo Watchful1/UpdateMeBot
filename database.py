@@ -451,3 +451,25 @@ def updateCurrentThreadCount(threadID, count):
 		SET CurrentCount = ?
 		WHERE ThreadID = ?
 	''', (count, threadID))
+
+
+def deleteComment(threadID, author):
+	c = dbConn.cursor()
+	result = c.execute('''
+		SELECT CommentID
+			,ParentAuthor
+		FROM threads
+		WHERE ThreadID = ?
+	''', (threadID,))
+
+	result = result.fetchone()
+
+	if not result: return None
+	if result[1] != author: return None
+
+	c.execute('''
+        DELETE FROM threads
+	    WHERE ThreadID = ?
+	''', (threadID,))
+
+	return result[0]
