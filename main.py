@@ -346,6 +346,22 @@ def searchComments(searchTerm):
 		if datetime.fromtimestamp(comment['created_utc']) < timestamp:
 			oldestIndex = i - 1
 			break
+		if i == 99:
+			log.info("Messaging owner that that we might have missed a comment")
+			strList = strings.possibleMissedCommentMessage(datetime.fromtimestamp(comment['created_utc']), timestamp)
+			strList.append("\n\n*****\n\n")
+			strList.append(strings.footer)
+			log.debug(''.join(strList))
+			try:
+				r.send_message(
+					recipient=globals.OWNER_NAME,
+					subject="Missed Comment",
+					message=''.join(strList)
+				)
+			except Exception as err:
+				log.warning("Could not send message to owner that we might have missed a comment")
+				log.warning(traceback.format_exc())
+
 
 	if oldestIndex == -1: return
 
