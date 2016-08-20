@@ -6,7 +6,6 @@ import time
 from datetime import datetime
 from datetime import timedelta
 import database
-import logging
 import logging.handlers
 import os
 import strings
@@ -16,6 +15,8 @@ import traceback
 import sys
 import signal
 import requests
+import xml.etree.ElementTree as etree
+import feedparser
 
 
 ### Constants ###
@@ -119,7 +120,7 @@ def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 	database.checkSubreddit(subreddit, startTimestamp)
 
 
-def processSubreddits():
+def processSubredditsOld():
 	prevSubreddit = None
 	subs = {}
 	oldestTimestamp = None
@@ -137,6 +138,19 @@ def processSubreddits():
 		prevSubreddit = row[SUBREDDIT_NUM]
 
 	searchSubreddit(prevSubreddit, subs, oldestTimestamp)
+
+
+def processSubreddits():
+	for subreddit in database.getSubscribedSubreddits():
+		log.debug("/r/"+subreddit[0])
+		feed = feedparser.parse("https://www.reddit.com/r/"+subreddit[0]+".rss")
+		for post in feed.entries:
+			log.debug(str(datetime.fromtimestamp(time.mktime(post.updated_parsed))))
+			log.debug(str(datetime.strptime(subreddit[1], "%Y-%m-%d %H:%M:%S")))
+			if datetime.fromtimestamp(time.mktime(post.updated_parsed)) > datetime.strptime(subreddit[1], "%Y-%m-%d %H:%M:%S"):
+				log.debug("ping")
+
+		time.sleep(0.05)
 
 
 def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), single = True, replies = {}):
@@ -459,19 +473,22 @@ if len(sys.argv) > 1 and sys.argv[1] == 'once':
 i = 1
 while True:
 	startTime = time.perf_counter()
+	log.debug("Starting run")
 
-	searchComments(UPDATE)
-	searchComments(SUBSCRIPTION)
+	#searchComments(UPDATE)
+	#searchComments(SUBSCRIPTION)
 
-	processMessages()
+	#processMessages()
 
+	#processSubredditsOld()
 	processSubreddits()
 
-	if i % globals.COMMENT_EDIT_ITERATIONS == 0:
+	if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
 		updateExistingComments()
 		deleteLowKarmaComments()
 
 	elapsedTime = time.perf_counter() - startTime
+	log.debug("Run complete after: %d", int(elapsedTime))
 	if elapsedTime > globals.WARNING_RUN_TIME:
 		log.warning("Messaging owner that that the process took too long to run: %d", int(elapsedTime))
 		noticeStrList = strings.longRunMessage(int(elapsedTime))

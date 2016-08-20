@@ -87,6 +87,16 @@ def getSubscriptions():
 	''')
 
 
+def getSubscribedSubreddits():
+	c = dbConn.cursor()
+	return c.execute('''
+		SELECT Subreddit, MIN(LastChecked)
+		FROM subscriptions
+		WHERE Approved = 1
+		GROUP BY subreddit
+	''')
+
+
 def getMySubscriptions(Subscriber):
 	c = dbConn.cursor()
 	output = c.execute('''
