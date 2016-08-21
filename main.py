@@ -20,13 +20,22 @@ import feedparser
 
 
 ### Constants ###
-# column numbers
+## column numbers
+# getSubscriptions query
 ID_NUM = 0
 SUBSCRIBER_NUM = 1
 SUBSCRIBEDTO_NUM = 2
 SUBREDDIT_NUM = 3
 LASTCHECKED_NUM = 4
-# subscription types
+# getSubscribedSubreddits query
+SUBBED_SUBREDDIT = 0
+SUBBED_LASTCHECKED = 1
+# getSubredditAuthorSubscriptions query
+SUBAUTHOR_ID = 0
+SUBAUTHOR_SUBSCRIBER = 1
+SUBAUTHOR_LASTCHECKED = 2
+SUBAUTHOR_SINGLE = 3
+## subscription types
 SUBSCRIPTION = "subscribeme"
 UPDATE = "updateme"
 
@@ -100,7 +109,7 @@ def searchSubreddit(subreddit, authorHash, oldestTimestamp):
 		if author in authorHash:
 			for key in authorHash[author]:
 				if datetime.fromtimestamp(post.created_utc) >= datetime.strptime(authorHash[author][key], "%Y-%m-%d %H:%M:%S"):
-					single = database.checkRemoveSubscription(key, str(post.author).lower(), subreddit)
+					single = database.checkRemoveSubscriptionOld(key, str(post.author).lower(), subreddit)
 					log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",key,author,subreddit)
 					strList = strings.alertMessage(str(post.author), subreddit, post.url, single)
 
@@ -142,13 +151,56 @@ def processSubredditsOld():
 
 def processSubreddits():
 	for subreddit in database.getSubscribedSubreddits():
-		log.debug("/r/"+subreddit[0])
-		feed = feedparser.parse("https://www.reddit.com/r/"+subreddit[0]+".rss")
-		for post in feed.entries:
-			log.debug(str(datetime.fromtimestamp(time.mktime(post.updated_parsed))))
-			log.debug(str(datetime.strptime(subreddit[1], "%Y-%m-%d %H:%M:%S")))
-			if datetime.fromtimestamp(time.mktime(post.updated_parsed)) > datetime.strptime(subreddit[1], "%Y-%m-%d %H:%M:%S"):
-				log.debug("ping")
+		startTimestamp = datetime.now()
+		feed = feedparser.parse("https://www.reddit.com/r/" + subreddit[SUBBED_SUBREDDIT] + "/new/.rss?sort=new&limit=100")
+
+		subredditDatetime = datetime.strptime(subreddit[SUBBED_LASTCHECKED], "%Y-%m-%d %H:%M:%S")
+		oldestIndex = len(feed.entries) - 1
+		for i, post in enumerate(feed.entries):
+			postDatetime = datetime.fromtimestamp(time.mktime(post.updated_parsed))
+			if postDatetime < subredditDatetime:
+				oldestIndex = i - 1
+				break
+			if i == 99:
+				log.info("Messaging owner that that we might have missed a post in /r/"+subreddit[SUBBED_SUBREDDIT])
+				strList = strings.possibleMissedPostMessage(postDatetime, subredditDatetime, subreddit[SUBBED_SUBREDDIT])
+				strList.append("\n\n*****\n\n")
+				strList.append(strings.footer)
+				log.debug(''.join(strList))
+				try:
+					r.send_message(
+						recipient=globals.OWNER_NAME,
+						subject="Missed Post",
+						message=''.join(strList)
+					)
+				except Exception as err:
+					log.warning("Could not send message to owner that we might have missed a post")
+					log.warning(traceback.format_exc())
+
+		if oldestIndex != -1:
+			for post in feed.entries[oldestIndex::-1]:
+				postDatetime = datetime.fromtimestamp(time.mktime(post.updated_parsed))
+				for subscriber in database.getSubredditAuthorSubscriptions(subreddit[SUBBED_SUBREDDIT], post.author[3:].lower()):
+					if postDatetime >= datetime.strptime(subscriber[SUBAUTHOR_LASTCHECKED], "%Y-%m-%d %H:%M:%S"):
+						log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",
+						         subscriber[SUBAUTHOR_SUBSCRIBER], post.author[3:], subreddit[SUBBED_SUBREDDIT])
+						strList = strings.alertMessage(post.author[3:], subreddit[SUBBED_SUBREDDIT], post.link, subscriber[SUBAUTHOR_SINGLE])
+
+						strList.append("\n\n*****\n\n")
+						strList.append(strings.footer)
+
+						try:
+							r.send_message(
+								recipient=subscriber[SUBAUTHOR_SUBSCRIBER],
+								subject=strings.messageSubject(subscriber[SUBAUTHOR_SUBSCRIBER]),
+								message=''.join(strList)
+							)
+							database.checkRemoveSubscription(subscriber[SUBAUTHOR_ID], subscriber[SUBAUTHOR_SINGLE], postDatetime + timedelta(0,1))
+						except Exception as err:
+							log.warning("Could not send message to /u/%s when sending update", subscriber[SUBAUTHOR_SUBSCRIBER])
+							log.warning(traceback.format_exc())
+
+		database.checkSubreddit(subreddit[SUBBED_SUBREDDIT], startTimestamp)
 
 		time.sleep(0.05)
 

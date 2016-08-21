@@ -300,6 +300,13 @@ def possibleMissedCommentMessage(oldestTimestamp, recordedTimestamp):
 	strList.append("Recorded timestamp: ")
 
 
+def possibleMissedPostMessage(oldestTimestamp, recordedTimestamp, subreddit):
+	strList = ["Post search hit index 99 without finding oldest timestamp in /r/",subreddit,"\n\n"]
+	strList.append("Oldest found timestamp: ")
+	strList.append("\n\n")
+	strList.append("Recorded timestamp: ")
+
+
 couldNotUnderstandSection = (
 	"Well, I got your message, but I didn't understand anything in it. "
 	"If I should have, message /u/"+globals.OWNER_NAME+" and he'll look into it."

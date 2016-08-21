@@ -97,6 +97,17 @@ def getSubscribedSubreddits():
 	''')
 
 
+def getSubredditAuthorSubscriptions(Subreddit, SubscribedTo):
+	c = dbConn.cursor()
+	return c.execute('''
+		SELECT ID, Subscriber, LastChecked, Single
+		FROM subscriptions
+		WHERE Subreddit = ?
+			and SubscribedTo = ?
+			and Approved = 1
+	''', (Subreddit, SubscribedTo))
+
+
 def getMySubscriptions(Subscriber):
 	c = dbConn.cursor()
 	output = c.execute('''
@@ -193,12 +204,27 @@ def removeSubscription(Subscriber, SubscribedTo, Subreddit):
 		return False
 
 
-def checkRemoveSubscription(Subscriber, SubscribedTo, Subreddit):
+def checkRemoveSubscriptionOld(Subscriber, SubscribedTo, Subreddit):
 	if getSubscriptionType(Subscriber, SubscribedTo, Subreddit):
 		return True
 	else:
 		removeSubscription(Subscriber, SubscribedTo, Subreddit)
 		return False
+
+
+def checkRemoveSubscription(ID, single, date):
+	c = dbConn.cursor()
+	if single:
+		c.execute('''
+	        DELETE FROM subscriptions
+	        WHERE ID = ?
+	    ''', (ID,))
+	else:
+		c.execute('''
+			UPDATE subscriptions
+			SET LastChecked = ?
+			WHERE ID = ?
+		''', (date.strftime("%Y-%m-%d %H:%M:%S"), ID))
 
 
 def removeAllSubscriptions(Subscriber):
