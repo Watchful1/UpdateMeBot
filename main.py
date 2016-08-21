@@ -94,61 +94,6 @@ def addDeniedRequest(deniedRequests):
 				log.warning(traceback.format_exc())
 
 
-def searchSubreddit(subreddit, authorHash, oldestTimestamp):
-	if authorHash == {}: return
-	oldestSeconds = time.mktime(datetime.strptime(oldestTimestamp, "%Y-%m-%d %H:%M:%S").timetuple())
-	log.debug("Getting posts in %s newer than %s", subreddit, oldestTimestamp)
-
-	# retrieving submissions takes some time, but starts with the newest first
-	# so we want to cache the time we start, but don't reset the timestamps until we know we aren't going to crash
-	# better to send two notifications than none
-	startTimestamp = datetime.now()
-	for post in praw.helpers.submissions_between(r, subreddit, oldestSeconds, verbosity=0):
-		log.debug("Found post by /u/"+str(post.author).lower())
-		author = str(post.author).lower()
-		if author in authorHash:
-			for key in authorHash[author]:
-				if datetime.fromtimestamp(post.created_utc) >= datetime.strptime(authorHash[author][key], "%Y-%m-%d %H:%M:%S"):
-					single = database.checkRemoveSubscriptionOld(key, str(post.author).lower(), subreddit)
-					log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",key,author,subreddit)
-					strList = strings.alertMessage(str(post.author), subreddit, post.url, single)
-
-					strList.append("\n\n*****\n\n")
-					strList.append(strings.footer)
-
-					try:
-						r.send_message(
-							recipient=key,
-							subject=strings.messageSubject(key),
-							message=''.join(strList)
-						)
-					except Exception as err:
-						log.warning("Could not send message to /u/%s when sending update", key)
-						log.warning(traceback.format_exc())
-
-	database.checkSubreddit(subreddit, startTimestamp)
-
-
-def processSubredditsOld():
-	prevSubreddit = None
-	subs = {}
-	oldestTimestamp = None
-	for row in database.getSubscriptions():
-		if row[SUBREDDIT_NUM] != prevSubreddit:
-			searchSubreddit(prevSubreddit, subs, oldestTimestamp)
-			subs = {}
-			oldestTimestamp = row[LASTCHECKED_NUM]
-
-		if row[SUBSCRIBEDTO_NUM] not in subs:
-			subs[row[SUBSCRIBEDTO_NUM]] = {}
-
-		subs[row[SUBSCRIBEDTO_NUM]][row[SUBSCRIBER_NUM]] = row[LASTCHECKED_NUM]
-
-		prevSubreddit = row[SUBREDDIT_NUM]
-
-	searchSubreddit(prevSubreddit, subs, oldestTimestamp)
-
-
 def processSubreddits():
 	for subreddit in database.getSubscribedSubreddits():
 		startTimestamp = datetime.now()
@@ -527,12 +472,11 @@ while True:
 	startTime = time.perf_counter()
 	log.debug("Starting run")
 
-	#searchComments(UPDATE)
-	#searchComments(SUBSCRIPTION)
+	searchComments(UPDATE)
+	searchComments(SUBSCRIPTION)
 
-	#processMessages()
+	processMessages()
 
-	#processSubredditsOld()
 	processSubreddits()
 
 	if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:

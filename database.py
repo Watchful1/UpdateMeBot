@@ -204,14 +204,6 @@ def removeSubscription(Subscriber, SubscribedTo, Subreddit):
 		return False
 
 
-def checkRemoveSubscriptionOld(Subscriber, SubscribedTo, Subreddit):
-	if getSubscriptionType(Subscriber, SubscribedTo, Subreddit):
-		return True
-	else:
-		removeSubscription(Subscriber, SubscribedTo, Subreddit)
-		return False
-
-
 def checkRemoveSubscription(ID, single, date):
 	c = dbConn.cursor()
 	if single:
