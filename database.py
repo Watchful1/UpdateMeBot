@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+import globals
 
 dbConn = 0
 
@@ -7,7 +8,7 @@ dbConn = 0
 def init():
 	global dbConn
 
-	dbConn = sqlite3.connect('database.db')
+	dbConn = sqlite3.connect(globals.DATABASE_NAME)
 
 	setup()
 
@@ -137,6 +138,7 @@ def addSubscription(Subscriber, SubscribedTo, Subreddit, date=datetime.now(), si
 	except sqlite3.IntegrityError:
 		return False
 
+	dbConn.commit()
 	return True
 
 
@@ -166,6 +168,7 @@ def setSubscriptionType(Subscriber, SubscribedTo, Subreddit, single):
 			AND Subreddit = ?
 			AND Approved = 1
 	''', (single, Subscriber, SubscribedTo, Subreddit))
+	dbConn.commit()
 
 
 def checkSubscription(ID, date = datetime.now()):
@@ -176,6 +179,7 @@ def checkSubscription(ID, date = datetime.now()):
 		WHERE ID = ?
 			AND Approved = 1
 	''', (date.strftime("%Y-%m-%d %H:%M:%S"), ID))
+	dbConn.commit()
 
 
 def checkSubreddit(Subreddit, date = datetime.now()):
@@ -186,6 +190,7 @@ def checkSubreddit(Subreddit, date = datetime.now()):
 		WHERE Subreddit = ?
 			AND Approved = 1
 	''', (date.strftime("%Y-%m-%d %H:%M:%S"), Subreddit))
+	dbConn.commit()
 
 
 def removeSubscription(Subscriber, SubscribedTo, Subreddit):
@@ -197,6 +202,7 @@ def removeSubscription(Subscriber, SubscribedTo, Subreddit):
     	    AND Subreddit = ?
 			AND Approved = 1
     ''', (Subscriber, SubscribedTo, Subreddit))
+	dbConn.commit()
 
 	if c.rowcount == 1:
 		return True
@@ -217,6 +223,7 @@ def checkRemoveSubscription(ID, single, date):
 			SET LastChecked = ?
 			WHERE ID = ?
 		''', (date.strftime("%Y-%m-%d %H:%M:%S"), ID))
+	dbConn.commit()
 
 
 def removeAllSubscriptions(Subscriber):
@@ -225,6 +232,7 @@ def removeAllSubscriptions(Subscriber):
     	DELETE FROM subscriptions
     	WHERE Subscriber = ?
     ''', (Subscriber,))
+	dbConn.commit()
 
 
 def clearSubscriptions():
@@ -232,6 +240,7 @@ def clearSubscriptions():
 	c.execute('''
 		DELETE FROM subscriptions
     ''')
+	dbConn.commit()
 
 
 def resetAllSubscriptionTimes():
@@ -240,6 +249,7 @@ def resetAllSubscriptionTimes():
 		UPDATE subscriptions
 		SET LastChecked = '2016-07-18 17:00:00'
     ''')
+	dbConn.commit()
 
 
 def isSubredditWhitelisted(Subreddit):
@@ -267,6 +277,7 @@ def addDeniedRequest(Subscriber, SubscribedTo, Subreddit, date = datetime.now(),
 	except sqlite3.IntegrityError:
 		return False
 
+	dbConn.commit()
 	return True
 
 
@@ -315,6 +326,7 @@ def activateSubreddit(Subreddit):
 		SET Approved = 1
 		WHERE subreddit = ?
 	''', (Subreddit,))
+	dbConn.commit()
 
 
 def subredditDefaultSubscribe(Subreddit):
@@ -369,8 +381,10 @@ def checkUpdateDeniedRequestsNotice(Subreddit, current):
 			SET NextNotice = ?
 			WHERE Subreddit = ?
 		''', (current*2, Subreddit))
+		dbConn.commit()
 		return True
 	else:
+		dbConn.commit()
 		return False
 
 
@@ -386,6 +400,7 @@ def addThread(threadID, commentID, subscribedTo, subreddit, parentAuthor, commen
 	except sqlite3.IntegrityError:
 		return False
 
+	dbConn.commit()
 	return True
 
 
@@ -434,10 +449,11 @@ def getCommentSearchTime(searchType):
 def updateCommentSearchSeconds(searchType, date):
 	c = dbConn.cursor()
 	c.execute('''
-			INSERT OR REPLACE INTO commentSearch
-			(Type, Timestamp)
-			VALUES (?, ?)
-		''', (searchType, date.strftime("%Y-%m-%d %H:%M:%S")))
+		INSERT OR REPLACE INTO commentSearch
+		(Type, Timestamp)
+		VALUES (?, ?)
+	''', (searchType, date.strftime("%Y-%m-%d %H:%M:%S")))
+	dbConn.commit()
 
 
 def getIncorrectThreads(cutoffDate):
@@ -479,6 +495,7 @@ def updateCurrentThreadCount(threadID, count):
 		SET CurrentCount = ?
 		WHERE ThreadID = ?
 	''', (count, threadID))
+	dbConn.commit()
 
 
 def deleteComment(threadID, author):
@@ -500,4 +517,5 @@ def deleteComment(threadID, author):
 	    WHERE ThreadID = ?
 	''', (threadID,))
 
+	dbConn.commit()
 	return result[0]

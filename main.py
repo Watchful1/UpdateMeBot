@@ -15,18 +15,12 @@ import traceback
 import sys
 import signal
 import requests
-import xml.etree.ElementTree as etree
 import feedparser
+from shutil import copyfile
 
 
 ### Constants ###
 ## column numbers
-# getSubscriptions query
-ID_NUM = 0
-SUBSCRIBER_NUM = 1
-SUBSCRIBEDTO_NUM = 2
-SUBREDDIT_NUM = 3
-LASTCHECKED_NUM = 4
 # getSubscribedSubreddits query
 SUBBED_SUBREDDIT = 0
 SUBBED_LASTCHECKED = 1
@@ -42,10 +36,9 @@ UPDATE = "updateme"
 
 ### Logging setup ###
 LOG_LEVEL = logging.DEBUG
-LOG_FOLDER = "logs"
-if not os.path.exists(LOG_FOLDER):
-    os.makedirs(LOG_FOLDER)
-LOG_FILENAME = LOG_FOLDER+"/"+"bot.log"
+if not os.path.exists(globals.LOGFOLDER_NAME):
+    os.makedirs(globals.LOGFOLDER_NAME)
+LOG_FILENAME = globals.LOGFOLDER_NAME+"/"+"bot.log"
 LOG_FILE_BACKUPCOUNT = 5
 LOG_FILE_MAXSIZE = 1024 * 256
 
@@ -450,6 +443,16 @@ def deleteLowKarmaComments():
 			comment.delete()
 
 
+def backupDatabase():
+	database.close()
+
+	if not os.path.exists(globals.BACKUPFOLDER_NAME):
+	    os.makedirs(globals.BACKUPFOLDER_NAME)
+	copyfile(globals.DATABASE_NAME, globals.BACKUPFOLDER_NAME + "/" + datetime.now().strftime("%Y-%m-%d_%H:%M") + ".db")
+
+	database.init()
+
+
 ### Main ###
 log.debug("Connecting to reddit")
 
@@ -482,6 +485,9 @@ while True:
 	if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
 		updateExistingComments()
 		deleteLowKarmaComments()
+
+	if i % globals.BACKUP_ITERATIONS == 0:
+		backupDatabase()
 
 	elapsedTime = time.perf_counter() - startTime
 	log.debug("Run complete after: %d", int(elapsedTime))
