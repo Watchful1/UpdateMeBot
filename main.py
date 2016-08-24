@@ -319,7 +319,7 @@ def processMessages():
 
 				strList.append(strings.footer)
 
-				log.debug("Sending message:")
+				log.debug("Sending message to /u/"+str(message.author))
 				try:
 					message.reply(''.join(strList))
 				except Exception as err:

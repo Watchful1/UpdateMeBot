@@ -286,7 +286,7 @@ def confirmationComment(subscriptionType, subscribeTo, subreddit, threadID, alre
 	strList.append("The parent author can [delete this post]")
 	strList.append("(http://np.reddit.com/message/compose/?to=")
 	strList.append(globals.ACCOUNT_NAME)
-	strList.append("&subject=Delete&message=DeleteComment ")
+	strList.append("&subject=Delete&message=DeleteComment t3_")
 	strList.append(threadID)
 	strList.append(")")
 
