@@ -392,9 +392,6 @@ def searchComments(searchTerm):
 				existingSubscribers = database.getAuthorSubscribersCount(comment['subreddit'].lower(), comment['link_author'].lower())
 				strList.extend(strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'], comment['link_id'][3:], existingSubscribers))
 
-				database.addThread(comment['link_id'][3:], comment['id'], comment['link_author'].lower(), comment['subreddit'].lower(),
-				                   comment['author'].lower(), datetime.fromtimestamp(comment['created_utc']), existingSubscribers, subscriptionType)
-
 			strList.append("\n\n*****\n\n")
 			strList.append(strings.footer)
 
@@ -412,7 +409,9 @@ def searchComments(searchTerm):
 			else:
 				log.info("Publicly replying to /u/%s for /u/%s in /r/%s:",comment['author'],comment['link_author'],comment['subreddit'])
 				try:
-					r.get_info(thing_id='t1_' + comment['id']).reply(''.join(strList))
+					resultComment = r.get_info(thing_id='t1_' + comment['id']).reply(''.join(strList))
+					database.addThread(comment['link_id'][3:], resultComment.id, comment['link_author'].lower(), comment['subreddit'].lower(),
+				                comment['author'].lower(), datetime.fromtimestamp(comment['created_utc']), existingSubscribers, subscriptionType)
 				except Exception as err:
 					log.warning("Could not publicly reply to /u/%s", comment['author'])
 					log.warning(traceback.format_exc())
@@ -475,19 +474,24 @@ while True:
 	startTime = time.perf_counter()
 	log.debug("Starting run")
 
-	searchComments(UPDATE)
-	searchComments(SUBSCRIPTION)
+	try:
+		searchComments(UPDATE)
+		searchComments(SUBSCRIPTION)
 
-	processMessages()
+		processMessages()
 
-	processSubreddits()
+		processSubreddits()
 
-	if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
-		updateExistingComments()
-		deleteLowKarmaComments()
+		if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
+			updateExistingComments()
+			deleteLowKarmaComments()
 
-	if i % globals.BACKUP_ITERATIONS == 0:
-		backupDatabase()
+		if i % globals.BACKUP_ITERATIONS == 0:
+			backupDatabase()
+	except Exception as err:
+		log.warning("Error in main function")
+		log.warning(traceback.format_exc())
+		break
 
 	elapsedTime = time.perf_counter() - startTime
 	log.debug("Run complete after: %d", int(elapsedTime))
