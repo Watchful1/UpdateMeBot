@@ -237,7 +237,7 @@ def processMessages():
 
 						if len(threadID) == 0: continue
 
-						commentID = database.deleteComment(threadID, str(message.author).lower())
+						commentID = database.deleteComment(threadID[0], str(message.author).lower())
 						if commentID:
 							try:
 								log.info("Deleting comment with ID %s/%s", threadID, commentID)
