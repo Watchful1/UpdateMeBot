@@ -240,11 +240,11 @@ def processMessages():
 						commentID = database.deleteComment(threadID[0], str(message.author).lower())
 						if commentID:
 							try:
-								log.info("Deleting comment with ID %s/%s", threadID, commentID)
+								log.info("Deleting comment with ID %s/%s", threadID[0], commentID)
 								r.get_info(thing_id='t1_' + commentID).delete()
-								replies['commentsDeleted'].append(threadID)
+								replies['commentsDeleted'].append(threadID[0])
 							except Exception as err:
-								log.warning("Could not delete comment with ID %s/%s", threadID, commentID)
+								log.warning("Could not delete comment with ID %s/%s", threadID[0], commentID)
 								log.warning(traceback.format_exc())
 
 
