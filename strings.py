@@ -281,7 +281,7 @@ def confirmationComment(subscriptionType, subscribeTo, subreddit, threadID, alre
 		strList.append(" others and")
 	else:
 		strList.append("also")
-	strList.append(" be messaged.")
+	strList.append(" be messaged. ")
 
 	strList.append("The parent author can [delete this post]")
 	strList.append("(http://np.reddit.com/message/compose/?to=")
