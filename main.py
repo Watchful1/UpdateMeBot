@@ -75,7 +75,6 @@ def addDeniedRequest(deniedRequests):
 			noticeStrList = strings.subredditNoticeThresholdMessage(subreddit, count)
 			noticeStrList.append("\n\n*****\n\n")
 			noticeStrList.append(strings.footer)
-			log.debug(''.join(noticeStrList))
 			try:
 				r.send_message(
 					recipient=globals.OWNER_NAME,
@@ -148,6 +147,7 @@ def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date = datetime.n
 
 	if not database.isSubredditWhitelisted(data['subreddit']):
 		database.addDeniedRequest(data['subscriber'], data['subscribedTo'], data['subreddit'], date, data['single'])
+		log.info("Could not add subscription for /u/"+data['subscriber']+" to /u/"+data['subscribedTo']+" in /r/"+data['subreddit']+", not whitelisted")
 		replies["couldnotadd"].append(data)
 		return
 
@@ -185,14 +185,12 @@ def processMessages():
 				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [], 'subredditsAdded': [], 'commentsDeleted': [], 'list': False}
 				log.info("Parsing message from /u/"+str(message.author))
 				for line in message.body.lower().splitlines():
-					log.debug("line: "+line)
 					if line.startswith("updateme") or line.startswith("subscribeme"):
 						users = re.findall('(?: /u/)(\w*)', line)
 						subs = re.findall('(?: /r/)(\w*)', line)
 						links = re.findall('(?:reddit.com/r/\w*/comments/)(\w*)', line)
 
 						if len(links) != 0:
-							log.debug("Parsing link")
 							try:
 								submission = r.get_submission(submission_id=links[0])
 								users.append(str(submission.author))
@@ -231,6 +229,7 @@ def processMessages():
 								removeSubscription(str(message.author), users[0], subs[0], replies)
 
 					elif (line.startswith("mysubscriptions") or line.startswith("myupdates")) and not replies['list']:
+						log.info("Listing subscriptions for /u/"+str(message.author).lower())
 						replies['list'] = True
 
 					elif line.startswith("deletecomment"):
@@ -371,6 +370,7 @@ def searchComments(searchTerm):
 
 	for comment in comments[oldestIndex::-1]:
 		if comment['author'].lower() != globals.ACCOUNT_NAME.lower():
+			log.info("Found public comment by /u/"+comment['author'])
 			replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': []}
 			addUpdateSubscription(comment['author'], comment['link_author'], comment['subreddit'],
 					datetime.fromtimestamp(comment['created_utc']), subscriptionType, replies)
