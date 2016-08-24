@@ -393,7 +393,7 @@ def searchComments(searchTerm):
 				strList.extend(strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'], comment['link_id'][3:], existingSubscribers))
 
 				database.addThread(comment['link_id'][3:], comment['id'], comment['link_author'].lower(), comment['subreddit'].lower(),
-				                   comment['author'].lower(), datetime.fromtimestamp(comment['created_utc']), existingSubscribers)
+				                   comment['author'].lower(), datetime.fromtimestamp(comment['created_utc']), existingSubscribers, subscriptionType)
 
 			strList.append("\n\n*****\n\n")
 			strList.append(strings.footer)
