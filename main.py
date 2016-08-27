@@ -342,6 +342,7 @@ def searchComments(searchTerm):
 	timestamp = database.getCommentSearchTime(searchTerm)
 	if timestamp is None:
 		timestamp = START_TIME
+		database.updateCommentSearchSeconds(searchTerm, timestamp)
 
 	# we want to start at the oldest. Since we update the current timestamp at each item,
 	# if we crash, we don't want to lose anything
