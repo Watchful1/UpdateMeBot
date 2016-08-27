@@ -88,7 +88,7 @@ def addDeniedRequest(deniedRequests):
 
 def processSubreddits():
 	for subreddit in database.getSubscribedSubreddits():
-		startTimestamp = datetime.now()
+		startTimestamp = datetime.utcnow()
 		feed = feedparser.parse("https://www.reddit.com/r/" + subreddit[SUBBED_SUBREDDIT] + "/new/.rss?sort=new&limit=100")
 
 		subredditDatetime = datetime.strptime(subreddit[SUBBED_LASTCHECKED], "%Y-%m-%d %H:%M:%S")
@@ -142,7 +142,7 @@ def processSubreddits():
 		time.sleep(0.05)
 
 
-def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), single = True, replies = {}):
+def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single = True, replies = {}):
 	data = {'subscriber': Subscriber.lower(), 'subscribedTo': SubscribedTo.lower(), 'subreddit': Subreddit.lower(), 'single': single}
 
 	if not database.isSubredditWhitelisted(data['subreddit']):
@@ -420,7 +420,7 @@ def searchComments(searchTerm):
 
 
 def updateExistingComments():
-	for thread in database.getIncorrectThreads(datetime.now() - timedelta(days=globals.COMMENT_EDIT_DAYS_CUTOFF)):
+	for thread in database.getIncorrectThreads(datetime.utcnow() - timedelta(days=globals.COMMENT_EDIT_DAYS_CUTOFF)):
 		strList = []
 		strList.extend(strings.confirmationComment(thread['single'], thread['subscribedTo'], thread['subreddit'], thread['threadID'], thread['currentCount']))
 		strList.append("\n\n*****\n\n")
@@ -447,7 +447,7 @@ def backupDatabase():
 
 	if not os.path.exists(globals.BACKUPFOLDER_NAME):
 	    os.makedirs(globals.BACKUPFOLDER_NAME)
-	copyfile(globals.DATABASE_NAME, globals.BACKUPFOLDER_NAME + "/" + datetime.now().strftime("%Y-%m-%d_%H:%M") + ".db")
+	copyfile(globals.DATABASE_NAME, globals.BACKUPFOLDER_NAME + "/" + datetime.utcnow().strftime("%Y-%m-%d_%H:%M") + ".db")
 
 	database.init()
 
@@ -455,7 +455,7 @@ def backupDatabase():
 ### Main ###
 log.debug("Connecting to reddit")
 
-START_TIME = datetime.now()
+START_TIME = datetime.utcnow()
 
 r = praw.Reddit(user_agent=globals.USER_AGENT, log_request=0)
 o = OAuth2Util.OAuth2Util(r)
