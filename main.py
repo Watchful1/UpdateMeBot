@@ -3,6 +3,7 @@
 import praw
 import OAuth2Util
 import time
+import calendar
 from datetime import datetime
 from datetime import timedelta
 import database
@@ -94,7 +95,7 @@ def processSubreddits():
 		subredditDatetime = datetime.strptime(subreddit[SUBBED_LASTCHECKED], "%Y-%m-%d %H:%M:%S")
 		oldestIndex = len(feed.entries) - 1
 		for i, post in enumerate(feed.entries):
-			postDatetime = datetime.fromtimestamp(time.mktime(post.updated_parsed))
+			postDatetime = datetime.fromtimestamp(calendar.timegm(post.updated_parsed))
 			if postDatetime < subredditDatetime:
 				oldestIndex = i - 1
 				break
@@ -116,7 +117,7 @@ def processSubreddits():
 
 		if oldestIndex != -1:
 			for post in feed.entries[oldestIndex::-1]:
-				postDatetime = datetime.fromtimestamp(time.mktime(post.updated_parsed))
+				postDatetime = datetime.fromtimestamp(calendar.timegm(post.updated_parsed))
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit[SUBBED_SUBREDDIT], post.author[3:].lower()):
 					if postDatetime >= datetime.strptime(subscriber[SUBAUTHOR_LASTCHECKED], "%Y-%m-%d %H:%M:%S"):
 						log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",
