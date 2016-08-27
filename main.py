@@ -202,12 +202,12 @@ def processMessages():
 							subscriptionType = True if line.startswith("updateme") else False
 							if len(users) > 1:
 								for user in users:
-									addUpdateSubscription(str(message.author), user, subs[0], datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
+									addUpdateSubscription(str(message.author), user, subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionType, replies)
 							elif len(subs) > 1:
 								for sub in subs:
-									addUpdateSubscription(str(message.author), users[0], sub, datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
+									addUpdateSubscription(str(message.author), users[0], sub, datetime.utcfromtimestamp(message.created_utc), subscriptionType, replies)
 							else:
-								addUpdateSubscription(str(message.author), users[0], subs[0], datetime.fromtimestamp(message.created_utc), subscriptionType, replies)
+								addUpdateSubscription(str(message.author), users[0], subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionType, replies)
 
 					elif line.startswith("removeall"):
 						log.info("Removing all subscriptions for /u/"+str(message.author).lower())
@@ -346,12 +346,12 @@ def searchComments(searchTerm):
 	# if we crash, we don't want to lose anything
 	oldestIndex = len(comments) - 1
 	for i, comment in enumerate(comments):
-		if datetime.fromtimestamp(comment['created_utc']) < timestamp:
+		if datetime.utcfromtimestamp(comment['created_utc']) < timestamp:
 			oldestIndex = i - 1
 			break
 		if i == 99:
 			log.info("Messaging owner that that we might have missed a comment")
-			strList = strings.possibleMissedCommentMessage(datetime.fromtimestamp(comment['created_utc']), timestamp)
+			strList = strings.possibleMissedCommentMessage(datetime.utcfromtimestamp(comment['created_utc']), timestamp)
 			strList.append("\n\n*****\n\n")
 			strList.append(strings.footer)
 			log.debug(''.join(strList))
@@ -373,7 +373,7 @@ def searchComments(searchTerm):
 			log.info("Found public comment by /u/"+comment['author'])
 			replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': []}
 			addUpdateSubscription(comment['author'], comment['link_author'], comment['subreddit'],
-					datetime.fromtimestamp(comment['created_utc']), subscriptionType, replies)
+					datetime.utcfromtimestamp(comment['created_utc']), subscriptionType, replies)
 
 			strList = []
 			usePM = True
@@ -411,12 +411,12 @@ def searchComments(searchTerm):
 				try:
 					resultComment = r.get_info(thing_id='t1_' + comment['id']).reply(''.join(strList))
 					database.addThread(comment['link_id'][3:], resultComment.id, comment['link_author'].lower(), comment['subreddit'].lower(),
-				                comment['author'].lower(), datetime.fromtimestamp(comment['created_utc']), existingSubscribers, subscriptionType)
+				                comment['author'].lower(), datetime.utcfromtimestamp(comment['created_utc']), existingSubscribers, subscriptionType)
 				except Exception as err:
 					log.warning("Could not publicly reply to /u/%s", comment['author'])
 					log.warning(traceback.format_exc())
 
-		database.updateCommentSearchSeconds(searchTerm, datetime.fromtimestamp(comment['created_utc']) + timedelta(0,1))
+		database.updateCommentSearchSeconds(searchTerm, datetime.utcfromtimestamp(comment['created_utc']) + timedelta(0,1))
 
 
 def updateExistingComments():

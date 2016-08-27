@@ -191,7 +191,7 @@ def updatedSubscriptionSection(updatedList):
 
 def removeUpdatesConfirmationSection(removedList):
 	strList = ["I will no longer message when the following happens. "
-			   "If you change your mind, you can copy the below section into a message to me"]
+			   "If you change your mind, you can copy the below section into a message to me.\n\n"]
 
 	for removed in removedList:
 		strList.append("  \n")
