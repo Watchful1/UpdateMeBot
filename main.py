@@ -412,6 +412,7 @@ def searchComments(searchTerm):
 					log.warning(traceback.format_exc())
 
 			if not posted:
+				strList = []
 				if len(replies['couldnotadd']) >= 1:
 					addDeniedRequest(replies['couldnotadd'])
 					strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
