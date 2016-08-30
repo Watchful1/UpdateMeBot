@@ -91,12 +91,16 @@ def getSubscriptions():
 
 def getSubscribedSubreddits():
 	c = dbConn.cursor()
-	return c.execute('''
+	results = []
+	for row in c.execute('''
 		SELECT Subreddit, MIN(LastChecked)
 		FROM subscriptions
 		WHERE Approved = 1
 		GROUP BY subreddit
-	''')
+	'''):
+		results.append({'subreddit': row[0], 'lastChecked': row[1]})
+
+	return results
 
 
 def getSubredditAuthorSubscriptions(Subreddit, SubscribedTo):

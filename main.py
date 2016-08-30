@@ -90,9 +90,9 @@ def addDeniedRequest(deniedRequests):
 def processSubreddits():
 	for subreddit in database.getSubscribedSubreddits():
 		startTimestamp = datetime.utcnow()
-		feed = feedparser.parse("https://www.reddit.com/r/" + subreddit[SUBBED_SUBREDDIT] + "/new/.rss?sort=new&limit=100")
+		feed = feedparser.parse("https://www.reddit.com/r/" + subreddit['subreddit'] + "/new/.rss?sort=new&limit=100")
 
-		subredditDatetime = datetime.strptime(subreddit[SUBBED_LASTCHECKED], "%Y-%m-%d %H:%M:%S")
+		subredditDatetime = datetime.strptime(subreddit['lastChecked'], "%Y-%m-%d %H:%M:%S")
 		oldestIndex = len(feed.entries) - 1
 		for i, post in enumerate(feed.entries):
 			postDatetime = datetime.fromtimestamp(calendar.timegm(post.updated_parsed))
@@ -100,8 +100,8 @@ def processSubreddits():
 				oldestIndex = i - 1
 				break
 			if i == 99:
-				log.info("Messaging owner that that we might have missed a post in /r/"+subreddit[SUBBED_SUBREDDIT])
-				strList = strings.possibleMissedPostMessage(postDatetime, subredditDatetime, subreddit[SUBBED_SUBREDDIT])
+				log.info("Messaging owner that that we might have missed a post in /r/"+subreddit['subreddit'])
+				strList = strings.possibleMissedPostMessage(postDatetime, subredditDatetime, subreddit['subreddit'])
 				strList.append("\n\n*****\n\n")
 				strList.append(strings.footer)
 				log.debug(''.join(strList))
@@ -118,11 +118,11 @@ def processSubreddits():
 		if oldestIndex != -1:
 			for post in feed.entries[oldestIndex::-1]:
 				postDatetime = datetime.fromtimestamp(calendar.timegm(post.updated_parsed))
-				for subscriber in database.getSubredditAuthorSubscriptions(subreddit[SUBBED_SUBREDDIT], post.author[3:].lower()):
+				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], post.author[3:].lower()):
 					if postDatetime >= datetime.strptime(subscriber[SUBAUTHOR_LASTCHECKED], "%Y-%m-%d %H:%M:%S"):
 						log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",
-						         subscriber[SUBAUTHOR_SUBSCRIBER], post.author[3:], subreddit[SUBBED_SUBREDDIT])
-						strList = strings.alertMessage(post.author[3:], subreddit[SUBBED_SUBREDDIT], post.link, subscriber[SUBAUTHOR_SINGLE])
+						         subscriber[SUBAUTHOR_SUBSCRIBER], post.author[3:], subreddit['subreddit'])
+						strList = strings.alertMessage(post.author[3:], subreddit['subreddit'], post.link, subscriber[SUBAUTHOR_SINGLE])
 
 						strList.append("\n\n*****\n\n")
 						strList.append(strings.footer)
@@ -138,9 +138,9 @@ def processSubreddits():
 							log.warning("Could not send message to /u/%s when sending update", subscriber[SUBAUTHOR_SUBSCRIBER])
 							log.warning(traceback.format_exc())
 
-		database.checkSubreddit(subreddit[SUBBED_SUBREDDIT], startTimestamp)
+		database.checkSubreddit(subreddit['subreddit'], startTimestamp)
 
-		time.sleep(0.05)
+		time.sleep(1)
 
 
 def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single = True, replies = {}):
