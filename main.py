@@ -104,7 +104,6 @@ def processSubreddits():
 				strList = strings.possibleMissedPostMessage(postDatetime, subredditDatetime, subreddit['subreddit'])
 				strList.append("\n\n*****\n\n")
 				strList.append(strings.footer)
-				log.debug(''.join(strList))
 				try:
 					r.send_message(
 						recipient=globals.OWNER_NAME,
@@ -374,7 +373,6 @@ def searchComments(searchTerm):
 			strList = strings.possibleMissedCommentMessage(datetime.utcfromtimestamp(comment['created_utc']), timestamp)
 			strList.append("\n\n*****\n\n")
 			strList.append(strings.footer)
-			log.debug(''.join(strList))
 			try:
 				r.send_message(
 					recipient=globals.OWNER_NAME,
@@ -443,7 +441,6 @@ def searchComments(searchTerm):
 
 
 def updateExistingComments():
-	log.debug(str(datetime.utcnow() - timedelta(days=globals.COMMENT_EDIT_DAYS_CUTOFF)))
 	for thread in database.getIncorrectThreads(datetime.utcnow() - timedelta(days=globals.COMMENT_EDIT_DAYS_CUTOFF)):
 		strList = []
 		strList.extend(strings.confirmationComment(thread['single'], thread['subscribedTo'], thread['subreddit'], thread['threadID'], thread['currentCount']))
@@ -524,7 +521,6 @@ while True:
 		noticeStrList = strings.longRunMessage(int(elapsedTime))
 		noticeStrList.append("\n\n*****\n\n")
 		noticeStrList.append(strings.footer)
-		log.debug(''.join(noticeStrList))
 		try:
 			r.send_message(
 				recipient=globals.OWNER_NAME,
