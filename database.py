@@ -39,6 +39,7 @@ def setup():
 			Status INTEGER DEFAULT 0,
 			DefaultSubscribe BOOLEAN DEFAULT 0,
 			NextNotice INTEGER DEFAULT 5,
+			AlwaysPM BOOLEAN DEFAULT 0,
 			UNIQUE (Subreddit)
 		)
 	''')
@@ -519,3 +520,31 @@ def deleteComment(threadID, author):
 
 	dbConn.commit()
 	return result[0]
+
+
+def alwaysPMForSubreddit(subreddit):
+	c = dbConn.cursor()
+	results = c.execute('''
+		SELECT AlwaysPM
+		FROM subredditWhitelist
+		WHERE Subreddit = ?
+	''', (subreddit,))
+
+	result = results.fetchone()
+
+	if not result: return None # shouldn't happen
+	if result == 1:
+		return True
+	else:
+		return False
+
+
+def setAlwaysPMForSubreddit(subreddit, alwaysPM):
+	c = dbConn.cursor()
+	c.execute('''
+		UPDATE subredditWhitelist
+		SET AlwaysPM = ?
+		WHERE Subreddit = ?
+	''', (alwaysPM, subreddit))
+	dbConn.commit()
+

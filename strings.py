@@ -295,16 +295,31 @@ def confirmationComment(subscriptionType, subscribeTo, subreddit, threadID, alre
 
 def possibleMissedCommentMessage(oldestTimestamp, recordedTimestamp):
 	strList = ["Comment search hit index 99 without finding oldest timestamp.\n\n"]
-	strList.append("Oldest found timestamp: ")
+	strList.append("Oldest found timestamp: "+str(oldestTimestamp))
 	strList.append("\n\n")
-	strList.append("Recorded timestamp: ")
+	strList.append("Recorded timestamp: "+str(recordedTimestamp))
 
 
 def possibleMissedPostMessage(oldestTimestamp, recordedTimestamp, subreddit):
 	strList = ["Post search hit index 99 without finding oldest timestamp in /r/",subreddit,"\n\n"]
-	strList.append("Oldest found timestamp: ")
+	strList.append("Oldest found timestamp: "+str(oldestTimestamp))
 	strList.append("\n\n")
-	strList.append("Recorded timestamp: ")
+	strList.append("Recorded timestamp: "+str(recordedTimestamp))
+
+
+def subredditAlwaysPMMessage(subreddits):
+	strList = []
+
+	for subreddit in subreddits:
+		strList.append("/r/")
+		strList.append(subreddit['subreddit'])
+		strList.append(" has been changed to ")
+		if not subreddit['alwaysPM']:
+			strList.append("don't ")
+		strList.append("always PM.")
+		strList.append("  \n")
+
+	return strList
 
 
 couldNotUnderstandSection = (

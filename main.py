@@ -183,7 +183,8 @@ def processMessages():
 		for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
 			# checks to see as some comments might be replys and non PMs
 			if isinstance(message, praw.objects.Message):
-				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [], 'subredditsAdded': [], 'commentsDeleted': [], 'list': False}
+				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [],
+				           'subredditsAdded': [], 'commentsDeleted': [], 'alwaysPM': [], 'list': False}
 				log.info("Parsing message from /u/"+str(message.author))
 				for line in message.body.lower().splitlines():
 					if line.startswith("updateme") or line.startswith("subscribeme"):
@@ -248,7 +249,6 @@ def processMessages():
 								log.warning("Could not delete comment with ID %s/%s", threadID[0], commentID)
 								log.warning(traceback.format_exc())
 
-
 					elif line.startswith("addsubreddit") and str(message.author).lower() == globals.OWNER_NAME.lower():
 						subs = re.findall('(?:/r/)(\w*)', line)
 						for sub in subs:
@@ -272,6 +272,20 @@ def processMessages():
 							replies['subredditsAdded'].append({'subreddit': sub, 'subscribers': len(deniedRequests)})
 
 							database.activateSubreddit(sub)
+
+					elif line.startswith("subredditpm") and str(message.author).lower() == globals.OWNER_NAME.lower():
+						subs = re.findall('(?:/r/)(\w*)', line)
+						if line.startswith("subredditpmtrue"):
+							alwaysPM = True
+						elif line.startswith("subredditpmfalse"):
+							alwaysPM = False
+						else:
+							continue
+
+						for sub in subs:
+							log.info("Setting subreddit /r/"+sub+" to "+("don't " if not alwaysPM else "")+"alwaysPM")
+							database.setAlwaysPMForSubreddit(sub.lower(), alwaysPM)
+							replies['alwaysPM'].append({'subreddit': sub, 'alwaysPM': alwaysPM})
 
 				message.mark_as_read()
 
@@ -311,6 +325,10 @@ def processMessages():
 				if replies['subredditsAdded']:
 					sectionCount += 1
 					strList.extend(strings.subredditActivatedMessage(replies['subredditsAdded']))
+					strList.append("\n\n*****\n\n")
+				if replies['alwaysPM']:
+					sectionCount += 1
+					strList.extend(strings.subredditAlwaysPMMessage(replies['alwaysPM']))
 					strList.append("\n\n*****\n\n")
 
 				if sectionCount == 0:
@@ -377,27 +395,39 @@ def searchComments(searchTerm):
 			addUpdateSubscription(comment['author'], comment['link_author'], comment['subreddit'],
 					datetime.utcfromtimestamp(comment['created_utc']), subscriptionType, replies)
 
-			strList = []
-			usePM = True
-			if len(replies['couldnotadd']) >= 1:
-				addDeniedRequest(replies['couldnotadd'])
-				strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
-			elif database.isThreadReplied(comment['link_id'][3:]):
-				if replies['added']:
-					strList.extend(strings.confirmationSection(replies['added']))
-				elif replies['updated']:
-					strList.extend(strings.updatedSubscriptionSection(replies['updated']))
-				elif replies['exist']:
-					strList.extend(strings.alreadySubscribedSection(replies['exist']))
-			else:
-				usePM = False
+			posted = False
+			if len(replies['couldnotadd']) == 0 and not database.alwaysPMForSubreddit(comment['subreddit']) and not database.isThreadReplied(comment['link_id'][3:]):
+				strList = []
 				existingSubscribers = database.getAuthorSubscribersCount(comment['subreddit'].lower(), comment['link_author'].lower())
 				strList.extend(strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'], comment['link_id'][3:], existingSubscribers))
+				strList.append("\n\n*****\n\n")
+				strList.append(strings.footer)
 
-			strList.append("\n\n*****\n\n")
-			strList.append(strings.footer)
+				log.info("Publicly replying to /u/%s for /u/%s in /r/%s:",comment['author'],comment['link_author'],comment['subreddit'])
+				try:
+					resultComment = r.get_info(thing_id='t1_' + comment['id']).reply(''.join(strList))
+					database.addThread(comment['link_id'][3:], resultComment.id, comment['link_author'].lower(), comment['subreddit'].lower(),
+				                comment['author'].lower(), datetime.utcfromtimestamp(comment['created_utc']), existingSubscribers, subscriptionType)
+					posted = True
+				except Exception as err:
+					log.warning("Could not publicly reply to /u/%s", comment['author'])
+					log.warning(traceback.format_exc())
 
-			if usePM:
+			if not posted:
+				if len(replies['couldnotadd']) >= 1:
+					addDeniedRequest(replies['couldnotadd'])
+					strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
+				else:
+					if replies['added']:
+						strList.extend(strings.confirmationSection(replies['added']))
+					elif replies['updated']:
+						strList.extend(strings.updatedSubscriptionSection(replies['updated']))
+					elif replies['exist']:
+						strList.extend(strings.alreadySubscribedSection(replies['exist']))
+
+				strList.append("\n\n*****\n\n")
+				strList.append(strings.footer)
+
 				log.info("Messaging confirmation for public comment to /u/%s for /u/%s in /r/%s:",comment['author'],comment['link_author'],comment['subreddit'])
 				try:
 					r.send_message(
@@ -408,20 +438,12 @@ def searchComments(searchTerm):
 				except Exception as err:
 					log.warning("Could not send message to /u/%s when sending confirmation for public comment", comment['author'])
 					log.warning(traceback.format_exc())
-			else:
-				log.info("Publicly replying to /u/%s for /u/%s in /r/%s:",comment['author'],comment['link_author'],comment['subreddit'])
-				try:
-					resultComment = r.get_info(thing_id='t1_' + comment['id']).reply(''.join(strList))
-					database.addThread(comment['link_id'][3:], resultComment.id, comment['link_author'].lower(), comment['subreddit'].lower(),
-				                comment['author'].lower(), datetime.utcfromtimestamp(comment['created_utc']), existingSubscribers, subscriptionType)
-				except Exception as err:
-					log.warning("Could not publicly reply to /u/%s", comment['author'])
-					log.warning(traceback.format_exc())
 
 		database.updateCommentSearchSeconds(searchTerm, datetime.utcfromtimestamp(comment['created_utc']) + timedelta(0,1))
 
 
 def updateExistingComments():
+	log.debug(str(datetime.utcnow() - timedelta(days=globals.COMMENT_EDIT_DAYS_CUTOFF)))
 	for thread in database.getIncorrectThreads(datetime.utcnow() - timedelta(days=globals.COMMENT_EDIT_DAYS_CUTOFF)):
 		strList = []
 		strList.extend(strings.confirmationComment(thread['single'], thread['subscribedTo'], thread['subreddit'], thread['threadID'], thread['currentCount']))
