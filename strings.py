@@ -298,6 +298,7 @@ def possibleMissedCommentMessage(oldestTimestamp, recordedTimestamp):
 	strList.append("Oldest found timestamp: "+str(oldestTimestamp))
 	strList.append("\n\n")
 	strList.append("Recorded timestamp: "+str(recordedTimestamp))
+	return strList
 
 
 def possibleMissedPostMessage(oldestTimestamp, recordedTimestamp, subreddit):
@@ -305,6 +306,7 @@ def possibleMissedPostMessage(oldestTimestamp, recordedTimestamp, subreddit):
 	strList.append("Oldest found timestamp: "+str(oldestTimestamp))
 	strList.append("\n\n")
 	strList.append("Recorded timestamp: "+str(recordedTimestamp))
+	return strList
 
 
 def subredditAlwaysPMMessage(subreddits):
