@@ -116,6 +116,7 @@ def processSubreddits():
 
 		if oldestIndex != -1:
 			for post in feed.entries[oldestIndex::-1]:
+				if 'author' not in post: continue
 				postDatetime = datetime.fromtimestamp(calendar.timegm(post.updated_parsed))
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], post.author[3:].lower()):
 					if postDatetime >= datetime.strptime(subscriber[SUBAUTHOR_LASTCHECKED], "%Y-%m-%d %H:%M:%S"):
