@@ -493,16 +493,16 @@ while True:
 	log.debug("Starting run")
 
 	try:
-		#searchComments(UPDATE)
-		#searchComments(SUBSCRIPTION)
+		searchComments(UPDATE)
+		searchComments(SUBSCRIPTION)
 
-		#processMessages()
+		processMessages()
 
 		processSubreddits()
 
-		#if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
-			#updateExistingComments()
-			#deleteLowKarmaComments()
+		if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
+			updateExistingComments()
+			deleteLowKarmaComments()
 
 		if i % globals.BACKUP_ITERATIONS == 0:
 			backupDatabase()
