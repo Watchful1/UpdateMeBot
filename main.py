@@ -25,11 +25,6 @@ from shutil import copyfile
 # getSubscribedSubreddits query
 SUBBED_SUBREDDIT = 0
 SUBBED_LASTCHECKED = 1
-# getSubredditAuthorSubscriptions query
-SUBAUTHOR_ID = 0
-SUBAUTHOR_SUBSCRIBER = 1
-SUBAUTHOR_LASTCHECKED = 2
-SUBAUTHOR_SINGLE = 3
 ## subscription types
 SUBSCRIPTION = "subscribeme"
 UPDATE = "updateme"
@@ -119,23 +114,23 @@ def processSubreddits():
 				if 'author' not in post: continue
 				postDatetime = datetime.fromtimestamp(calendar.timegm(post.updated_parsed))
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], post.author[3:].lower()):
-					if postDatetime >= datetime.strptime(subscriber[SUBAUTHOR_LASTCHECKED], "%Y-%m-%d %H:%M:%S"):
+					if postDatetime >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
 						log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",
-						         subscriber[SUBAUTHOR_SUBSCRIBER], post.author[3:], subreddit['subreddit'])
-						strList = strings.alertMessage(post.author[3:], subreddit['subreddit'], post.link, subscriber[SUBAUTHOR_SINGLE])
+						         subscriber['subscriber'], post.author[3:], subreddit['subreddit'])
+						strList = strings.alertMessage(post.author[3:], subreddit['subreddit'], post.link, subscriber['single'])
 
 						strList.append("\n\n*****\n\n")
 						strList.append(strings.footer)
 
 						try:
 							r.send_message(
-								recipient=subscriber[SUBAUTHOR_SUBSCRIBER],
-								subject=strings.messageSubject(subscriber[SUBAUTHOR_SUBSCRIBER]),
+								recipient=subscriber['subscriber'],
+								subject=strings.messageSubject(subscriber['subscriber']),
 								message=''.join(strList)
 							)
-							database.checkRemoveSubscription(subscriber[SUBAUTHOR_ID], subscriber[SUBAUTHOR_SINGLE], postDatetime + timedelta(0,1))
+							database.checkRemoveSubscription(subscriber['ID'], subscriber['single'], postDatetime + timedelta(0,1))
 						except Exception as err:
-							log.warning("Could not send message to /u/%s when sending update", subscriber[SUBAUTHOR_SUBSCRIBER])
+							log.warning("Could not send message to /u/%s when sending update", subscriber['subscriber'])
 							log.warning(traceback.format_exc())
 
 		database.checkSubreddit(subreddit['subreddit'], startTimestamp)
@@ -498,16 +493,16 @@ while True:
 	log.debug("Starting run")
 
 	try:
-		searchComments(UPDATE)
-		searchComments(SUBSCRIPTION)
+		#searchComments(UPDATE)
+		#searchComments(SUBSCRIPTION)
 
-		processMessages()
+		#processMessages()
 
 		processSubreddits()
 
-		if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
-			updateExistingComments()
-			deleteLowKarmaComments()
+		#if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
+			#updateExistingComments()
+			#deleteLowKarmaComments()
 
 		if i % globals.BACKUP_ITERATIONS == 0:
 			backupDatabase()

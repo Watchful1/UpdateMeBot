@@ -105,13 +105,17 @@ def getSubscribedSubreddits():
 
 def getSubredditAuthorSubscriptions(Subreddit, SubscribedTo):
 	c = dbConn.cursor()
-	return c.execute('''
+	results = []
+	for row in c.execute('''
 		SELECT ID, Subscriber, LastChecked, Single
 		FROM subscriptions
 		WHERE Subreddit = ?
 			and SubscribedTo = ?
 			and Approved = 1
-	''', (Subreddit, SubscribedTo))
+	''', (Subreddit, SubscribedTo)):
+		results.append({'ID': row[0], 'subscriber': row[1], 'lastChecked': row[2], 'single': row[3] == 1})
+
+	return results
 
 
 def getMySubscriptions(Subscriber):
