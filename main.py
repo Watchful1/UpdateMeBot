@@ -90,7 +90,7 @@ def processSubreddits():
 		subredditDatetime = datetime.strptime(subreddit['lastChecked'], "%Y-%m-%d %H:%M:%S")
 		oldestIndex = len(feed.entries) - 1
 		for i, post in enumerate(feed.entries):
-			postDatetime = datetime.fromtimestamp(calendar.timegm(post.updated_parsed))
+			postDatetime = datetime(*post.updated_parsed[0:6])
 			if postDatetime < subredditDatetime:
 				oldestIndex = i - 1
 				break
@@ -112,7 +112,7 @@ def processSubreddits():
 		if oldestIndex != -1:
 			for post in feed.entries[oldestIndex::-1]:
 				if 'author' not in post: continue
-				postDatetime = datetime.fromtimestamp(calendar.timegm(post.updated_parsed))
+				postDatetime = datetime(*post.updated_parsed[0:6])
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], post.author[3:].lower()):
 					if postDatetime >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
 						log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",
