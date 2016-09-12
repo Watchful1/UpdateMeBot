@@ -18,6 +18,7 @@ import signal
 import requests
 import feedparser
 from shutil import copyfile
+import reddit
 
 
 ### Constants ###
@@ -71,15 +72,8 @@ def addDeniedRequest(deniedRequests):
 			noticeStrList = strings.subredditNoticeThresholdMessage(subreddit, count)
 			noticeStrList.append("\n\n*****\n\n")
 			noticeStrList.append(strings.footer)
-			try:
-				r.send_message(
-					recipient=globals.OWNER_NAME,
-					subject="Subreddit Threshold",
-					message=''.join(noticeStrList)
-				)
-			except Exception as err:
+			if not reddit.sendMessage(globals.OWNER_NAME, "Subreddit Threshold", ''.join(noticeStrList)):
 				log.warning("Could not send message to owner when notifying on subreddit threshold")
-				log.warning(traceback.format_exc())
 
 
 def processSubreddits():
@@ -99,15 +93,8 @@ def processSubreddits():
 				strList = strings.possibleMissedPostMessage(postDatetime, subredditDatetime, subreddit['subreddit'])
 				strList.append("\n\n*****\n\n")
 				strList.append(strings.footer)
-				try:
-					r.send_message(
-						recipient=globals.OWNER_NAME,
-						subject="Missed Post",
-						message=''.join(strList)
-					)
-				except Exception as err:
+				if not reddit.sendMessage(globals.OWNER_NAME, "Missed Post", ''.join(strList)):
 					log.warning("Could not send message to owner that we might have missed a post")
-					log.warning(traceback.format_exc())
 
 		if oldestIndex != -1:
 			for post in feed.entries[oldestIndex::-1]:
@@ -122,16 +109,10 @@ def processSubreddits():
 						strList.append("\n\n*****\n\n")
 						strList.append(strings.footer)
 
-						try:
-							r.send_message(
-								recipient=subscriber['subscriber'],
-								subject=strings.messageSubject(subscriber['subscriber']),
-								message=''.join(strList)
-							)
+						if reddit.sendMessage(subscriber['subscriber'], strings.messageSubject(subscriber['subscriber']), ''.join(strList)):
 							database.checkRemoveSubscription(subscriber['ID'], subscriber['single'], postDatetime + timedelta(0,1))
-						except Exception as err:
+						else:
 							log.warning("Could not send message to /u/%s when sending update", subscriber['subscriber'])
-							log.warning(traceback.format_exc())
 
 		database.checkSubreddit(subreddit['subreddit'], startTimestamp)
 
@@ -175,7 +156,7 @@ def removeSubscription(Subscriber, SubscribedTo, Subreddit, replies = {}):
 
 def processMessages():
 	try:
-		for message in r.get_unread(unset_has_mail=True, update_user=True, limit=100):
+		for message in reddit.getMessages():
 			# checks to see as some comments might be replys and non PMs
 			if isinstance(message, praw.objects.Message):
 				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [],
@@ -189,7 +170,7 @@ def processMessages():
 
 						if len(links) != 0:
 							try:
-								submission = r.get_submission(submission_id=links[0])
+								submission = reddit.getSubmission(submission_id=links[0])
 								users.append(str(submission.author))
 								subs.append(str(submission.subreddit))
 							except Exception as err:
@@ -236,13 +217,11 @@ def processMessages():
 
 						commentID = database.deleteComment(threadID[0], str(message.author).lower())
 						if commentID:
-							try:
-								log.info("Deleting comment with ID %s/%s", threadID[0], commentID)
-								r.get_info(thing_id='t1_' + commentID).delete()
+							log.info("Deleting comment with ID %s/%s", threadID[0], commentID)
+							if reddit.deleteComment(id=commentID):
 								replies['commentsDeleted'].append(threadID[0])
-							except Exception as err:
+							else:
 								log.warning("Could not delete comment with ID %s/%s", threadID[0], commentID)
-								log.warning(traceback.format_exc())
 
 					elif line.startswith("addsubreddit") and str(message.author).lower() == globals.OWNER_NAME.lower():
 						subs = re.findall('(?:/r/)(\w*)', line)
@@ -255,15 +234,8 @@ def processMessages():
 								strList = strings.activatingSubredditMessage(sub.lower(), deniedRequests[user])
 								strList.append("\n\n*****\n\n")
 								strList.append(strings.footer)
-								try:
-									r.send_message(
-										recipient=user,
-										subject=strings.messageSubject(user),
-										message=''.join(strList)
-									)
-								except Exception as err:
+								if not reddit.sendMessage(user, strings.messageSubject(user), ''.join(strList)):
 									log.warning("Could not send message to /u/%s when activating subreddit", user)
-									log.warning(traceback.format_exc())
 							replies['subredditsAdded'].append({'subreddit': sub, 'subscribers': len(deniedRequests)})
 
 							database.activateSubreddit(sub)
@@ -282,7 +254,7 @@ def processMessages():
 							database.setAlwaysPMForSubreddit(sub.lower(), alwaysPM)
 							replies['alwaysPM'].append({'subreddit': sub, 'alwaysPM': alwaysPM})
 
-				message.mark_as_read()
+				reddit.markMessageRead(message)
 
 				strList = []
 				sectionCount = 0
@@ -334,11 +306,8 @@ def processMessages():
 				strList.append(strings.footer)
 
 				log.debug("Sending message to /u/"+str(message.author))
-				try:
-					message.reply(''.join(strList))
-				except Exception as err:
+				if not reddit.replyMessage(message, ''.join(strList)):
 					log.warning("Exception sending confirmation message")
-					log.warning(traceback.format_exc())
 	except Exception as err:
 		log.warning("Exception reading messages")
 		log.warning(traceback.format_exc())
@@ -369,15 +338,8 @@ def searchComments(searchTerm):
 			strList = strings.possibleMissedCommentMessage(datetime.utcfromtimestamp(comment['created_utc']), timestamp)
 			strList.append("\n\n*****\n\n")
 			strList.append(strings.footer)
-			try:
-				r.send_message(
-					recipient=globals.OWNER_NAME,
-					subject="Missed Comment",
-					message=''.join(strList)
-				)
-			except Exception as err:
+			if not reddit.sendMessage(globals.OWNER_NAME, "Missed Comment", ''.join(strList)):
 				log.warning("Could not send message to owner that we might have missed a comment")
-				log.warning(traceback.format_exc())
 
 
 	if oldestIndex == -1: return
@@ -398,14 +360,13 @@ def searchComments(searchTerm):
 				strList.append(strings.footer)
 
 				log.info("Publicly replying to /u/%s for /u/%s in /r/%s:",comment['author'],comment['link_author'],comment['subreddit'])
-				try:
-					resultComment = r.get_info(thing_id='t1_' + comment['id']).reply(''.join(strList))
-					database.addThread(comment['link_id'][3:], resultComment.id, comment['link_author'].lower(), comment['subreddit'].lower(),
+				resultCommentID = reddit.replyComment(comment['id'], ''.join(strList))
+				if resultCommentID is not None:
+					database.addThread(comment['link_id'][3:], resultCommentID, comment['link_author'].lower(), comment['subreddit'].lower(),
 				                comment['author'].lower(), datetime.utcfromtimestamp(comment['created_utc']), existingSubscribers, subscriptionType)
 					posted = True
-				except Exception as err:
+				else:
 					log.warning("Could not publicly reply to /u/%s", comment['author'])
-					log.warning(traceback.format_exc())
 
 			if not posted:
 				strList = []
@@ -424,15 +385,8 @@ def searchComments(searchTerm):
 				strList.append(strings.footer)
 
 				log.info("Messaging confirmation for public comment to /u/%s for /u/%s in /r/%s:",comment['author'],comment['link_author'],comment['subreddit'])
-				try:
-					r.send_message(
-						recipient=comment['author'],
-						subject=strings.messageSubject(comment['author']),
-						message=''.join(strList)
-					)
-				except Exception as err:
+				if not reddit.sendMessage(comment['author'], strings.messageSubject(comment['author']), ''.join(strList)):
 					log.warning("Could not send message to /u/%s when sending confirmation for public comment", comment['author'])
-					log.warning(traceback.format_exc())
 
 		database.updateCommentSearchSeconds(searchTerm, datetime.utcfromtimestamp(comment['created_utc']) + timedelta(0,1))
 
@@ -444,20 +398,17 @@ def updateExistingComments():
 		strList.append("\n\n*****\n\n")
 		strList.append(strings.footer)
 
-		try:
-			r.get_info(thing_id='t1_' + thread['commentID']).edit(''.join(strList))
+		if reddit.editComment(thread['commentID'], ''.join(strList)):
 			database.updateCurrentThreadCount(thread['threadID'], thread['currentCount'])
-		except Exception as err:
+		else:
 			log.warning("Could not update comment with ID %s/%s", thread['threadID'], thread['commentID'])
-			log.warning(traceback.format_exc())
 
 
 def deleteLowKarmaComments():
-	user = r.get_redditor(globals.ACCOUNT_NAME)
-	for comment in user.get_comments(limit=100):
+	for comment in reddit.getUserComments(globals.ACCOUNT_NAME):
 		if comment.score <= -5:
 			log.info("Deleting low score comment")
-			comment.delete()
+			reddit.deleteComment(comment=comment)
 
 
 def backupDatabase():
@@ -475,9 +426,7 @@ log.debug("Connecting to reddit")
 
 START_TIME = datetime.utcnow()
 
-r = praw.Reddit(user_agent=globals.USER_AGENT, log_request=0)
-o = OAuth2Util.OAuth2Util(r)
-o.refresh(force=True)
+reddit.init(log)
 
 database.init()
 
@@ -518,15 +467,8 @@ while True:
 		noticeStrList = strings.longRunMessage(int(elapsedTime))
 		noticeStrList.append("\n\n*****\n\n")
 		noticeStrList.append(strings.footer)
-		try:
-			r.send_message(
-				recipient=globals.OWNER_NAME,
-				subject="Long Run",
-				message=''.join(noticeStrList)
-			)
-		except Exception as err:
+		if not reddit.sendMessage(globals.OWNER_NAME, "Long Run", ''.join(noticeStrList)):
 			log.warning("Could not send message to owner when notifying on long run")
-			log.warning(traceback.format_exc())
 
 	if once:
 		break
