@@ -426,15 +426,24 @@ log.debug("Connecting to reddit")
 
 START_TIME = datetime.utcnow()
 
-reddit.init(log)
+once = False
+responseWhitelist = None
+for arg in sys.argv:
+	# don't loop
+	if arg == "-once":
+		once = True
+
+	# if it's just -debug don't send any messages. If it's -debug=test1,test2 only send messages to thsoe users
+	if arg.startswith("-debug"):
+		responseWhitelist = []
+		if arg.startswith("-debug="):
+			responseWhitelist = arg[7:].split(',')
+
+reddit.init(log, responseWhitelist)
 
 database.init()
 
 signal.signal(signal.SIGINT, signal_handler)
-
-once = False
-if len(sys.argv) > 1 and sys.argv[1] == 'once':
-	once = True
 
 i = 1
 while True:
@@ -442,12 +451,12 @@ while True:
 	log.debug("Starting run")
 
 	try:
-		searchComments(UPDATE)
-		searchComments(SUBSCRIPTION)
+		#searchComments(UPDATE)
+		#searchComments(SUBSCRIPTION)
 
-		processMessages()
+		#processMessages()
 
-		processSubreddits()
+		#processSubreddits()
 
 		if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
 			updateExistingComments()
