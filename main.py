@@ -456,12 +456,12 @@ while True:
 	log.debug("Starting run")
 
 	try:
-		#searchComments(UPDATE)
-		#searchComments(SUBSCRIPTION)
+		searchComments(UPDATE)
+		searchComments(SUBSCRIPTION)
 
-		#processMessages()
+		processMessages()
 
-		#processSubreddits()
+		processSubreddits()
 
 		if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
 			updateExistingComments()
