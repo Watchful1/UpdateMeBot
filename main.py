@@ -319,8 +319,13 @@ def searchComments(searchTerm):
 	elif searchTerm == SUBSCRIPTION:
 		subscriptionType = False
 
-	comments = requests.get("https://api.pushshift.io/reddit/search?q="+searchTerm+"&limit=100",
+	try:
+		comments = requests.get("https://api.pushshift.io/reddit/search?q="+searchTerm+"&limit=100",
 	                       headers={'User-Agent': globals.USER_AGENT}).json()['data']
+	except Exception as err:
+		log.warning("Could not parse data for search term: "+searchTerm)
+		return
+
 	timestamp = database.getCommentSearchTime(searchTerm)
 	if timestamp is None:
 		timestamp = START_TIME
@@ -433,7 +438,7 @@ for arg in sys.argv:
 	if arg == "-once":
 		once = True
 
-	# if it's just -debug don't send any messages. If it's -debug=test1,test2 only send messages to thsoe users
+	# if it's just -debug don't send any messages. If it's -debug=test1,test2 only send messages to those users
 	if arg.startswith("-debug"):
 		responseWhitelist = []
 		if arg.startswith("-debug="):
