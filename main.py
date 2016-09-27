@@ -170,7 +170,7 @@ def processMessages():
 
 						if len(links) != 0:
 							try:
-								submission = reddit.getSubmission(submission_id=links[0])
+								submission = reddit.getSubmission(links[0])
 								users.append(str(submission.author))
 								subs.append(str(submission.subreddit))
 							except Exception as err:
