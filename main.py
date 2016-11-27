@@ -41,7 +41,7 @@ LOG_FILE_MAXSIZE = 1024 * 256
 
 log = logging.getLogger("bot")
 log.setLevel(LOG_LEVEL)
-log_formatter = logging.Formatter('%(levelname)s: %(message)s')
+log_formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
 log_stderrHandler = logging.StreamHandler()
 log_stderrHandler.setFormatter(log_formatter)
 log.addHandler(log_stderrHandler)
