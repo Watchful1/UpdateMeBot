@@ -77,7 +77,10 @@ def addDeniedRequest(deniedRequests):
 
 
 def processSubreddits():
+	subredditsCount = 0
+	postsCount = 0
 	for subreddit in database.getSubscribedSubreddits():
+		subredditsCount += 1
 		startTimestamp = datetime.utcnow()
 		feed = feedparser.parse("https://www.reddit.com/r/" + subreddit['subreddit'] + "/new/.rss?sort=new&limit=100")
 
@@ -99,6 +102,7 @@ def processSubreddits():
 		if oldestIndex != -1:
 			for post in feed.entries[oldestIndex::-1]:
 				if 'author' not in post: continue
+				postsCount += 1
 				postDatetime = datetime(*post.updated_parsed[0:6])
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], post.author[3:].lower()):
 					if postDatetime >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
@@ -117,6 +121,8 @@ def processSubreddits():
 		database.checkSubreddit(subreddit['subreddit'], startTimestamp)
 
 		time.sleep(1)
+
+	return subredditsCount, postsCount
 
 
 def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single = True, replies = {}):
@@ -155,10 +161,12 @@ def removeSubscription(Subscriber, SubscribedTo, Subreddit, replies = {}):
 
 
 def processMessages():
+	messagesProcessed = 0
 	try:
 		for message in reddit.getMessages():
 			# checks to see as some comments might be replys and non PMs
 			if isinstance(message, praw.objects.Message):
+				messagesProcessed += 1
 				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [],
 				           'subredditsAdded': [], 'commentsDeleted': [], 'alwaysPM': [], 'list': False}
 				log.info("Parsing message from /u/"+str(message.author))
@@ -312,6 +320,8 @@ def processMessages():
 		log.warning("Exception reading messages")
 		log.warning(traceback.format_exc())
 
+	return messagesProcessed
+
 
 def searchComments(searchTerm):
 	if searchTerm == UPDATE:
@@ -347,10 +357,14 @@ def searchComments(searchTerm):
 				log.warning("Could not send message to owner that we might have missed a comment")
 
 
-	if oldestIndex == -1: return
+	if oldestIndex == -1:
+		return 0, 0
 
+	commentsAdded = 0
+	commentsSearched = 0
 	for comment in comments[oldestIndex::-1]:
 		if comment['author'].lower() != globals.ACCOUNT_NAME.lower():
+			commentsSearched += 1
 			log.info("Found public comment by /u/"+comment['author'])
 			replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': []}
 			addUpdateSubscription(comment['author'], comment['link_author'], comment['subreddit'],
@@ -380,8 +394,10 @@ def searchComments(searchTerm):
 					strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
 				else:
 					if replies['added']:
+						commentsAdded += 1
 						strList.extend(strings.confirmationSection(replies['added']))
 					elif replies['updated']:
+						commentsAdded += 1
 						strList.extend(strings.updatedSubscriptionSection(replies['updated']))
 					elif replies['exist']:
 						strList.extend(strings.alreadySubscribedSection(replies['exist']))
@@ -395,9 +411,13 @@ def searchComments(searchTerm):
 
 		database.updateCommentSearchSeconds(searchTerm, datetime.utcfromtimestamp(comment['created_utc']) + timedelta(0,1))
 
+	return commentsSearched, commentsAdded
+
 
 def updateExistingComments():
+	commentsUpdated = 0
 	for thread in database.getIncorrectThreads(datetime.utcnow() - timedelta(days=globals.COMMENT_EDIT_DAYS_CUTOFF)):
+		commentsUpdated += 1
 		strList = []
 		strList.extend(strings.confirmationComment(thread['single'], thread['subscribedTo'], thread['subreddit'], thread['threadID'], thread['currentCount']))
 		strList.append("\n\n*****\n\n")
@@ -408,12 +428,18 @@ def updateExistingComments():
 		else:
 			log.warning("Could not update comment with ID %s/%s", thread['threadID'], thread['commentID'])
 
+	return commentsUpdated
+
 
 def deleteLowKarmaComments():
+	commentsDeleted = 0
 	for comment in reddit.getUserComments(globals.ACCOUNT_NAME):
 		if comment.score <= -5:
+			commentsDeleted += 1
 			log.info("Deleting low score comment")
 			reddit.deleteComment(comment=comment)
+
+	return commentsDeleted
 
 
 def backupDatabase():
@@ -456,29 +482,112 @@ while True:
 	log.debug("Starting run")
 
 	try:
-		searchComments(UPDATE)
-		searchComments(SUBSCRIPTION)
+		sectionTime = time.perf_counter()
+		updateCommentsSearched, updateCommentsAdded = searchComments(UPDATE)
+		updateCommentsTime = time.perf_counter() - sectionTime
 
-		processMessages()
+		sectionTime = time.perf_counter()
+		subCommentsSearched, subCommentsAdded = searchComments(SUBSCRIPTION)
+		subCommentsTime = time.perf_counter() - sectionTime
 
-		processSubreddits()
+		sectionTime = time.perf_counter()
+		messagesProcessed = processMessages()
+		messagesTime = time.perf_counter() - sectionTime
 
+		sectionTime = time.perf_counter()
+		subredditsCount, postsCount = processSubreddits()
+		subredditsTime = time.perf_counter() - sectionTime
+
+		existingCommentsUpdated = 0
+		updateExistingCommentsTime = 0
+		lowKarmaCommentsDeleted = 0
+		deleteLowKarmaCommentsTime = 0
 		if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
-			updateExistingComments()
-			deleteLowKarmaComments()
+			sectionTime = time.perf_counter()
+			existingCommentsUpdated = updateExistingComments()
+			updateExistingCommentsTime = time.perf_counter() - sectionTime
 
+			sectionTime = time.perf_counter()
+			lowKarmaCommentsDeleted = deleteLowKarmaComments()
+			deleteLowKarmaCommentsTime = time.perf_counter() - sectionTime
+
+			backupTime = 0
 		if i % globals.BACKUP_ITERATIONS == 0:
+			sectionTime = time.perf_counter()
 			backupDatabase()
+			backupTime = time.perf_counter() - sectionTime
 	except Exception as err:
 		log.warning("Error in main function")
 		log.warning(traceback.format_exc())
 		break
 
 	elapsedTime = time.perf_counter() - startTime
-	log.debug("Run complete after: %d", int(elapsedTime))
+	logStrList = ["Run complete after: ", str(int(elapsedTime))]
+	if updateCommentsAdded > 0:
+		logStrList.append(" : Update comments added: ")
+		logStrList.append(str(updateCommentsAdded))
+	if subCommentsAdded > 0:
+		logStrList.append(" : Sub comments added: ")
+		logStrList.append(str(subCommentsAdded))
+	if messagesProcessed > 0:
+		logStrList.append(" : Messages processed: ")
+		logStrList.append(str(messagesProcessed))
+	logStrList.append(" : ")
+	logStrList.append(str(postsCount))
+	logStrList.append(" posts searched in ")
+	logStrList.append(str(subredditsCount))
+	logStrList.append(" subreddits")
+	if existingCommentsUpdated > 0:
+		logStrList.append(" : Existing comments updated: ")
+		logStrList.append(str(existingCommentsUpdated))
+	if lowKarmaCommentsDeleted > 0:
+		logStrList.append(" : Low karma comments deleted: ")
+		logStrList.append(str(lowKarmaCommentsDeleted))
+	log.debug(''.join(logStrList))
+
 	if elapsedTime > globals.WARNING_RUN_TIME:
 		log.warning("Messaging owner that that the process took too long to run: %d", int(elapsedTime))
 		noticeStrList = strings.longRunMessage(int(elapsedTime))
+
+		noticeStrList.append("\n\nUpdate comments searched, added and time: ")
+		noticeStrList.append(str(updateCommentsSearched))
+		noticeStrList.append(", ")
+		noticeStrList.append(str(updateCommentsAdded))
+		noticeStrList.append(", ")
+		noticeStrList.append(str(round(updateCommentsTime, 3)))
+
+		noticeStrList.append("\n\nSub comments searched, added and time: ")
+		noticeStrList.append(str(subCommentsSearched))
+		noticeStrList.append(", ")
+		noticeStrList.append(str(subCommentsAdded))
+		noticeStrList.append(", ")
+		noticeStrList.append(str(round(subCommentsTime, 3)))
+
+		noticeStrList.append("\n\nMessages processed, time: ")
+		noticeStrList.append(str(messagesProcessed))
+		noticeStrList.append(", ")
+		noticeStrList.append(str(round(messagesTime, 3)))
+
+		noticeStrList.append("\n\nSubreddits searched, posts searched, time: ")
+		noticeStrList.append(str(subredditsCount))
+		noticeStrList.append(", ")
+		noticeStrList.append(str(postsCount))
+		noticeStrList.append(", ")
+		noticeStrList.append(str(round(subredditsTime, 3)))
+
+		noticeStrList.append("\n\nExisting comments updated, time: ")
+		noticeStrList.append(str(existingCommentsUpdated))
+		noticeStrList.append(", ")
+		noticeStrList.append(str(round(updateExistingCommentsTime, 3)))
+
+		noticeStrList.append("\n\nLow karma comments deleted, time: ")
+		noticeStrList.append(str(lowKarmaCommentsDeleted))
+		noticeStrList.append(", ")
+		noticeStrList.append(str(round(deleteLowKarmaCommentsTime, 3)))
+
+		noticeStrList.append("\n\nBackup time: ")
+		noticeStrList.append(str(round(backupTime, 3)))
+
 		noticeStrList.append("\n\n*****\n\n")
 		noticeStrList.append(strings.footer)
 		if not reddit.sendMessage(globals.OWNER_NAME, "Long Run", ''.join(noticeStrList)):
