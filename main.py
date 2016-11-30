@@ -334,7 +334,7 @@ def searchComments(searchTerm):
 	                       headers={'User-Agent': globals.USER_AGENT}).json()['data']
 	except Exception as err:
 		log.warning("Could not parse data for search term: "+searchTerm)
-		return
+		return 0, 0
 
 	timestamp = database.getCommentSearchTime(searchTerm)
 	if timestamp is None:
