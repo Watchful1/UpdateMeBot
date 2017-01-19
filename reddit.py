@@ -41,7 +41,7 @@ def getMessages():
 
 
 def markMessageRead(message):
-	if whitelist is None:
+	if whitelist is None or message.author in whitelist:
 		message.mark_as_read()
 
 

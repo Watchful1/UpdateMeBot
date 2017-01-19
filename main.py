@@ -168,7 +168,8 @@ def processMessages():
 			if isinstance(message, praw.objects.Message):
 				messagesProcessed += 1
 				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [],
-				           'subredditsAdded': [], 'commentsDeleted': [], 'alwaysPM': [], 'list': False}
+				           'subredditsAdded': [], 'commentsDeleted': [], 'alwaysPM': [], 'blacklist': [],
+				           'blacklistNot': False, 'list': False}
 				log.info("Parsing message from /u/"+str(message.author))
 				for line in message.body.lower().splitlines():
 					if line.startswith("updateme") or line.startswith("subscribeme"):
@@ -262,6 +263,31 @@ def processMessages():
 							database.setAlwaysPMForSubreddit(sub.lower(), alwaysPM)
 							replies['alwaysPM'].append({'subreddit': sub, 'alwaysPM': alwaysPM})
 
+					elif line.startswith("leavemealone") or line.startswith("talktome"):
+						addBlacklist = True if line.startswith("leavemealone") else False
+						subs = re.findall('(?:/r/)(\w*)', line)
+						users = re.findall('(?:/u/)(\w*)', line)
+
+						if len(subs) or len(users):
+							if str(message.author).lower() == globals.OWNER_NAME.lower():
+								for sub in subs:
+									log.info(("Blacklisting" if addBlacklist else "Removing blacklist for")+" subreddit /r/"+sub)
+									result = database.blacklist(sub, True, addBlacklist)
+									replies['blacklist'].append({'name': sub, 'isSubreddit': True, 'added': addBlacklist, 'result': result})
+
+								for user in users:
+									log.info(("Blacklisting" if addBlacklist else "Removing blacklist for")+" user /u/"+user)
+									result = database.blacklist(user, False, addBlacklist)
+									replies['blacklist'].append({'name': user, 'isSubreddit': False, 'added': addBlacklist, 'result': result})
+							else:
+								log.info("User /u/"+str(message.author).lower()+"tried tried to blacklist")
+								replies['blacklistNot'] = True
+						else:
+							username = str(message.author).lower()
+							log.info(("Blacklisting" if addBlacklist else "Removing blacklist for")+" user /u/"+username)
+							result = database.blacklist(username, False, addBlacklist)
+							replies['blacklist'].append({'name': username, 'isSubreddit': False, 'added': addBlacklist, 'result': result})
+
 				reddit.markMessageRead(message)
 
 				strList = []
@@ -304,6 +330,14 @@ def processMessages():
 				if replies['alwaysPM']:
 					sectionCount += 1
 					strList.extend(strings.subredditAlwaysPMMessage(replies['alwaysPM']))
+					strList.append("\n\n*****\n\n")
+				if replies['blacklist']:
+					sectionCount += 1
+					strList.extend(strings.blacklistSection(replies['blacklist']))
+					strList.append("\n\n*****\n\n")
+				if replies['blacklistNot']:
+					sectionCount += 1
+					strList.extend(strings.blacklistNotSection())
 					strList.append("\n\n*****\n\n")
 
 				if sectionCount == 0:
@@ -365,6 +399,11 @@ def searchComments(searchTerm):
 	for comment in comments[oldestIndex::-1]:
 		if comment['author'].lower() != globals.ACCOUNT_NAME.lower():
 			commentsSearched += 1
+
+			if database.isBlacklisted(comment['author'].lower(), comment['subreddit'].lower()):
+				log.info("Skipping comment by /u/"+comment['author']+" in /r/"+comment['subreddit']+", blacklisted")
+				continue
+
 			log.info("Found public comment by /u/"+comment['author'])
 			replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': []}
 			addUpdateSubscription(comment['author'], comment['link_author'], comment['subreddit'],

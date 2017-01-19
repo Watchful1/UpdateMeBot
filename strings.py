@@ -248,6 +248,38 @@ def deletedCommentSection(deletedComments):
 	return strList
 
 
+def blacklistSection(blacklisted):
+	strList = []
+
+	for blacklist in blacklisted:
+		strList.append("UpdateMeBot will ")
+		if blacklist['added']:
+			strList.append("not ")
+		strList.append("interact with public comments ")
+		if blacklist['isSubreddit']:
+			strList.append("in subreddit /r/")
+		else:
+			strList.append("by user /u/")
+		strList.append(blacklist['name'])
+		strList.append(". [Click here](")
+		strList.append("http://np.reddit.com/message/compose/?to=")
+		strList.append(globals.ACCOUNT_NAME)
+		strList.append("&subject=Re-enable&message=TalkToMe! ")
+		if blacklist['isSubreddit']:
+			strList.append("/r/")
+		else:
+			strList.append("/u/")
+		strList.append(blacklist['name'])
+		strList.append(") to re-enable.  \n")
+
+	return strList
+
+
+blacklistNotSection = (
+	"It looks like you tried to blacklist something that you didn't have access to."
+)
+
+
 def subredditNoticeThresholdMessage(subreddit, count):
 	return ["/r/", subreddit, " has hit the notice threshold, which is ", str(count)]
 
