@@ -17,8 +17,12 @@ def init(logger, responseWhitelist):
 	OAuth = OAuth2Util.OAuth2Util(reddit)
 	OAuth.refresh(force=True)
 
+	globals.ACCOUNT_NAME = reddit.user.name
+
 	log = logger
 	whitelist = responseWhitelist
+
+	log.info("Logged into reddit as /u/"+globals.ACCOUNT_NAME)
 
 
 def sendMessage(recipient, subject, message):
