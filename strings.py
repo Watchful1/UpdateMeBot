@@ -153,6 +153,13 @@ def couldNotSubscribeSection(couldNotSubscribeList):
 	strList.append("Each subreddit it checks takes several seconds, so I have to limit the number of subreddits or the bot will get overloaded. ")
 	strList.append("If you think this would be a good subreddit for this bot, message /u/"+globals.OWNER_NAME+" and he'll take a look. ")
 	strList.append("I've also logged your request, so if the subreddit does get added, I'll automatically start sending your updates.")
+	strList.append("\n\n")
+
+	strList.append("Didn't mean to subscribe to anything? Click [here](")
+	strList.append("http://np.reddit.com/message/compose/?to=")
+	strList.append(globals.ACCOUNT_NAME)
+	strList.append("&subject=Disable&message=LeaveMeAlone!")
+	strList.append(") and the bot won't bother you anymore.")
 
 	return strList
 

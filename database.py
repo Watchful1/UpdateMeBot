@@ -69,7 +69,8 @@ def setup():
 		CREATE TABLE IF NOT EXISTS blacklist (
 			ID INTEGER PRIMARY KEY AUTOINCREMENT,
 			Name VARCHAR(80) NOT NULL,
-			IsSubreddit BOOLEAN DEFAULT 0
+			IsSubreddit BOOLEAN DEFAULT 0,
+			UNIQUE (Name, IsSubreddit)
 		)
 	''')
 	dbConn.commit()
@@ -567,12 +568,15 @@ def setAlwaysPMForSubreddit(subreddit, alwaysPM):
 def blacklist(name, isSubreddit, add):
 	c = dbConn.cursor()
 	if add:
-		c.execute('''
-			INSERT INTO blacklist
-			(Name, IsSubreddit)
-			VALUES (?, ?)
-		''', (name, isSubreddit))
-		dbConn.commit()
+		try:
+			c.execute('''
+				INSERT INTO blacklist
+				(Name, IsSubreddit)
+				VALUES (?, ?)
+			''', (name, isSubreddit))
+			dbConn.commit()
+		except sqlite3.IntegrityError:
+			return False
 
 		return True
 	else:
@@ -591,23 +595,25 @@ def blacklist(name, isSubreddit, add):
 
 def isBlacklisted(name=None, subreddit=None):
 	c = dbConn.cursor()
-	result = c.execute('''
-		SELECT * FROM blacklist
-		WHERE Name = ?
-			and IsSubreddit = 0
-	''', (name,))
-
 	output = False
-	if result.fetchone():
-		output = True
+	if name:
+		result = c.execute('''
+			SELECT * FROM blacklist
+			WHERE Name = ?
+				and IsSubreddit = 0
+		''', (name,))
 
-	result = c.execute('''
-		SELECT * FROM blacklist
-		WHERE Name = ?
-			and IsSubreddit = 1
-	''', (subreddit,))
+		if result.fetchone():
+			output = True
 
-	if result.fetchone():
-		output = True
+	if subreddit:
+		result = c.execute('''
+			SELECT * FROM blacklist
+			WHERE Name = ?
+				and IsSubreddit = 1
+		''', (subreddit,))
+
+		if result.fetchone():
+			output = True
 
 	return output
