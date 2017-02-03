@@ -1,5 +1,4 @@
 import praw
-import OAuth2Util
 import globals
 import traceback
 
@@ -8,16 +7,19 @@ log = None
 whitelist = None
 
 
-def init(logger, responseWhitelist):
+def init(logger, responseWhitelist, client_id, client_secret, refresh_token):
 	global reddit
 	global log
 	global whitelist
 
-	reddit = praw.Reddit(user_agent=globals.USER_AGENT, log_request=0)
-	OAuth = OAuth2Util.OAuth2Util(reddit)
-	OAuth.refresh(force=True)
+	reddit = praw.Reddit(
+		client_id=client_id,
+		client_secret=client_secret,
+		refresh_token=refresh_token,
+		user_agent=globals.USER_AGENT,
+		log_request=0)
 
-	globals.ACCOUNT_NAME = reddit.user.name
+	globals.ACCOUNT_NAME = str(reddit.user.me())
 
 	log = logger
 	whitelist = responseWhitelist
@@ -41,7 +43,7 @@ def sendMessage(recipient, subject, message):
 
 
 def getMessages():
-	return reddit.get_unread(unset_has_mail=True, update_user=True, limit=100)
+	return reddit.inbox.unread(limit=100)
 
 
 def markMessageRead(message):
@@ -61,7 +63,7 @@ def replyMessage(message, body):
 
 
 def getSubmission(id):
-	return reddit.get_submission(submission_id=id)
+	return reddit.submission(submission_id=id)
 
 
 def deleteComment(id=None, comment=None):
@@ -69,7 +71,7 @@ def deleteComment(id=None, comment=None):
 		return True
 	try:
 		if id is not None:
-			idComment = reddit.get_info(thing_id='t1_' + id)
+			idComment = reddit.comment(id='t1_' + id)
 			if str(idComment.author).lower() == globals.ACCOUNT_NAME.lower():
 				idComment.delete()
 			else:
@@ -87,7 +89,7 @@ def deleteComment(id=None, comment=None):
 
 def replyComment(id, message):
 	try:
-		parent = reddit.get_info(thing_id='t1_' + id)
+		parent = reddit.comment(id='t1_' + id)
 		if whitelist is not None and str(parent.author) not in whitelist:
 			return None
 		resultComment = parent.reply(message)
@@ -101,7 +103,7 @@ def editComment(id, message):
 	if whitelist is not None and not len(whitelist):
 		return True
 	try:
-		comment = reddit.get_info(thing_id='t1_' + id)
+		comment = reddit.comment(id='t1_' + id)
 		if str(comment.author).lower() == globals.ACCOUNT_NAME.lower():
 			comment.edit(message)
 			return True
@@ -114,4 +116,4 @@ def editComment(id, message):
 
 
 def getUserComments(user):
-	return reddit.get_redditor(user).get_comments(limit=100)
+	return reddit.redditor(user).comments.new(limit=100)

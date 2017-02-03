@@ -19,6 +19,7 @@ import requests
 import feedparser
 from shutil import copyfile
 import reddit
+import configparser
 
 
 ### Constants ###
@@ -165,7 +166,7 @@ def processMessages():
 	try:
 		for message in reddit.getMessages():
 			# checks to see as some comments might be replys and non PMs
-			if isinstance(message, praw.objects.Message):
+			if isinstance(message, praw.models.Message):
 				messagesProcessed += 1
 				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [],
 				           'subredditsAdded': [], 'commentsDeleted': [], 'alwaysPM': [], 'blacklist': [],
@@ -509,7 +510,13 @@ for arg in sys.argv:
 		if arg.startswith("-debug="):
 			responseWhitelist = arg[7:].split(',')
 
-reddit.init(log, responseWhitelist)
+config = configparser.ConfigParser()
+config.read('oauth.ini')
+
+client_id = config['credentials']['client_id']
+client_secret = config['credentials']['client_secret']
+refresh_token = config['credentials']['refresh_token']
+reddit.init(log, responseWhitelist, client_id, client_secret, refresh_token)
 
 database.init()
 
