@@ -71,7 +71,7 @@ def deleteComment(id=None, comment=None):
 		return True
 	try:
 		if id is not None:
-			idComment = reddit.comment(id='t1_' + id)
+			idComment = reddit.comment(id)
 			if str(idComment.author).lower() == globals.ACCOUNT_NAME.lower():
 				idComment.delete()
 			else:
@@ -89,7 +89,7 @@ def deleteComment(id=None, comment=None):
 
 def replyComment(id, message):
 	try:
-		parent = reddit.comment(id='t1_' + id)
+		parent = reddit.comment(id)
 		if whitelist is not None and str(parent.author) not in whitelist:
 			return None
 		resultComment = parent.reply(message)
@@ -103,7 +103,7 @@ def editComment(id, message):
 	if whitelist is not None and not len(whitelist):
 		return True
 	try:
-		comment = reddit.comment(id='t1_' + id)
+		comment = reddit.comment(id)
 		if str(comment.author).lower() == globals.ACCOUNT_NAME.lower():
 			comment.edit(message)
 			return True
