@@ -63,7 +63,7 @@ def replyMessage(message, body):
 
 
 def getSubmission(id):
-	return reddit.submission(submission_id=id)
+	return reddit.submission(id=id)
 
 
 def deleteComment(id=None, comment=None):
@@ -117,3 +117,7 @@ def editComment(id, message):
 
 def getUserComments(user):
 	return reddit.redditor(user).comments.new(limit=100)
+
+
+def getSubredditSubmissions(subredditName):
+	return reddit.subreddit(subredditName).submissions.new()

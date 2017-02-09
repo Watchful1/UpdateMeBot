@@ -341,7 +341,7 @@ def possibleMissedCommentMessage(oldestTimestamp, recordedTimestamp):
 
 
 def possibleMissedPostMessage(oldestTimestamp, recordedTimestamp, subreddit):
-	strList = ["Post search hit index 99 without finding oldest timestamp in /r/",subreddit,"\n\n"]
+	strList = ["Post search hit end of listing without finding oldest timestamp in /r/",subreddit,"\n\n"]
 	strList.append("Oldest found timestamp: "+str(oldestTimestamp))
 	strList.append("\n\n")
 	strList.append("Recorded timestamp: "+str(recordedTimestamp))

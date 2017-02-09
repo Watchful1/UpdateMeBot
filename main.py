@@ -83,39 +83,43 @@ def processSubreddits():
 	for subreddit in database.getSubscribedSubreddits():
 		subredditsCount += 1
 		startTimestamp = datetime.utcnow()
-		feed = feedparser.parse("https://www.reddit.com/r/" + subreddit['subreddit'] + "/new/.rss?sort=new&limit=100")
 
 		subredditDatetime = datetime.strptime(subreddit['lastChecked'], "%Y-%m-%d %H:%M:%S")
-		oldestIndex = len(feed.entries) - 1
-		for i, post in enumerate(feed.entries):
-			postDatetime = datetime(*post.updated_parsed[0:6])
-			if postDatetime < subredditDatetime:
-				oldestIndex = i - 1
+		submissions = []
+		hitEnd = True
+		for submission in reddit.getSubredditSubmissions(subreddit['subreddit']):
+			submissionCreated = datetime.fromtimestamp(submission.created_utc)
+			if submissionCreated < subredditDatetime:
+				hitEnd = False
 				break
-			if i == 99:
-				log.info("Messaging owner that that we might have missed a post in /r/"+subreddit['subreddit'])
-				strList = strings.possibleMissedPostMessage(postDatetime, subredditDatetime, subreddit['subreddit'])
-				strList.append("\n\n*****\n\n")
-				strList.append(strings.footer)
-				if not reddit.sendMessage(globals.OWNER_NAME, "Missed Post", ''.join(strList)):
-					log.warning("Could not send message to owner that we might have missed a post")
+			submissions.append({'id': submission.id
+				                ,'dateCreated': submissionCreated
+				                ,'author': submission.author
+				                ,'link': submission.link
+			                })
 
-		if oldestIndex != -1:
-			for post in feed.entries[oldestIndex::-1]:
-				if 'author' not in post: continue
+		if hitEnd and len(submissions):
+			log.info("Messaging owner that that we might have missed a post in /r/"+subreddit['subreddit'])
+			strList = strings.possibleMissedPostMessage(submissions[len(submissions)-1]['dateCreated'], subredditDatetime, subreddit['subreddit'])
+			strList.append("\n\n*****\n\n")
+			strList.append(strings.footer)
+			if not reddit.sendMessage(globals.OWNER_NAME, "Missed Post", ''.join(strList)):
+				log.warning("Could not send message to owner that we might have missed a post")
+
+		if len(submissions):
+			for submission in submissions:
 				postsCount += 1
-				postDatetime = datetime(*post.updated_parsed[0:6])
-				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], post.author[3:].lower()):
-					if postDatetime >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
+				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], submission['author'].lower()):
+					if submission['dateCreated'] >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
 						log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",
-						         subscriber['subscriber'], post.author[3:], subreddit['subreddit'])
-						strList = strings.alertMessage(post.author[3:], subreddit['subreddit'], post.link, subscriber['single'])
+						         subscriber['subscriber'], submission['author'], subreddit['subreddit'])
+						strList = strings.alertMessage(submission['author'], subreddit['subreddit'], submission['link'], subscriber['single'])
 
 						strList.append("\n\n*****\n\n")
 						strList.append(strings.footer)
 
 						if reddit.sendMessage(subscriber['subscriber'], strings.messageSubject(subscriber['subscriber']), ''.join(strList)):
-							database.checkRemoveSubscription(subscriber['ID'], subscriber['single'], postDatetime + timedelta(0,1))
+							database.checkRemoveSubscription(subscriber['ID'], subscriber['single'], submission['dateCreated'] + timedelta(0,1))
 						else:
 							log.warning("Could not send message to /u/%s when sending update", subscriber['subscriber'])
 
