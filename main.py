@@ -89,7 +89,7 @@ def processSubreddits():
 		submissions = []
 		hitEnd = True
 		for submission in reddit.getSubredditSubmissions(subreddit['subreddit']):
-			submissionCreated = datetime.fromtimestamp(submission.created_utc)
+			submissionCreated = datetime.utcfromtimestamp(submission.created_utc)
 			if submissionCreated < subredditDatetime:
 				hitEnd = False
 				break
