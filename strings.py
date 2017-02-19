@@ -379,10 +379,10 @@ def longRunLog(timings, counts):
 	logStrList.append(" posts searched in ")
 	logStrList.append(str(counts['subredditsCount']))
 	logStrList.append(" subreddits")
-	if counts['existingCommentsUpdated'] > 0:
+	if 'existingCommentsUpdated' in counts and counts['existingCommentsUpdated'] > 0:
 		logStrList.append(" : Existing comments updated: ")
 		logStrList.append(str(counts['existingCommentsUpdated']))
-	if counts['lowKarmaCommentsDeleted'] > 0:
+	if 'lowKarmaCommentsDeleted' in counts and counts['lowKarmaCommentsDeleted'] > 0:
 		logStrList.append(" : Low karma comments deleted: ")
 		logStrList.append(str(counts['lowKarmaCommentsDeleted']))
 
