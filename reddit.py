@@ -1,22 +1,25 @@
 import praw
 import globals
 import traceback
+import configparser
 
 reddit = None
 log = None
 whitelist = None
 
 
-def init(logger, responseWhitelist, client_id, client_secret, refresh_token):
+def init(logger, responseWhitelist, user):
 	global reddit
 	global log
 	global whitelist
 
-	reddit = praw.Reddit(
-		client_id=client_id,
-		client_secret=client_secret,
-		refresh_token=refresh_token,
-		user_agent=globals.USER_AGENT)
+	try:
+		reddit = praw.Reddit(
+			user,
+			user_agent=globals.USER_AGENT)
+	except configparser.NoSectionError:
+		log.error("User "+user+" not in praw.ini, aborting")
+		return False
 
 	globals.ACCOUNT_NAME = str(reddit.user.me())
 
@@ -24,6 +27,7 @@ def init(logger, responseWhitelist, client_id, client_secret, refresh_token):
 	whitelist = responseWhitelist
 
 	log.info("Logged into reddit as /u/"+globals.ACCOUNT_NAME)
+	return True
 
 
 def sendMessage(recipient, subject, message):

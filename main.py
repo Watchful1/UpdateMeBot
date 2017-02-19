@@ -520,24 +520,22 @@ START_TIME = datetime.utcnow()
 
 once = False
 responseWhitelist = None
-for arg in sys.argv:
-	# don't loop
-	if arg == "-once":
-		once = True
+user = None
+if len(sys.argv) >= 2:
+	user = sys.argv[1]
+	for arg in sys.argv:
+		if arg == 'once':
+			once = True
+		elif arg.startswith("debug="):
+			responseWhitelist = []
+			if arg.startswith("debug="):
+				responseWhitelist = arg[7:].split(',')
+else:
+	log.error("No user specified, aborting")
+	sys.exit(0)
 
-	# if it's just -debug don't send any messages. If it's -debug=test1,test2 only send messages to those users
-	if arg.startswith("-debug"):
-		responseWhitelist = []
-		if arg.startswith("-debug="):
-			responseWhitelist = arg[7:].split(',')
-
-config = configparser.ConfigParser()
-config.read('oauth.ini')
-
-client_id = config['credentials']['client_id']
-client_secret = config['credentials']['client_secret']
-refresh_token = config['credentials']['refresh_token']
-reddit.init(log, responseWhitelist, client_id, client_secret, refresh_token)
+if not reddit.init(log, responseWhitelist, user):
+	sys.exit(0)
 
 database.init()
 
