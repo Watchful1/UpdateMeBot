@@ -363,6 +363,83 @@ def subredditAlwaysPMMessage(subreddits):
 	return strList
 
 
+def longRunLog(timings, counts):
+	logStrList = ["Run complete after: ", str(int(timings['end']))]
+	if counts['updateCommentsAdded'] > 0:
+		logStrList.append(" : Update comments added: ")
+		logStrList.append(str(counts['updateCommentsAdded']))
+	if counts['subCommentsAdded'] > 0:
+		logStrList.append(" : Sub comments added: ")
+		logStrList.append(str(counts['subCommentsAdded']))
+	if counts['messagesProcessed'] > 0:
+		logStrList.append(" : Messages processed: ")
+		logStrList.append(str(counts['messagesProcessed']))
+	logStrList.append(" : ")
+	logStrList.append(str(counts['postsCount']))
+	logStrList.append(" posts searched in ")
+	logStrList.append(str(counts['subredditsCount']))
+	logStrList.append(" subreddits")
+	if counts['existingCommentsUpdated'] > 0:
+		logStrList.append(" : Existing comments updated: ")
+		logStrList.append(str(counts['existingCommentsUpdated']))
+	if counts['lowKarmaCommentsDeleted'] > 0:
+		logStrList.append(" : Low karma comments deleted: ")
+		logStrList.append(str(counts['lowKarmaCommentsDeleted']))
+
+	return logStrList
+
+
+def longRunMessage(timings, counts):
+	strList = []
+
+	strList.append("Loop run took too long: ")
+	strList.append(str(int(timings['end'])))
+
+	strList.append("\n\nUpdate comments searched, added and time: ")
+	strList.append(str(counts['updateCommentsSearched']))
+	strList.append(", ")
+	strList.append(str(counts['updateCommentsAdded']))
+	strList.append(", ")
+	strList.append(str(round(timings['SearchCommentsUpdate'], 3)))
+
+	strList.append("\n\nSub comments searched, added and time: ")
+	strList.append(str(counts['subCommentsSearched']))
+	strList.append(", ")
+	strList.append(str(counts['subCommentsAdded']))
+	strList.append(", ")
+	strList.append(str(round(timings['SearchCommentsSubscribe'], 3)))
+
+	strList.append("\n\nMessages processed, time: ")
+	strList.append(str(counts['messagesProcessed']))
+	strList.append(", ")
+	strList.append(str(round(timings['ProcessMessages'], 3)))
+
+	strList.append("\n\nSubreddits searched, posts searched, time: ")
+	strList.append(str(counts['subredditsCount']))
+	strList.append(", ")
+	strList.append(str(counts['postsCount']))
+	strList.append(", ")
+	strList.append(str(round(timings['ProcessSubreddits'], 3)))
+
+	if 'UpdateExistingComments' in timings:
+		strList.append("\n\nExisting comments updated, time: ")
+		strList.append(str(counts['existingCommentsUpdated']))
+		strList.append(", ")
+		strList.append(str(round(timings['UpdateExistingComments'], 3)))
+
+	if 'DeleteLowKarmaComments' in timings:
+		strList.append("\n\nLow karma comments deleted, time: ")
+		strList.append(str(counts['lowKarmaCommentsDeleted']))
+		strList.append(", ")
+		strList.append(str(round(timings['DeleteLowKarmaComments'], 3)))
+
+	if 'BackupDatabase' in timings:
+		strList.append("\n\nBackup time: ")
+		strList.append(str(round(timings['BackupDatabase'], 3)))
+
+	return strList
+
+
 couldNotUnderstandSection = (
 	"Well, I got your message, but I didn't understand anything in it. "
 	"If I should have, message /u/"+globals.OWNER_NAME+" and he'll look into it."

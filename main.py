@@ -2,7 +2,6 @@
 
 import praw
 import time
-import calendar
 from datetime import datetime
 from datetime import timedelta
 import database
@@ -84,7 +83,7 @@ def processSubreddits():
 		subPostsCount = 0
 		subredditsCount += 1
 		startTimestamp = datetime.utcnow()
-		log.debug("Checking subreddit: "+subreddit['subreddit'])
+		#log.debug("Checking subreddit: "+subreddit['subreddit'])
 
 		subredditDatetime = datetime.strptime(subreddit['lastChecked'], "%Y-%m-%d %H:%M:%S")
 		submissions = []
@@ -99,6 +98,8 @@ def processSubreddits():
 				                ,'author': str(submission.author)
 				                ,'link': "https://www.reddit.com"+submission.permalink
 			                })
+			if len(submissions) % 50 == 0:
+				log.info("Posts searched: "+str(len(submissions)))
 
 		if hitEnd and len(submissions):
 			log.info("Messaging owner that that we might have missed a post in /r/"+subreddit['subreddit'])
@@ -129,7 +130,7 @@ def processSubreddits():
 
 		database.checkSubreddit(subreddit['subreddit'], startTimestamp)
 
-		log.debug(str(subPostsCount)+" posts searched in: "+str(time.perf_counter() - subStartTime))
+		#log.debug(str(subPostsCount)+" posts searched in: "+str(round(time.perf_counter() - subStartTime, 3)))
 
 	return subredditsCount, postsCount, messagesSent
 
@@ -499,17 +500,16 @@ def backupDatabase():
 
 	database.init()
 
-times = {}
-lastMark = time.perf_counter()
+lastMark = None
 def markTime(name, startTime = None):
 	global lastMark
-	global times
+	global timings
 	if startTime == None:
-		times[name] = time.perf_counter() - lastMark
+		timings[name] = time.perf_counter() - lastMark
 		lastMark = time.perf_counter()
 		return lastMark
 	else:
-		times[name] = time.perf_counter() - startTime
+		timings[name] = time.perf_counter() - startTime
 		return time.perf_counter()
 
 
@@ -517,7 +517,6 @@ def markTime(name, startTime = None):
 log.debug("Connecting to reddit")
 
 START_TIME = datetime.utcnow()
-markTime('init')
 
 once = False
 responseWhitelist = None
@@ -546,29 +545,31 @@ signal.signal(signal.SIGINT, signal_handler)
 
 i = 1
 while True:
-	startTime = markTime('start')
 	log.debug("Starting run")
 
+	timings = {}
+	counts = {}
+	lastMark = time.perf_counter()
+	startTime = markTime('start')
+
 	try:
-		updateCommentsSearched, updateCommentsAdded = searchComments(UPDATE)
+		counts['updateCommentsSearched'], counts['updateCommentsAdded'] = searchComments(UPDATE)
 		markTime('SearchCommentsUpdate')
 
-		subCommentsSearched, subCommentsAdded = searchComments(SUBSCRIPTION)
+		counts['subCommentsSearched'], counts['subCommentsAdded'] = searchComments(SUBSCRIPTION)
 		markTime('SearchCommentsSubscribe')
 
-		messagesProcessed = processMessages()
+		counts['messagesProcessed'] = processMessages()
 		markTime('ProcessMessages')
 
-		subredditsCount, postsCount, subscriptionMessagesSent = processSubreddits()
+		counts['subredditsCount'], counts['postsCount'], counts['subscriptionMessagesSent'] = processSubreddits()
 		markTime('ProcessSubreddits')
 
-		existingCommentsUpdated = 0
-		lowKarmaCommentsDeleted = 0
 		if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
-			existingCommentsUpdated = updateExistingComments()
+			counts['existingCommentsUpdated'] = updateExistingComments()
 			markTime('UpdateExistingComments')
 
-			lowKarmaCommentsDeleted = deleteLowKarmaComments()
+			counts['lowKarmaCommentsDeleted'] = deleteLowKarmaComments()
 			markTime('DeleteLowKarmaComments')
 
 		if i % globals.BACKUP_ITERATIONS == 0:
@@ -580,71 +581,12 @@ while True:
 		break
 
 	markTime('end', startTime)
-	logStrList = ["Run complete after: ", str(int(times['end']))]
-	if updateCommentsAdded > 0:
-		logStrList.append(" : Update comments added: ")
-		logStrList.append(str(updateCommentsAdded))
-	if subCommentsAdded > 0:
-		logStrList.append(" : Sub comments added: ")
-		logStrList.append(str(subCommentsAdded))
-	if messagesProcessed > 0:
-		logStrList.append(" : Messages processed: ")
-		logStrList.append(str(messagesProcessed))
-	logStrList.append(" : ")
-	logStrList.append(str(postsCount))
-	logStrList.append(" posts searched in ")
-	logStrList.append(str(subredditsCount))
-	logStrList.append(" subreddits")
-	if existingCommentsUpdated > 0:
-		logStrList.append(" : Existing comments updated: ")
-		logStrList.append(str(existingCommentsUpdated))
-	if lowKarmaCommentsDeleted > 0:
-		logStrList.append(" : Low karma comments deleted: ")
-		logStrList.append(str(lowKarmaCommentsDeleted))
+	logStrList = strings.longRunLog(timings, counts)
 	log.debug(''.join(logStrList))
 
-	if times['end'] > globals.WARNING_RUN_TIME:
-		log.warning("Messaging owner that that the process took too long to run: %d", int(times['end']))
-		noticeStrList = strings.longRunMessage(int(times['end']))
-
-		noticeStrList.append("\n\nUpdate comments searched, added and time: ")
-		noticeStrList.append(str(updateCommentsSearched))
-		noticeStrList.append(", ")
-		noticeStrList.append(str(updateCommentsAdded))
-		noticeStrList.append(", ")
-		noticeStrList.append(str(round(times['SearchCommentsUpdate'], 3)))
-
-		noticeStrList.append("\n\nSub comments searched, added and time: ")
-		noticeStrList.append(str(subCommentsSearched))
-		noticeStrList.append(", ")
-		noticeStrList.append(str(subCommentsAdded))
-		noticeStrList.append(", ")
-		noticeStrList.append(str(round(times['SearchCommentsSubscribe'], 3)))
-
-		noticeStrList.append("\n\nMessages processed, time: ")
-		noticeStrList.append(str(messagesProcessed))
-		noticeStrList.append(", ")
-		noticeStrList.append(str(round(times['ProcessMessages'], 3)))
-
-		noticeStrList.append("\n\nSubreddits searched, posts searched, time: ")
-		noticeStrList.append(str(subredditsCount))
-		noticeStrList.append(", ")
-		noticeStrList.append(str(postsCount))
-		noticeStrList.append(", ")
-		noticeStrList.append(str(round(times['ProcessSubreddits'], 3)))
-
-		noticeStrList.append("\n\nExisting comments updated, time: ")
-		noticeStrList.append(str(existingCommentsUpdated))
-		noticeStrList.append(", ")
-		noticeStrList.append(str(round(times['UpdateExistingComments'], 3)))
-
-		noticeStrList.append("\n\nLow karma comments deleted, time: ")
-		noticeStrList.append(str(lowKarmaCommentsDeleted))
-		noticeStrList.append(", ")
-		noticeStrList.append(str(round(times['DeleteLowKarmaComments'], 3)))
-
-		noticeStrList.append("\n\nBackup time: ")
-		noticeStrList.append(str(round(times['BackupDatabase'], 3)))
+	if timings['end'] > globals.WARNING_RUN_TIME:
+		log.warning("Messaging owner that that the process took too long to run: %d", int(timings['end']))
+		noticeStrList = strings.longRunMessage(timings, counts)
 
 		noticeStrList.append("\n\n*****\n\n")
 		noticeStrList.append(strings.footer)

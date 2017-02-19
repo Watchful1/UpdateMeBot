@@ -118,4 +118,4 @@ def getUserComments(user):
 
 
 def getSubredditSubmissions(subredditName):
-	return reddit.subreddit(subredditName).submissions()
+	return reddit.subreddit(subredditName).new(limit=1000)
