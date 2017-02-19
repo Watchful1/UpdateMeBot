@@ -16,8 +16,7 @@ def init(logger, responseWhitelist, client_id, client_secret, refresh_token):
 		client_id=client_id,
 		client_secret=client_secret,
 		refresh_token=refresh_token,
-		user_agent=globals.USER_AGENT,
-		log_request=0)
+		user_agent=globals.USER_AGENT)
 
 	globals.ACCOUNT_NAME = str(reddit.user.me())
 
@@ -31,8 +30,7 @@ def sendMessage(recipient, subject, message):
 	if whitelist is not None and recipient not in whitelist:
 		return True
 	try:
-		reddit.send_message(
-			recipient=recipient,
+		reddit.redditor(recipient).message(
 			subject=subject,
 			message=message
 		)
@@ -120,4 +118,4 @@ def getUserComments(user):
 
 
 def getSubredditSubmissions(subredditName):
-	return reddit.subreddit(subredditName).submissions.new()
+	return reddit.subreddit(subredditName).submissions()

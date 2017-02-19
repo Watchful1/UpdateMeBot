@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import praw
-import OAuth2Util
 import time
 import calendar
 from datetime import datetime
@@ -16,7 +15,6 @@ import traceback
 import sys
 import signal
 import requests
-import feedparser
 from shutil import copyfile
 import reddit
 import configparser
@@ -80,9 +78,13 @@ def addDeniedRequest(deniedRequests):
 def processSubreddits():
 	subredditsCount = 0
 	postsCount = 0
+	messagesSent = 0
 	for subreddit in database.getSubscribedSubreddits():
+		subStartTime = time.perf_counter()
+		subPostsCount = 0
 		subredditsCount += 1
 		startTimestamp = datetime.utcnow()
+		log.debug("Checking subreddit: "+subreddit['subreddit'])
 
 		subredditDatetime = datetime.strptime(subreddit['lastChecked'], "%Y-%m-%d %H:%M:%S")
 		submissions = []
@@ -94,8 +96,8 @@ def processSubreddits():
 				break
 			submissions.append({'id': submission.id
 				                ,'dateCreated': submissionCreated
-				                ,'author': submission.author
-				                ,'link': submission.link
+				                ,'author': str(submission.author)
+				                ,'link': "https://www.reddit.com"+submission.permalink
 			                })
 
 		if hitEnd and len(submissions):
@@ -109,8 +111,10 @@ def processSubreddits():
 		if len(submissions):
 			for submission in submissions:
 				postsCount += 1
+				subPostsCount += 1
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], submission['author'].lower()):
 					if submission['dateCreated'] >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
+						messagesSent += 1
 						log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",
 						         subscriber['subscriber'], submission['author'], subreddit['subreddit'])
 						strList = strings.alertMessage(submission['author'], subreddit['subreddit'], submission['link'], subscriber['single'])
@@ -125,9 +129,9 @@ def processSubreddits():
 
 		database.checkSubreddit(subreddit['subreddit'], startTimestamp)
 
-		time.sleep(1)
+		log.debug(str(subPostsCount)+" posts searched in: "+str(time.perf_counter() - subStartTime))
 
-	return subredditsCount, postsCount
+	return subredditsCount, postsCount, messagesSent
 
 
 def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single = True, replies = {}):
@@ -495,11 +499,25 @@ def backupDatabase():
 
 	database.init()
 
+times = {}
+lastMark = time.perf_counter()
+def markTime(name, startTime = None):
+	global lastMark
+	global times
+	if startTime == None:
+		times[name] = time.perf_counter() - lastMark
+		lastMark = time.perf_counter()
+		return lastMark
+	else:
+		times[name] = time.perf_counter() - startTime
+		return time.perf_counter()
+
 
 ### Main ###
 log.debug("Connecting to reddit")
 
 START_TIME = datetime.utcnow()
+markTime('init')
 
 once = False
 responseWhitelist = None
@@ -528,51 +546,41 @@ signal.signal(signal.SIGINT, signal_handler)
 
 i = 1
 while True:
-	startTime = time.perf_counter()
+	startTime = markTime('start')
 	log.debug("Starting run")
 
 	try:
-		sectionTime = time.perf_counter()
 		updateCommentsSearched, updateCommentsAdded = searchComments(UPDATE)
-		updateCommentsTime = time.perf_counter() - sectionTime
+		markTime('SearchCommentsUpdate')
 
-		sectionTime = time.perf_counter()
 		subCommentsSearched, subCommentsAdded = searchComments(SUBSCRIPTION)
-		subCommentsTime = time.perf_counter() - sectionTime
+		markTime('SearchCommentsSubscribe')
 
-		sectionTime = time.perf_counter()
 		messagesProcessed = processMessages()
-		messagesTime = time.perf_counter() - sectionTime
+		markTime('ProcessMessages')
 
-		sectionTime = time.perf_counter()
-		subredditsCount, postsCount = processSubreddits()
-		subredditsTime = time.perf_counter() - sectionTime
+		subredditsCount, postsCount, subscriptionMessagesSent = processSubreddits()
+		markTime('ProcessSubreddits')
 
 		existingCommentsUpdated = 0
-		updateExistingCommentsTime = 0
 		lowKarmaCommentsDeleted = 0
-		deleteLowKarmaCommentsTime = 0
 		if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
-			sectionTime = time.perf_counter()
 			existingCommentsUpdated = updateExistingComments()
-			updateExistingCommentsTime = time.perf_counter() - sectionTime
+			markTime('UpdateExistingComments')
 
-			sectionTime = time.perf_counter()
 			lowKarmaCommentsDeleted = deleteLowKarmaComments()
-			deleteLowKarmaCommentsTime = time.perf_counter() - sectionTime
+			markTime('DeleteLowKarmaComments')
 
-			backupTime = 0
 		if i % globals.BACKUP_ITERATIONS == 0:
-			sectionTime = time.perf_counter()
 			backupDatabase()
-			backupTime = time.perf_counter() - sectionTime
+			markTime('BackupDatabase')
 	except Exception as err:
 		log.warning("Error in main function")
 		log.warning(traceback.format_exc())
 		break
 
-	elapsedTime = time.perf_counter() - startTime
-	logStrList = ["Run complete after: ", str(int(elapsedTime))]
+	markTime('end', startTime)
+	logStrList = ["Run complete after: ", str(int(times['end']))]
 	if updateCommentsAdded > 0:
 		logStrList.append(" : Update comments added: ")
 		logStrList.append(str(updateCommentsAdded))
@@ -595,48 +603,48 @@ while True:
 		logStrList.append(str(lowKarmaCommentsDeleted))
 	log.debug(''.join(logStrList))
 
-	if elapsedTime > globals.WARNING_RUN_TIME:
-		log.warning("Messaging owner that that the process took too long to run: %d", int(elapsedTime))
-		noticeStrList = strings.longRunMessage(int(elapsedTime))
+	if times['end'] > globals.WARNING_RUN_TIME:
+		log.warning("Messaging owner that that the process took too long to run: %d", int(times['end']))
+		noticeStrList = strings.longRunMessage(int(times['end']))
 
 		noticeStrList.append("\n\nUpdate comments searched, added and time: ")
 		noticeStrList.append(str(updateCommentsSearched))
 		noticeStrList.append(", ")
 		noticeStrList.append(str(updateCommentsAdded))
 		noticeStrList.append(", ")
-		noticeStrList.append(str(round(updateCommentsTime, 3)))
+		noticeStrList.append(str(round(times['SearchCommentsUpdate'], 3)))
 
 		noticeStrList.append("\n\nSub comments searched, added and time: ")
 		noticeStrList.append(str(subCommentsSearched))
 		noticeStrList.append(", ")
 		noticeStrList.append(str(subCommentsAdded))
 		noticeStrList.append(", ")
-		noticeStrList.append(str(round(subCommentsTime, 3)))
+		noticeStrList.append(str(round(times['SearchCommentsSubscribe'], 3)))
 
 		noticeStrList.append("\n\nMessages processed, time: ")
 		noticeStrList.append(str(messagesProcessed))
 		noticeStrList.append(", ")
-		noticeStrList.append(str(round(messagesTime, 3)))
+		noticeStrList.append(str(round(times['ProcessMessages'], 3)))
 
 		noticeStrList.append("\n\nSubreddits searched, posts searched, time: ")
 		noticeStrList.append(str(subredditsCount))
 		noticeStrList.append(", ")
 		noticeStrList.append(str(postsCount))
 		noticeStrList.append(", ")
-		noticeStrList.append(str(round(subredditsTime, 3)))
+		noticeStrList.append(str(round(times['ProcessSubreddits'], 3)))
 
 		noticeStrList.append("\n\nExisting comments updated, time: ")
 		noticeStrList.append(str(existingCommentsUpdated))
 		noticeStrList.append(", ")
-		noticeStrList.append(str(round(updateExistingCommentsTime, 3)))
+		noticeStrList.append(str(round(times['UpdateExistingComments'], 3)))
 
 		noticeStrList.append("\n\nLow karma comments deleted, time: ")
 		noticeStrList.append(str(lowKarmaCommentsDeleted))
 		noticeStrList.append(", ")
-		noticeStrList.append(str(round(deleteLowKarmaCommentsTime, 3)))
+		noticeStrList.append(str(round(times['DeleteLowKarmaComments'], 3)))
 
 		noticeStrList.append("\n\nBackup time: ")
-		noticeStrList.append(str(round(backupTime, 3)))
+		noticeStrList.append(str(round(times['BackupDatabase'], 3)))
 
 		noticeStrList.append("\n\n*****\n\n")
 		noticeStrList.append(strings.footer)
