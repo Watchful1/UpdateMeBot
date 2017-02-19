@@ -50,7 +50,7 @@ def getMessages():
 
 def markMessageRead(message):
 	if whitelist is None:
-		message.mark_as_read()
+		message.mark_read()
 
 
 def replyMessage(message, body):
