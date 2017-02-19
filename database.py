@@ -188,7 +188,7 @@ def setSubscriptionType(Subscriber, SubscribedTo, Subreddit, single):
 	dbConn.commit()
 
 
-def checkSubscription(ID, date = datetime.now()):
+def checkSubscription(ID, date=datetime.now()):
 	c = dbConn.cursor()
 	c.execute('''
 		UPDATE subscriptions
@@ -199,7 +199,7 @@ def checkSubscription(ID, date = datetime.now()):
 	dbConn.commit()
 
 
-def checkSubreddit(Subreddit, date = datetime.now()):
+def checkSubreddit(Subreddit, date=datetime.now()):
 	c = dbConn.cursor()
 	c.execute('''
 		UPDATE subscriptions
@@ -283,7 +283,7 @@ def isSubredditWhitelisted(Subreddit):
 		return False
 
 
-def addDeniedRequest(Subscriber, SubscribedTo, Subreddit, date = datetime.now(), single = True):
+def addDeniedRequest(Subscriber, SubscribedTo, Subreddit, date=datetime.now(), single=True):
 	c = dbConn.cursor()
 	try:
 		c.execute('''
@@ -548,7 +548,7 @@ def alwaysPMForSubreddit(subreddit):
 
 	result = results.fetchone()
 
-	if not result: return None # shouldn't happen
+	if not result: return None  # shouldn't happen
 	if result == 1:
 		return True
 	else:
