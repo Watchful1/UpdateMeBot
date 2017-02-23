@@ -298,6 +298,13 @@ def processMessages():
 							result = database.blacklist(username, False, addBlacklist)
 							replies['blacklist'].append({'name': username, 'isSubreddit': False, 'added': addBlacklist, 'result': result})
 
+					elif line.startswith("prompt") or line.startswith("dontprompt"):
+						addPrompt = True if line.startswith("prompt") else False
+						subs = re.findall('(?:/r/)(\w*)', line)
+						users = re.findall('(?:/u/)(\w*)', line)
+
+
+
 				reddit.markMessageRead(message)
 
 				strList = []
@@ -411,7 +418,6 @@ def searchComments(searchTerm):
 			commentsSearched += 1
 
 			if database.isBlacklisted(comment['author'].lower(), comment['subreddit'].lower()):
-				log.info("Skipping comment by /u/"+comment['author']+" in /r/"+comment['subreddit']+", blacklisted")
 				continue
 
 			log.info("Found public comment by /u/"+comment['author'])

@@ -73,6 +73,14 @@ def setup():
 			UNIQUE (Name, IsSubreddit)
 		)
 	''')
+	c.execute('''
+		CREATE TABLE IF NOT EXISTS prompts (
+			ID INTEGER PRIMARY KEY AUTOINCREMENT,
+			User VARCHAR(80) NOT NULL,
+			Subreddit VARCHAR(80) NOT NULL,
+			UNIQUE (User, Subreddit)
+		)
+	''')
 	dbConn.commit()
 
 
@@ -617,3 +625,41 @@ def isBlacklisted(name=None, subreddit=None):
 			output = True
 
 	return output
+
+
+def addPrompt(user, subreddit):
+	c = dbConn.cursor()
+	c.execute('''
+		INSERT INTO prompts
+		(User, Subreddit)
+		VALUES (?, ?)
+	''', (user, subreddit))
+	dbConn.commit()
+
+
+def removePrompt(user, subreddit):
+	c = dbConn.cursor()
+	c.execute('''
+		DELETE FROM prompts
+		WHERE User = ?
+			and Subreddit = ?
+	''', (user, subreddit))
+	dbConn.commit()
+
+
+def isPrompt(user, subreddit):
+	c = dbConn.cursor()
+	results = c.execute('''
+		SELECT *
+		FROM prompts
+		WHERE User = ?
+			AND Subreddit = ?
+	''', (user, subreddit))
+
+	result = results.fetchone()
+
+	if not result: return None  # shouldn't happen
+	if result == 1:
+		return True
+	else:
+		return False
