@@ -650,7 +650,7 @@ def removePrompt(user, subreddit):
 def isPrompt(user, subreddit):
 	c = dbConn.cursor()
 	results = c.execute('''
-		SELECT *
+		SELECT COUNT(*)
 		FROM prompts
 		WHERE User = ?
 			AND Subreddit = ?
@@ -659,7 +659,7 @@ def isPrompt(user, subreddit):
 	result = results.fetchone()
 
 	if not result: return None  # shouldn't happen
-	if result == 1:
+	if result[0] >= 1:
 		return True
 	else:
 		return False

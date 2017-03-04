@@ -268,16 +268,19 @@ def blacklistSection(blacklisted):
 		else:
 			strList.append("by user /u/")
 		strList.append(blacklist['name'])
-		strList.append(". [Click here](")
-		strList.append("http://np.reddit.com/message/compose/?to=")
-		strList.append(globals.ACCOUNT_NAME)
-		strList.append("&subject=Re-enable&message=TalkToMe! ")
-		if blacklist['isSubreddit']:
-			strList.append("/r/")
-		else:
-			strList.append("/u/")
-		strList.append(blacklist['name'])
-		strList.append(") to re-enable.  \n")
+		strList.append(".")
+		if not blacklist['added']:
+			strList.append(" [Click here](")
+			strList.append("http://np.reddit.com/message/compose/?to=")
+			strList.append(globals.ACCOUNT_NAME)
+			strList.append("&subject=Re-enable&message=TalkToMe! ")
+			if blacklist['isSubreddit']:
+				strList.append("/r/")
+			else:
+				strList.append("/u/")
+			strList.append(blacklist['name'])
+			strList.append(") to re-enable.")
+		strList.append("  \n")
 
 	return strList
 
@@ -285,6 +288,43 @@ def blacklistSection(blacklisted):
 blacklistNotSection = (
 	"It looks like you tried to blacklist something that you didn't have access to."
 )
+
+
+def promptSection(prompts):
+	strList = []
+
+	for prompt in prompts:
+		if prompt['exists']:
+			strList.append("This prompt already exists, no changes.  \n")
+		else:
+			strList.append("UpdateMeBot will ")
+			if not prompt['added']:
+				strList.append("not ")
+			strList.append("post a prompt asking for subscriptions whenever /u/")
+			strList.append(prompt['name'])
+			strList.append(" posts a new submission in /r/")
+			strList.append(prompt['subreddit'])
+			strList.append(".  \n")
+
+	return strList
+
+
+def promptPublicComment(user, subreddit):
+	strList = []
+
+	strList.append("[Click here](")
+	strList.append("http://np.reddit.com/message/compose/?to=")
+	strList.append(globals.ACCOUNT_NAME)
+	strList.append("&subject=Subscribe&message=SubscribeMe! /u/")
+	strList.append(user)
+	strList.append(" /r/")
+	strList.append(subreddit)
+	strList.append(") ")
+	strList.append(" to subscribe to /r/")
+	strList.append(user)
+	strList.append(" and receive a message every time they post.")
+
+	return strList
 
 
 def subredditNoticeThresholdMessage(subreddit, count):

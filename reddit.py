@@ -31,7 +31,7 @@ def init(logger, responseWhitelist, user):
 
 
 def sendMessage(recipient, subject, message):
-	if whitelist is not None and recipient not in whitelist:
+	if whitelist is not None and recipient.lower() not in whitelist:
 		return True
 	try:
 		reddit.redditor(recipient).message(
@@ -54,7 +54,7 @@ def markMessageRead(message):
 
 
 def replyMessage(message, body):
-	if whitelist is not None and str(message.author) not in whitelist:
+	if whitelist is not None and str(message.author).lower() not in whitelist:
 		return True
 	try:
 		message.reply(body)
@@ -92,9 +92,21 @@ def deleteComment(id=None, comment=None):
 def replyComment(id, message):
 	try:
 		parent = reddit.comment(id)
-		if whitelist is not None and str(parent.author) not in whitelist:
+		if whitelist is not None and str(parent.author).lower() not in whitelist:
 			return None
 		resultComment = parent.reply(message)
+		return resultComment.id
+	except Exception as err:
+		log.warning(traceback.format_exc())
+		return None
+
+
+def replySubmission(id, message):
+	try:
+		submission = getSubmission(id)
+		if whitelist is not None and str(submission.author).lower() not in whitelist:
+			return None
+		resultComment = submission.reply(message)
 		return resultComment.id
 	except Exception as err:
 		log.warning(traceback.format_exc())

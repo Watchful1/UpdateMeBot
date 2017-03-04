@@ -79,7 +79,7 @@ def processSubreddits():
 	postsCount = 0
 	messagesSent = 0
 	for subreddit in database.getSubscribedSubreddits():
-		subStartTime = time.perf_counter()
+		# subStartTime = time.perf_counter()
 		subPostsCount = 0
 		subredditsCount += 1
 		startTimestamp = datetime.utcnow()
@@ -113,6 +113,13 @@ def processSubreddits():
 			for submission in submissions:
 				postsCount += 1
 				subPostsCount += 1
+				if database.isPrompt(submission['author'].lower(), subreddit['subreddit']):
+					log.info("Posting a prompt for /u/"+submission['author'].lower()+" in /r/"+subreddit['subreddit'])
+					promptStrList = strings.promptPublicComment(submission['author'].lower(), subreddit['subreddit'])
+					promptStrList.append("\n\n*****\n\n")
+					promptStrList.append(strings.footer)
+					reddit.replySubmission(submission['id'], ''.join(promptStrList))
+
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], submission['author'].lower()):
 					if submission['dateCreated'] >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
 						messagesSent += 1
@@ -178,9 +185,10 @@ def processMessages():
 			if isinstance(message, praw.models.Message):
 				messagesProcessed += 1
 				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [],
-				           'subredditsAdded': [], 'commentsDeleted': [], 'alwaysPM': [], 'blacklist': [],
-				           'blacklistNot': False, 'list': False}
-				log.info("Parsing message from /u/"+str(message.author))
+				            'subredditsAdded': [], 'commentsDeleted': [], 'alwaysPM': [], 'blacklist': [], 'prompt': [],
+				            'blacklistNot': False, 'list': False}
+				msgAuthor = str(message.author).lower()
+				log.info("Parsing message from /u/"+msgAuthor)
 				for line in message.body.lower().splitlines():
 					if line.startswith("updateme") or line.startswith("subscribeme"):
 						users = re.findall('(?: /u/)(\w*)', line)
@@ -207,9 +215,9 @@ def processMessages():
 								addUpdateSubscription(str(message.author), users[0], subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionType, replies)
 
 					elif line.startswith("removeall"):
-						log.info("Removing all subscriptions for /u/"+str(message.author).lower())
-						replies['removed'].extend(database.getMySubscriptions(str(message.author).lower()))
-						database.removeAllSubscriptions(str(message.author).lower())
+						log.info("Removing all subscriptions for /u/"+msgAuthor)
+						replies['removed'].extend(database.getMySubscriptions(msgAuthor))
+						database.removeAllSubscriptions(msgAuthor)
 
 					elif line.startswith("remove"):
 						users = re.findall('(?:/u/)(\w*)', line)
@@ -226,7 +234,7 @@ def processMessages():
 								removeSubscription(str(message.author), users[0], subs[0], replies)
 
 					elif (line.startswith("mysubscriptions") or line.startswith("myupdates")) and not replies['list']:
-						log.info("Listing subscriptions for /u/"+str(message.author).lower())
+						log.info("Listing subscriptions for /u/"+msgAuthor)
 						replies['list'] = True
 
 					elif line.startswith("deletecomment"):
@@ -234,7 +242,7 @@ def processMessages():
 
 						if len(threadID) == 0: continue
 
-						commentID = database.deleteComment(threadID[0], str(message.author).lower())
+						commentID = database.deleteComment(threadID[0], msgAuthor)
 						if commentID:
 							log.info("Deleting comment with ID %s/%s", threadID[0], commentID)
 							if reddit.deleteComment(id=commentID):
@@ -242,7 +250,7 @@ def processMessages():
 							else:
 								log.warning("Could not delete comment with ID %s/%s", threadID[0], commentID)
 
-					elif line.startswith("addsubreddit") and str(message.author).lower() == globals.OWNER_NAME.lower():
+					elif line.startswith("addsubreddit") and msgAuthor == globals.OWNER_NAME.lower():
 						subs = re.findall('(?:/r/)(\w*)', line)
 						for sub in subs:
 							log.info("Whitelisting subreddit /r/"+sub)
@@ -259,7 +267,7 @@ def processMessages():
 
 							database.activateSubreddit(sub)
 
-					elif line.startswith("subredditpm") and str(message.author).lower() == globals.OWNER_NAME.lower():
+					elif line.startswith("subredditpm") and msgAuthor == globals.OWNER_NAME.lower():
 						subs = re.findall('(?:/r/)(\w*)', line)
 						if line.startswith("subredditpmtrue"):
 							alwaysPM = True
@@ -279,7 +287,7 @@ def processMessages():
 						users = re.findall('(?:/u/)(\w*)', line)
 
 						if len(subs) or len(users):
-							if str(message.author).lower() == globals.OWNER_NAME.lower():
+							if msgAuthor == globals.OWNER_NAME.lower():
 								for sub in subs:
 									log.info(("Blacklisting" if addBlacklist else "Removing blacklist for")+" subreddit /r/"+sub)
 									result = database.blacklist(sub, True, addBlacklist)
@@ -290,20 +298,46 @@ def processMessages():
 									result = database.blacklist(user, False, addBlacklist)
 									replies['blacklist'].append({'name': user, 'isSubreddit': False, 'added': addBlacklist, 'result': result})
 							else:
-								log.info("User /u/"+str(message.author).lower()+"tried tried to blacklist")
+								log.info("User /u/"+msgAuthor+"tried tried to blacklist")
 								replies['blacklistNot'] = True
 						else:
-							username = str(message.author).lower()
-							log.info(("Blacklisting" if addBlacklist else "Removing blacklist for")+" user /u/"+username)
-							result = database.blacklist(username, False, addBlacklist)
-							replies['blacklist'].append({'name': username, 'isSubreddit': False, 'added': addBlacklist, 'result': result})
+							log.info(("Blacklisting" if addBlacklist else "Removing blacklist for")+" user /u/"+msgAuthor)
+							result = database.blacklist(msgAuthor, False, addBlacklist)
+							replies['blacklist'].append({'name': msgAuthor, 'isSubreddit': False, 'added': addBlacklist, 'result': result})
 
 					elif line.startswith("prompt") or line.startswith("dontprompt"):
 						addPrompt = True if line.startswith("prompt") else False
 						subs = re.findall('(?:/r/)(\w*)', line)
 						users = re.findall('(?:/u/)(\w*)', line)
 
+						skip = False
+						if len(subs) and len(users) and msgAuthor == globals.OWNER_NAME.lower():
+							sub = subs[0].lower()
+							user = users[0].lower()
+						elif len(subs):
+							sub = subs[0].lower()
+							user = msgAuthor
+						else:
+							skip = True
 
+						if not skip and not database.isSubredditWhitelisted(sub):
+							log.info("Could not add prompt for /u/"+user+" in /r/"+sub+", not whitelisted")
+							replies["couldnotadd"].append({'subreddit': sub})
+							skip = True
+
+						if not skip:
+							if database.isPrompt(user, sub):
+								log.info("Prompt already exists for /u/"+user+" in /r/"+sub)
+								replies['prompt'].append({'name': user, 'subreddit': sub, 'added': False, 'exists': True})
+							else:
+								if addPrompt:
+									log.info("Adding prompt for /u/"+user+" in /r/"+sub)
+									database.addPrompt(user, sub)
+									replies['prompt'].append({'name': user, 'subreddit': sub, 'added': True, 'exists': False})
+								else:
+									log.info("Removing prompt for /u/"+user+" in /r/"+sub)
+									database.removePrompt(user, sub)
+									replies['prompt'].append({'name': user, 'subreddit': sub, 'added': False, 'exists': False})
 
 				reddit.markMessageRead(message)
 
@@ -332,7 +366,7 @@ def processMessages():
 					strList.append("\n\n*****\n\n")
 				if replies['list']:
 					sectionCount += 1
-					strList.extend(strings.yourUpdatesSection(database.getMySubscriptions(str(message.author).lower())))
+					strList.extend(strings.yourUpdatesSection(database.getMySubscriptions(msgAuthor)))
 					strList.append("\n\n*****\n\n")
 				if replies['couldnotadd']:
 					sectionCount += 1
@@ -355,6 +389,10 @@ def processMessages():
 				if replies['blacklistNot']:
 					sectionCount += 1
 					strList.extend(strings.blacklistNotSection())
+					strList.append("\n\n*****\n\n")
+				if replies['prompt']:
+					sectionCount += 1
+					strList.extend(strings.promptSection(replies['prompt']))
 					strList.append("\n\n*****\n\n")
 
 				if sectionCount == 0:
