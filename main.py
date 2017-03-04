@@ -381,8 +381,8 @@ def searchComments(searchTerm):
 		subscriptionType = False
 
 	try:
-		comments = requests.get("https://api.pushshift.io/reddit/search?q="+searchTerm+"&limit=100",
-	                       headers={'User-Agent': globals.USER_AGENT}).json()['data']
+		comments = requests.get("https://apiv2.pushshift.io/reddit/comment/search?q="+searchTerm+"&limit=100&sort=desc",
+	                        headers={'User-Agent': globals.USER_AGENT}).json()['data']
 	except Exception as err:
 		log.warning("Could not parse data for search term: "+searchTerm)
 		return 0, 0
@@ -422,6 +422,9 @@ def searchComments(searchTerm):
 
 			log.info("Found public comment by /u/"+comment['author'])
 			replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': []}
+
+			comment['link_author'] = str(reddit.getSubmission(comment['link_id'][3:]).author)
+
 			addUpdateSubscription(comment['author'], comment['link_author'], comment['subreddit'],
 					datetime.utcfromtimestamp(comment['created_utc']), subscriptionType, replies)
 
@@ -535,7 +538,7 @@ if len(sys.argv) >= 2:
 		elif arg.startswith("debug="):
 			responseWhitelist = []
 			if arg.startswith("debug="):
-				responseWhitelist = arg[7:].split(',')
+				responseWhitelist = arg[6:].split(',')
 else:
 	log.error("No user specified, aborting")
 	sys.exit(0)

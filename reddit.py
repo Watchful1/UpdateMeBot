@@ -123,3 +123,7 @@ def getUserComments(user):
 
 def getSubredditSubmissions(subredditName):
 	return reddit.subreddit(subredditName).new(limit=1000)
+
+
+def getComment(id):
+	return reddit.comment(id)
