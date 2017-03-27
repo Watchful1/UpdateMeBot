@@ -623,7 +623,13 @@ while True:
 	except Exception as err:
 		log.warning("Error in main function")
 		log.warning(traceback.format_exc())
-		break
+
+		log.info("Messaging owner about an error in the main function")
+		strList = ["Error in main function, continuing"]
+		strList.append("\n\n*****\n\n")
+		strList.append(strings.footer)
+		if not reddit.sendMessage(globals.OWNER_NAME, "Missed Comment", ''.join(strList)):
+			log.warning("Could not send message to owner about an error in the main function")
 
 	markTime('end', startTime)
 	logStrList = strings.longRunLog(timings, counts)
