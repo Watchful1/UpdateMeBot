@@ -631,6 +631,18 @@ while True:
 		if not reddit.sendMessage(globals.OWNER_NAME, "Missed Comment", ''.join(strList)):
 			log.warning("Could not send message to owner about an error in the main function")
 
+		seconds = 150
+		recovered = False
+		for num in range(1, 4):
+			time.sleep(seconds)
+			if reddit.checkConnection():
+				recovered = True
+				break
+			seconds = seconds * 2
+
+		if not recovered:
+			break
+
 	markTime('end', startTime)
 	logStrList = strings.longRunLog(timings, counts)
 	log.debug(''.join(logStrList))

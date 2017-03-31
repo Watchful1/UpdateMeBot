@@ -30,6 +30,14 @@ def init(logger, responseWhitelist, user):
 	return True
 
 
+def checkConnection():
+	try:
+		reddit.user.me()
+		return True
+	except Exception as err:
+		return False
+
+
 def sendMessage(recipient, subject, message):
 	if whitelist is not None and recipient.lower() not in whitelist:
 		return True
