@@ -47,6 +47,9 @@ def sendMessage(recipient, subject, message):
 			message=message
 		)
 		return True
+	except praw.exceptions.APIException as err:
+		log.warning("User "+recipient+" doesn't exist")
+		return False
 	except Exception as err:
 		log.warning(traceback.format_exc())
 		return False

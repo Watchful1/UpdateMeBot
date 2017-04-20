@@ -624,13 +624,6 @@ while True:
 		log.warning("Error in main function")
 		log.warning(traceback.format_exc())
 
-		log.info("Messaging owner about an error in the main function")
-		strList = ["Error in main function, continuing"]
-		strList.append("\n\n*****\n\n")
-		strList.append(strings.footer)
-		if not reddit.sendMessage(globals.OWNER_NAME, "Missed Comment", ''.join(strList)):
-			log.warning("Could not send message to owner about an error in the main function")
-
 		seconds = 150
 		recovered = False
 		for num in range(1, 4):
@@ -640,7 +633,20 @@ while True:
 				break
 			seconds = seconds * 2
 
-		if not recovered:
+		if recovered:
+			log.warning("Messaging owner that that we recovered from a problem")
+			noticeStrList.append("Recovered from an exception after "+str(seconds)+" seconds.")
+			noticeStrList.append("\n\n*****\n\n")
+			noticeStrList.append(strings.footer)
+			if not reddit.sendMessage(globals.OWNER_NAME, "Recovered", ''.join(noticeStrList)):
+				log.warning("Could not send message to owner when notifying recovery")
+		else:
+			log.warning("Messaging owner that that we failed to recover from a problem")
+			noticeStrList.append("Failed to recovered from an exception after "+str(seconds)+" seconds.")
+			noticeStrList.append("\n\n*****\n\n")
+			noticeStrList.append(strings.footer)
+			if not reddit.sendMessage(globals.OWNER_NAME, "Failed recovery", ''.join(noticeStrList)):
+				log.warning("Could not send message to owner when notifying failed recovery")
 			break
 
 	markTime('end', startTime)
