@@ -650,8 +650,12 @@ while True:
 			break
 
 	markTime('end', startTime)
-	logStrList = strings.longRunLog(timings, counts)
-	log.debug(''.join(logStrList))
+	try:
+		logStrList = strings.longRunLog(timings, counts)
+		log.debug(''.join(logStrList))
+	except Exception as err:
+		log.debug("Could not build long run log")
+		log.warning(traceback.format_exc())
 
 	if timings['end'] > globals.WARNING_RUN_TIME:
 		log.warning("Messaging owner that that the process took too long to run: %d", int(timings['end']))
