@@ -593,7 +593,18 @@ while True:
 	log.debug("Starting run")
 
 	timings = {}
-	counts = {}
+	counts = {
+		'updateCommentsSearched': '',
+		'updateCommentsAdded': '',
+		'subCommentsSearched': '',
+		'subCommentsAdded': '',
+		'messagesProcessed': '',
+		'subredditsCount': '',
+		'postsCount': '',
+		'subscriptionMessagesSent': '',
+		'existingCommentsUpdated': '',
+		'lowKarmaCommentsDeleted': ''
+	}
 	lastMark = time.perf_counter()
 	startTime = markTime('start')
 
@@ -633,19 +644,20 @@ while True:
 				break
 			seconds = seconds * 2
 
+		problemStrList = []
 		if recovered:
 			log.warning("Messaging owner that that we recovered from a problem")
-			noticeStrList.append("Recovered from an exception after "+str(seconds)+" seconds.")
-			noticeStrList.append("\n\n*****\n\n")
-			noticeStrList.append(strings.footer)
-			if not reddit.sendMessage(globals.OWNER_NAME, "Recovered", ''.join(noticeStrList)):
+			problemStrList.append("Recovered from an exception after "+str(seconds)+" seconds.")
+			problemStrList.append("\n\n*****\n\n")
+			problemStrList.append(strings.footer)
+			if not reddit.sendMessage(globals.OWNER_NAME, "Recovered", ''.join(problemStrList)):
 				log.warning("Could not send message to owner when notifying recovery")
 		else:
 			log.warning("Messaging owner that that we failed to recover from a problem")
-			noticeStrList.append("Failed to recovered from an exception after "+str(seconds)+" seconds.")
-			noticeStrList.append("\n\n*****\n\n")
-			noticeStrList.append(strings.footer)
-			if not reddit.sendMessage(globals.OWNER_NAME, "Failed recovery", ''.join(noticeStrList)):
+			problemStrList.append("Failed to recovered from an exception after "+str(seconds)+" seconds.")
+			problemStrList.append("\n\n*****\n\n")
+			problemStrList.append(strings.footer)
+			if not reddit.sendMessage(globals.OWNER_NAME, "Failed recovery", ''.join(problemStrList)):
 				log.warning("Could not send message to owner when notifying failed recovery")
 			break
 
