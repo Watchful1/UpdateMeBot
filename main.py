@@ -593,14 +593,11 @@ while True:
 	log.debug("Starting run")
 
 	timings = {
-		'end': '',
-		'SearchCommentsUpdate': '',
-		'SearchCommentsSubscribe': '',
-		'ProcessMessages': '',
-		'ProcessSubreddits': '',
-		'UpdateExistingComments': '',
-		'DeleteLowKarmaComments': '',
-		'BackupDatabase': ''
+		'end': 0,
+		'SearchCommentsUpdate': 0,
+		'SearchCommentsSubscribe': 0,
+		'ProcessMessages': 0,
+		'ProcessSubreddits': 0
 	}
 	counts = {
 		'updateCommentsSearched': '',
