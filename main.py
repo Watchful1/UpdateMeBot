@@ -600,16 +600,16 @@ while True:
 		'ProcessSubreddits': 0
 	}
 	counts = {
-		'updateCommentsSearched': '',
-		'updateCommentsAdded': '',
-		'subCommentsSearched': '',
-		'subCommentsAdded': '',
-		'messagesProcessed': '',
-		'subredditsCount': '',
-		'postsCount': '',
-		'subscriptionMessagesSent': '',
-		'existingCommentsUpdated': '',
-		'lowKarmaCommentsDeleted': ''
+		'updateCommentsSearched': 0,
+		'updateCommentsAdded': 0,
+		'subCommentsSearched': 0,
+		'subCommentsAdded': 0,
+		'messagesProcessed': 0,
+		'subredditsCount': 0,
+		'postsCount': 0,
+		'subscriptionMessagesSent': 0,
+		'existingCommentsUpdated': 0,
+		'lowKarmaCommentsDeleted': 0
 	}
 	lastMark = time.perf_counter()
 	startTime = markTime('start')
