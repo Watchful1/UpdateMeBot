@@ -177,7 +177,7 @@ def getSubscriptionType(Subscriber, SubscribedTo, Subreddit):
 			AND Approved = 1
 	''', (Subscriber, SubscribedTo, Subreddit))
 
-	if result.fetchone()[0] == 1:
+	if len(result) > 0 and result.fetchone()[0] == 1:
 		return True
 	else:
 		return False

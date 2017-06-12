@@ -168,7 +168,6 @@ def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single = Tr
 
 def removeSubscription(Subscriber, SubscribedTo, Subreddit, replies = {}):
 	data = {'subscriber': Subscriber.lower(), 'subscribedTo': SubscribedTo.lower(), 'subreddit': Subreddit.lower()}
-	data['single'] = database.getSubscriptionType(data['subscriber'], data['subscribedTo'], data['subreddit'])
 	if database.removeSubscription(data['subscriber'], data['subscribedTo'], data['subreddit']):
 		log.info("/u/"+data['subscriber']+"'s removed /u/"+data['subscribedTo']+" in /r/"+data['subreddit'])
 		replies["removed"].append(data)
