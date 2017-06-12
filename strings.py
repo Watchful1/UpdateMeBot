@@ -419,6 +419,9 @@ def longRunLog(timings, counts):
 	logStrList.append(" posts searched in ")
 	logStrList.append(str(counts['subredditsCount']))
 	logStrList.append(" subreddits")
+	if 'subscriptionMessagesSent' in counts and counts['subscriptionMessagesSent'] > 0:
+		logStrList.append(" subreddits : Sub messages sent: ")
+		logStrList.append(str(counts['subscriptionMessagesSent']))
 	if 'existingCommentsUpdated' in counts and counts['existingCommentsUpdated'] > 0:
 		logStrList.append(" : Existing comments updated: ")
 		logStrList.append(str(counts['existingCommentsUpdated']))
@@ -454,10 +457,12 @@ def longRunMessage(timings, counts):
 	strList.append(", ")
 	strList.append(str(round(timings['ProcessMessages'], 3)))
 
-	strList.append("\n\nSubreddits searched, posts searched, time: ")
+	strList.append("\n\nSubreddits searched, posts searched, messages sent, time: ")
 	strList.append(str(counts['subredditsCount']))
 	strList.append(", ")
 	strList.append(str(counts['postsCount']))
+	strList.append(", ")
+	strList.append(str(counts['subscriptionMessagesSent']))
 	strList.append(", ")
 	strList.append(str(round(timings['ProcessSubreddits'], 3)))
 
