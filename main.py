@@ -35,7 +35,7 @@ if not os.path.exists(globals.LOGFOLDER_NAME):
     os.makedirs(globals.LOGFOLDER_NAME)
 LOG_FILENAME = globals.LOGFOLDER_NAME+"/"+"bot.log"
 LOG_FILE_BACKUPCOUNT = 5
-LOG_FILE_MAXSIZE = 1024 * 256
+LOG_FILE_MAXSIZE = 1024 * 256 * 16
 
 log = logging.getLogger("bot")
 log.setLevel(LOG_LEVEL)
