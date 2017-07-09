@@ -432,7 +432,7 @@ def longRunLog(timings, counts):
 	return logStrList
 
 
-def longRunMessage(timings, counts):
+def longRunMessage(timings, counts, errors):
 	strList = []
 
 	strList.append("Loop run took too long: ")
@@ -481,6 +481,13 @@ def longRunMessage(timings, counts):
 	if 'BackupDatabase' in timings:
 		strList.append("\n\nBackup time: ")
 		strList.append(str(round(timings['BackupDatabase'], 3)))
+
+	if len(errors):
+		strList.append("\n\nErrors: ")
+		for error in errors:
+			strList.append("\n")
+			strList.append(error)
+
 
 	return strList
 

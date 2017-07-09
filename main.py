@@ -28,7 +28,6 @@ SUBBED_LASTCHECKED = 1
 SUBSCRIPTION = "subscribeme"
 UPDATE = "updateme"
 
-
 ### Logging setup ###
 LOG_LEVEL = logging.DEBUG
 if not os.path.exists(globals.LOGFOLDER_NAME):
@@ -412,6 +411,7 @@ def processMessages():
 
 
 def searchComments(searchTerm):
+	global errors
 	if searchTerm == UPDATE:
 		subscriptionType = True
 	elif searchTerm == SUBSCRIPTION:
@@ -422,6 +422,7 @@ def searchComments(searchTerm):
 	                        headers={'User-Agent': globals.USER_AGENT}).json()['data']
 	except Exception as err:
 		log.warning("Could not parse data for search term: "+searchTerm)
+		errors.append("Could not parse data for search term: "+searchTerm)
 		return 0, 0
 
 	timestamp = database.getCommentSearchTime(searchTerm)
@@ -587,9 +588,11 @@ database.init()
 
 signal.signal(signal.SIGINT, signal_handler)
 
+errors = []
 i = 1
 while True:
 	log.debug("Starting run")
+	errors = []
 
 	timings = {
 		'end': 0,
@@ -674,9 +677,15 @@ while True:
 		log.debug("Could not build long run log")
 		log.warning(traceback.format_exc())
 
-	if timings['end'] > globals.WARNING_RUN_TIME:
-		log.warning("Messaging owner that that the process took too long to run: %d", int(timings['end']))
-		noticeStrList = strings.longRunMessage(timings, counts)
+	if timings['end'] > (
+					globals.WARNING_RUN_TIME +
+					counts['subscriptionMessagesSent'] +
+					counts['updateCommentsAdded'] +
+					counts['subCommentsAdded'] +
+					counts['existingCommentsUpdated']
+			) or len(errors):
+		log.warning("Messaging owner that that the process took too long to run or we encountered errors: %d", int(timings['end']))
+		noticeStrList = strings.longRunMessage(timings, counts, errors)
 
 		noticeStrList.append("\n\n*****\n\n")
 		noticeStrList.append(strings.footer)
