@@ -342,23 +342,23 @@ def processMessages():
 				strList = []
 				sectionCount = 0
 
-				if replies['added']:
+				if len(replies['added']):
 					sectionCount += 1
 					strList.extend(strings.confirmationSection(replies['added']))
 					strList.append("\n\n*****\n\n")
-				if replies['updated']:
+				if len(replies['updated']):
 					sectionCount += 1
 					strList.extend(strings.updatedSubscriptionSection(replies['updated']))
 					strList.append("\n\n*****\n\n")
-				if replies['exist']:
+				if len(replies['exist']):
 					sectionCount += 1
 					strList.extend(strings.alreadySubscribedSection(replies['exist']))
 					strList.append("\n\n*****\n\n")
-				if replies['removed']:
+				if len(replies['removed']):
 					sectionCount += 1
 					strList.extend(strings.removeUpdatesConfirmationSection(replies['removed']))
 					strList.append("\n\n*****\n\n")
-				if replies['commentsDeleted']:
+				if len(replies['commentsDeleted']):
 					sectionCount += 1
 					strList.extend(strings.deletedCommentSection(replies['commentsDeleted']))
 					strList.append("\n\n*****\n\n")
@@ -366,21 +366,21 @@ def processMessages():
 					sectionCount += 1
 					strList.extend(strings.yourUpdatesSection(database.getMySubscriptions(msgAuthor)))
 					strList.append("\n\n*****\n\n")
-				if replies['couldnotadd']:
+				if len(replies['couldnotadd']):
 					sectionCount += 1
 					strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
 					strList.append("\n\n*****\n\n")
 
 					addDeniedRequest(replies['couldnotadd'])
-				if replies['subredditsAdded']:
+				if len(replies['subredditsAdded']):
 					sectionCount += 1
 					strList.extend(strings.subredditActivatedMessage(replies['subredditsAdded']))
 					strList.append("\n\n*****\n\n")
-				if replies['alwaysPM']:
+				if len(replies['alwaysPM']):
 					sectionCount += 1
 					strList.extend(strings.subredditAlwaysPMMessage(replies['alwaysPM']))
 					strList.append("\n\n*****\n\n")
-				if replies['blacklist']:
+				if len(replies['blacklist']):
 					sectionCount += 1
 					strList.extend(strings.blacklistSection(replies['blacklist']))
 					strList.append("\n\n*****\n\n")
@@ -388,7 +388,7 @@ def processMessages():
 					sectionCount += 1
 					strList.extend(strings.blacklistNotSection())
 					strList.append("\n\n*****\n\n")
-				if replies['prompt']:
+				if len(replies['prompt']):
 					sectionCount += 1
 					strList.extend(strings.promptSection(replies['prompt']))
 					strList.append("\n\n*****\n\n")
