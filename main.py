@@ -417,23 +417,28 @@ def searchComments(searchTerm):
 	elif searchTerm == SUBSCRIPTION:
 		subscriptionType = False
 
+	requestSeconds = 0
 	try:
 		url = "https://apiv2.pushshift.io/reddit/comment/search?q="+searchTerm+"&limit=100&sort=desc"
+		requestTime = time.perf_counter()
 		json = requests.get(url, headers={'User-Agent': globals.USER_AGENT})
+		requestSeconds = int(time.perf_counter() - requestTime)
 		if json.status_code != 200:
 			log.warning("Could not parse data for search term: "+searchTerm + " status: "+str(json.status_code))
 			errors.append("Could not parse data for search term: "+str(json.status_code) + " : " +url)
-			return 0, 0
+			return 0, 0, 0
 		comments = json.json()['data']
 	except Exception as err:
 		log.warning("Could not parse data for search term: "+searchTerm)
 		errors.append("Could not parse data for search term: "+url)
-		return 0, 0
+		return 0, 0, 0
 
 	if len(comments) == 0:
 		log.warning("Could not parse data for search term, no results: "+searchTerm + " status: "+str(json.status_code))
 		errors.append("Could not parse data for search term, no results: "+str(json.status_code) + " : " +url)
-		return 0, 0
+		return 0, 0, 0
+	elif requestSeconds > 80 and len(comments) > 0:
+		log.warning("Long request, but returned successfully")
 
 	timestamp = database.getCommentSearchTime(searchTerm)
 	if timestamp is None:
@@ -457,7 +462,7 @@ def searchComments(searchTerm):
 
 
 	if oldestIndex == -1:
-		return 0, 0
+		return 0, 0, 0
 
 	commentsAdded = 0
 	commentsSearched = 0
@@ -517,7 +522,7 @@ def searchComments(searchTerm):
 
 		database.updateCommentSearchSeconds(searchTerm, datetime.utcfromtimestamp(comment['created_utc']) + timedelta(0,1))
 
-	return commentsSearched, commentsAdded
+	return commentsSearched, commentsAdded, requestSeconds
 
 
 def updateExistingComments():
@@ -626,11 +631,13 @@ while True:
 	lastMark = time.perf_counter()
 	startTime = markTime('start')
 
+	updateRequestSeconds = 0
+	subscribeRequestSeconds = 0
 	try:
-		counts['updateCommentsSearched'], counts['updateCommentsAdded'] = searchComments(UPDATE)
+		counts['updateCommentsSearched'], counts['updateCommentsAdded'], updateRequestSeconds = searchComments(UPDATE)
 		markTime('SearchCommentsUpdate')
 
-		counts['subCommentsSearched'], counts['subCommentsAdded'] = searchComments(SUBSCRIPTION)
+		counts['subCommentsSearched'], counts['subCommentsAdded'], subscribeRequestSeconds = searchComments(SUBSCRIPTION)
 		markTime('SearchCommentsSubscribe')
 
 		counts['messagesProcessed'] = processMessages()
@@ -692,7 +699,9 @@ while True:
 					counts['subscriptionMessagesSent'] +
 					counts['updateCommentsAdded'] +
 					counts['subCommentsAdded'] +
-					counts['existingCommentsUpdated']
+					counts['existingCommentsUpdated'] +
+					updateRequestSeconds +
+					subscribeRequestSeconds
 			) or len(errors):
 		log.warning("Messaging owner that that the process took too long to run or we encountered errors: %d", int(timings['end']))
 		noticeStrList = strings.longRunMessage(timings, counts, errors)
