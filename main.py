@@ -418,11 +418,16 @@ def searchComments(searchTerm):
 		subscriptionType = False
 
 	try:
-		comments = requests.get("https://apiv2.pushshift.io/reddit/comment/search?q="+searchTerm+"&limit=100&sort=desc",
-	                        headers={'User-Agent': globals.USER_AGENT}).json()['data']
+		url = "https://apiv2.pushshift.io/reddit/comment/search?q="+searchTerm+"&limit=100&sort=desc"
+		json = requests.get(url, headers={'User-Agent': globals.USER_AGENT})
+		if json.status_code != 200:
+			log.warning("Could not parse data for search term: "+searchTerm + " status: "+str(json.status_code))
+			errors.append("Could not parse data for search term: "+str(json.status_code) + " : " +url)
+			return 0, 0
+		comments = json.json()['data']
 	except Exception as err:
 		log.warning("Could not parse data for search term: "+searchTerm)
-		errors.append("Could not parse data for search term: "+searchTerm)
+		errors.append("Could not parse data for search term: "+url)
 		return 0, 0
 
 	timestamp = database.getCommentSearchTime(searchTerm)
