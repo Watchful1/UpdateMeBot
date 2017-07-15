@@ -438,7 +438,7 @@ def searchComments(searchTerm):
 		errors.append("Could not parse data for search term, no results: "+str(json.status_code) + " : " +url)
 		return 0, 0, 0
 	elif requestSeconds > 80 and len(comments) > 0:
-		log.warning("Long request, but returned successfully")
+		log.warning("Long request, but returned successfully: "+str(requestSeconds))
 
 	timestamp = database.getCommentSearchTime(searchTerm)
 	if timestamp is None:
@@ -462,7 +462,7 @@ def searchComments(searchTerm):
 
 
 	if oldestIndex == -1:
-		return 0, 0, 0
+		return 0, 0, requestSeconds
 
 	commentsAdded = 0
 	commentsSearched = 0
