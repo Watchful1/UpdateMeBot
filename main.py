@@ -430,6 +430,11 @@ def searchComments(searchTerm):
 		errors.append("Could not parse data for search term: "+url)
 		return 0, 0
 
+	if len(comments) == 0:
+		log.warning("Could not parse data for search term, no results: "+searchTerm + " status: "+str(json.status_code))
+		errors.append("Could not parse data for search term, no results: "+str(json.status_code) + " : " +url)
+		return 0, 0
+
 	timestamp = database.getCommentSearchTime(searchTerm)
 	if timestamp is None:
 		timestamp = START_TIME
