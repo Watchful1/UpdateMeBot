@@ -122,8 +122,8 @@ def processSubreddits():
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], submission['author'].lower()):
 					if submission['dateCreated'] >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
 						messagesSent += 1
-						log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s:",
-						         subscriber['subscriber'], submission['author'], subreddit['subreddit'])
+						log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s: %s",
+						         subscriber['subscriber'], submission['author'], subreddit['subreddit'], submission['id'])
 						strList = strings.alertMessage(submission['author'], subreddit['subreddit'], submission['link'], subscriber['single'])
 
 						strList.append("\n\n*****\n\n")
