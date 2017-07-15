@@ -703,6 +703,7 @@ while True:
 					updateRequestSeconds +
 					subscribeRequestSeconds
 			) or len(errors):
+		log.debug("updateRequestSeconds: "+str(updateRequestSeconds)+" subscribeRequestSeconds: "+str(subscribeRequestSeconds))
 		log.warning("Messaging owner that that the process took too long to run or we encountered errors: %d", int(timings['end']))
 		noticeStrList = strings.longRunMessage(timings, counts, errors)
 
