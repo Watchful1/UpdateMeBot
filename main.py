@@ -597,10 +597,13 @@ if len(sys.argv) >= 2:
 				responseWhitelist = arg[6:].split(',')
 		elif arg == "noSearchComments":
 			noSearchComments = True
+			log.debug("Comment searching disabled")
 		elif arg == "noSearchPosts":
 			noSearchPosts = True
+			log.debug("Post searching disabled")
 		elif arg == "noRespondMessages":
 			noRespondMessages = True
+			log.debug("Message responses disabled")
 else:
 	log.error("No user specified, aborting")
 	sys.exit(0)
