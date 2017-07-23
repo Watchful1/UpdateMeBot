@@ -581,6 +581,9 @@ log.debug("Connecting to reddit")
 START_TIME = datetime.utcnow()
 
 once = False
+noSearchComments = False
+noSearchPosts = False
+noRespondMessages = False
 responseWhitelist = None
 user = None
 if len(sys.argv) >= 2:
@@ -592,6 +595,12 @@ if len(sys.argv) >= 2:
 			responseWhitelist = []
 			if arg.startswith("debug="):
 				responseWhitelist = arg[6:].split(',')
+		elif arg == "noSearchComments":
+			noSearchComments = True
+		elif arg == "noSearchPosts":
+			noSearchPosts = True
+		elif arg == "noRespondMessages":
+			noRespondMessages = True
 else:
 	log.error("No user specified, aborting")
 	sys.exit(0)
@@ -634,17 +643,20 @@ while True:
 	updateRequestSeconds = 0
 	subscribeRequestSeconds = 0
 	try:
-		counts['updateCommentsSearched'], counts['updateCommentsAdded'], updateRequestSeconds = searchComments(UPDATE)
-		markTime('SearchCommentsUpdate')
+		if not noSearchComments:
+			counts['updateCommentsSearched'], counts['updateCommentsAdded'], updateRequestSeconds = searchComments(UPDATE)
+			markTime('SearchCommentsUpdate')
 
-		counts['subCommentsSearched'], counts['subCommentsAdded'], subscribeRequestSeconds = searchComments(SUBSCRIPTION)
-		markTime('SearchCommentsSubscribe')
+			counts['subCommentsSearched'], counts['subCommentsAdded'], subscribeRequestSeconds = searchComments(SUBSCRIPTION)
+			markTime('SearchCommentsSubscribe')
 
-		counts['messagesProcessed'] = processMessages()
-		markTime('ProcessMessages')
+		if not noRespondMessages:
+			counts['messagesProcessed'] = processMessages()
+			markTime('ProcessMessages')
 
-		counts['subredditsCount'], counts['postsCount'], counts['subscriptionMessagesSent'] = processSubreddits()
-		markTime('ProcessSubreddits')
+		if not noSearchPosts:
+			counts['subredditsCount'], counts['postsCount'], counts['subscriptionMessagesSent'] = processSubreddits()
+			markTime('ProcessSubreddits')
 
 		if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
 			counts['existingCommentsUpdated'] = updateExistingComments()
