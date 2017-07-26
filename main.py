@@ -419,7 +419,7 @@ def searchComments(searchTerm):
 
 	requestSeconds = 0
 	try:
-		url = "https://apiv2.pushshift.io/reddit/comment/search?q="+searchTerm+"&limit=100&sort=desc"
+		url = "https://api.pushshift.io/reddit/comment/search?q="+searchTerm+"&limit=100&sort=desc"
 		requestTime = time.perf_counter()
 		json = requests.get(url, headers={'User-Agent': globals.USER_AGENT})
 		requestSeconds = int(time.perf_counter() - requestTime)
