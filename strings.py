@@ -139,7 +139,10 @@ def couldNotSubscribeSection(couldNotSubscribeList):
 
 	i = 0
 	length = len(subreddits)
+	writingprompts = False
 	for subreddit in subreddits:
+		if subreddit.lower() == "writingprompts":
+			writingprompts = True
 		strList.append("/r/")
 		strList.append(subreddit)
 		if length != 1 and i+2 == length:
@@ -149,10 +152,15 @@ def couldNotSubscribeSection(couldNotSubscribeList):
 		i += 1
 
 	strList.append(".\n\n")
-	strList.append("This bot works by checking every subreddit that someone is subscribed to every few minutes. ")
-	strList.append("Each subreddit it checks takes several seconds, so I have to limit the number of subreddits or the bot will get overloaded. ")
-	strList.append("If you think this would be a good subreddit for this bot, message /u/"+globals.OWNER_NAME+" and he'll take a look. ")
-	strList.append("I've also logged your request, so if the subreddit does get added, I'll automatically start sending your updates.")
+	if writingprompts:
+		strList.append("The moderators of /r/WritingPrompts have requested that this bot not be turned on in the sub. ")
+		strList.append("If you think it would be useful, feel free to message them and let them know.")
+	else:
+		strList.append("This bot works by checking every subreddit that someone is subscribed to every few minutes. ")
+		strList.append("Each subreddit it checks takes several seconds, so I have to limit the number of subreddits or the bot will get overloaded. ")
+		strList.append("If you think this would be a good subreddit for this bot, message /u/"+globals.OWNER_NAME+" and he'll take a look. ")
+		strList.append("I've also logged your request, so if the subreddit does get added, I'll automatically start sending your updates.")
+
 	strList.append("\n\n")
 
 	strList.append("Didn't mean to subscribe to anything? Click [here](")
