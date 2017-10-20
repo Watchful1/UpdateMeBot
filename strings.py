@@ -154,7 +154,7 @@ def couldNotSubscribeSection(couldNotSubscribeList):
 	strList.append(".\n\n")
 	if writingprompts:
 		strList.append("The moderators of /r/WritingPrompts have requested that this bot not be turned on in the sub. ")
-		strList.append("If you think it would be useful, feel free to message them and let them know.")
+		strList.append("If you think it would be useful, feel free to [message them](https://www.reddit.com/message/compose?to=%2Fr%2FWritingPrompts&subject=UpdateMeBot) and let them know.")
 	else:
 		strList.append("This bot works by checking every subreddit that someone is subscribed to every few minutes. ")
 		strList.append("Each subreddit it checks takes several seconds, so I have to limit the number of subreddits or the bot will get overloaded. ")
