@@ -207,6 +207,7 @@ def processMessages():
 							elif line.startswith("subscribeme"):
 								subscriptionTypeSingle = False
 							else:
+								log.debug("Checking default subscribe for sub: "+subs[0])
 								subscriptionTypeSingle = not database.subredditDefaultSubscribe(subs[0])
 
 							if len(users) > 1:
