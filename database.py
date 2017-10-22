@@ -354,15 +354,17 @@ def activateSubreddit(Subreddit):
 	dbConn.commit()
 
 
-def subredditDefaultSubscribe(Subreddit):
+def subredditDefaultSubscribe(subreddit):
 	c = dbConn.cursor()
-	result = c.execute('''
+	results = c.execute('''
 		SELECT DefaultSubscribe
 		FROM subredditWhitelist
 		WHERE Subreddit = ?
-	''', (Subreddit,))
+	''', (subreddit,))
 
-	if result.fetchone()[0] == 1:
+	result = results.fetchone()
+
+	if result == 1:
 		return True
 	else:
 		return False
