@@ -649,10 +649,12 @@ def removePrompt(user, subreddit):
 
 def isPrompt(user, subreddit):
 	c = dbConn.cursor()
+	## using sub as a default couldn't possible go wrong
 	results = c.execute('''
 		SELECT COUNT(*)
 		FROM prompts
-		WHERE User = ?
+		WHERE (User = ?
+			OR User = 'sub')
 			AND Subreddit = ?
 	''', (user, subreddit))
 

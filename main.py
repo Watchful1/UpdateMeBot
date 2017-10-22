@@ -188,7 +188,7 @@ def processMessages():
 				msgAuthor = str(message.author).lower()
 				log.info("Parsing message from /u/"+msgAuthor)
 				for line in message.body.lower().splitlines():
-					if line.startswith("updateme") or line.startswith("subscribeme"):
+					if line.startswith("updateme") or line.startswith("subscribeme") or line.startswith("http"):
 						users = re.findall('(?: /u/)(\w*)', line)
 						subs = re.findall('(?: /r/)(\w*)', line)
 						links = re.findall('(?:reddit.com/r/\w*/comments/)(\w*)', line)
@@ -202,15 +202,21 @@ def processMessages():
 								log.debug("Exception parsing link")
 
 						if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
-							subscriptionType = True if line.startswith("updateme") else False
+							if line.startswith("updateme"):
+								subscriptionTypeSingle = True
+							elif line.startswith("subscribeme"):
+								subscriptionTypeSingle = False
+							else:
+								subscriptionTypeSingle = not database.subredditDefaultSubscribe(subs[0])
+
 							if len(users) > 1:
 								for user in users:
-									addUpdateSubscription(str(message.author), user, subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionType, replies)
+									addUpdateSubscription(str(message.author), user, subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, replies)
 							elif len(subs) > 1:
 								for sub in subs:
-									addUpdateSubscription(str(message.author), users[0], sub, datetime.utcfromtimestamp(message.created_utc), subscriptionType, replies)
+									addUpdateSubscription(str(message.author), users[0], sub, datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, replies)
 							else:
-								addUpdateSubscription(str(message.author), users[0], subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionType, replies)
+								addUpdateSubscription(str(message.author), users[0], subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, replies)
 
 					elif line.startswith("removeall"):
 						log.info("Removing all subscriptions for /u/"+msgAuthor)
