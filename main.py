@@ -331,17 +331,21 @@ def processMessages():
 
 						if not skip:
 							if database.isPrompt(user, sub):
-								log.info("Prompt already exists for /u/"+user+" in /r/"+sub)
-								replies['prompt'].append({'name': user, 'subreddit': sub, 'added': False, 'exists': True})
+								if not addPrompt:
+									log.info("Removing prompt for /u/"+user+" in /r/"+sub)
+									database.removePrompt(user, sub)
+									replies['prompt'].append({'name': user, 'subreddit': sub, 'added': False, 'exists': False})
+								else:
+									log.info("Prompt doesn't exist for /u/"+user+" in /r/"+sub)
+									replies['prompt'].append({'name': user, 'subreddit': sub, 'added': False, 'exists': True})
 							else:
 								if addPrompt:
 									log.info("Adding prompt for /u/"+user+" in /r/"+sub)
 									database.addPrompt(user, sub)
 									replies['prompt'].append({'name': user, 'subreddit': sub, 'added': True, 'exists': False})
 								else:
-									log.info("Removing prompt for /u/"+user+" in /r/"+sub)
-									database.removePrompt(user, sub)
-									replies['prompt'].append({'name': user, 'subreddit': sub, 'added': False, 'exists': False})
+									log.info("Prompt already exists for /u/"+user+" in /r/"+sub)
+									replies['prompt'].append({'name': user, 'subreddit': sub, 'added': False, 'exists': True})
 
 				reddit.markMessageRead(message)
 
