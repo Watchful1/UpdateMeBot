@@ -440,6 +440,7 @@ def searchComments(searchTerm):
 		comments = json.json()['data']
 	except Exception as err:
 		log.warning("Could not parse data for search term: "+searchTerm)
+		log.warning(traceback.format_exc())
 		errors.append("Could not parse data for search term: "+url)
 		return 0, 0, 0
 
