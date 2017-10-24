@@ -68,7 +68,7 @@ def alertMessage(subscribedTo, subreddit, link, single):
 
 def eachHelper(item, includeMessageType = True):
 	strList = []
-	if 'single' in item:
+	if 'single' in item and item['single']:
 		if includeMessageType:
 			strList.append("UpdateMe ")
 		strList.append("next")
