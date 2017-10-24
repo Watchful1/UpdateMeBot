@@ -325,7 +325,7 @@ def getDeniedSubscriptions(Subreddit):
 	return results
 
 
-def activateSubreddit(Subreddit):
+def activateSubreddit(Subreddit, DefaultSubscribe):
 	c = dbConn.cursor()
 	result = c.execute('''
 		SELECT count(*)
@@ -336,15 +336,16 @@ def activateSubreddit(Subreddit):
 	if result.fetchone()[0] == 0:
 		c.execute('''
 			INSERT INTO subredditWhitelist
-			(Subreddit, Status)
-			VALUES (?, 1)
-		''', (Subreddit,))
+			(Subreddit, Status, DefaultSubscribe)
+			VALUES (?, 1, ?)
+		''', (Subreddit,DefaultSubscribe))
 	else:
 		c.execute('''
 			UPDATE subredditWhitelist
 			SET Status = 1
+				,DefaultSubscribe = ?
 			WHERE subreddit = ?
-		''', (Subreddit,))
+		''', (DefaultSubscribe, Subreddit))
 
 	c.execute('''
 		UPDATE subscriptions

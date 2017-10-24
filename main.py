@@ -269,7 +269,7 @@ def processMessages():
 									log.warning("Could not send message to /u/%s when activating subreddit", user)
 							replies['subredditsAdded'].append({'subreddit': sub, 'subscribers': len(deniedRequests)})
 
-							database.activateSubreddit(sub)
+							database.activateSubreddit(sub, line.startswith("addsubredditsub"))
 
 					elif line.startswith("subredditpm") and msgAuthor == globals.OWNER_NAME.lower():
 						subs = re.findall('(?:/r/)(\w*)', line)
