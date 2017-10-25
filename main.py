@@ -661,6 +661,8 @@ while True:
 			counts['updateCommentsSearched'], counts['updateCommentsAdded'], updateRequestSeconds = searchComments(UPDATE)
 			markTime('SearchCommentsUpdate')
 
+			time.sleep(1)
+
 			counts['subCommentsSearched'], counts['subCommentsAdded'], subscribeRequestSeconds = searchComments(SUBSCRIPTION)
 			markTime('SearchCommentsSubscribe')
 
