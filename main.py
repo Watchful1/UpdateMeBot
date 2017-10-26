@@ -189,7 +189,7 @@ def processMessages():
 				log.info("Parsing message from /u/"+msgAuthor)
 				for line in message.body.lower().splitlines():
 					if line.startswith("updateme") or line.startswith("subscribeme") or line.startswith("http"):
-						users = re.findall('(?: /u/)(\w*)', line)
+						users = re.findall('(?: /u/)([\w-]*)', line)
 						subs = re.findall('(?: /r/)(\w*)', line)
 						links = re.findall('(?:reddit.com/r/\w*/comments/)(\w*)', line)
 
@@ -224,7 +224,7 @@ def processMessages():
 						database.removeAllSubscriptions(msgAuthor)
 
 					elif line.startswith("remove"):
-						users = re.findall('(?:/u/)(\w*)', line)
+						users = re.findall('(?:/u/)([\w-]*)', line)
 						subs = re.findall('(?:/r/)(\w*)', line)
 
 						if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
@@ -288,7 +288,7 @@ def processMessages():
 					elif line.startswith("leavemealone") or line.startswith("talktome"):
 						addBlacklist = True if line.startswith("leavemealone") else False
 						subs = re.findall('(?:/r/)(\w*)', line)
-						users = re.findall('(?:/u/)(\w*)', line)
+						users = re.findall('(?:/u/)([\w-]*)', line)
 
 						if len(subs) or len(users):
 							if msgAuthor == globals.OWNER_NAME.lower():
@@ -312,7 +312,7 @@ def processMessages():
 					elif line.startswith("prompt") or line.startswith("dontprompt"):
 						addPrompt = True if line.startswith("prompt") else False
 						subs = re.findall('(?:/r/)(\w*)', line)
-						users = re.findall('(?:/u/)(\w*)', line)
+						users = re.findall('(?:/u/)([\w-]*)', line)
 
 						skip = False
 						if len(subs) and len(users) and msgAuthor == globals.OWNER_NAME.lower():
