@@ -328,7 +328,7 @@ def promptPublicComment(user, subreddit):
 	strList.append(" /r/")
 	strList.append(subreddit)
 	strList.append(") ")
-	strList.append(" to subscribe to /r/")
+	strList.append(" to subscribe to /u/")
 	strList.append(user)
 	strList.append(" and receive a message every time they post.")
 
