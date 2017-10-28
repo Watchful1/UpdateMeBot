@@ -302,7 +302,7 @@ def processMessages():
 									result = database.blacklist(user, False, addBlacklist)
 									replies['blacklist'].append({'name': user, 'isSubreddit': False, 'added': addBlacklist, 'result': result})
 							else:
-								log.info("User /u/"+msgAuthor+"tried tried to blacklist")
+								log.info("User /u/"+msgAuthor+" tried to blacklist")
 								replies['blacklistNot'] = True
 						else:
 							log.info(("Blacklisting" if addBlacklist else "Removing blacklist for")+" user /u/"+msgAuthor)
