@@ -191,14 +191,14 @@ def getMySubscriptions(Subscriber):
 	return results
 
 
-def addSubscription(Subscriber, SubscribedTo, Subreddit, date=datetime.now(), single=True):
+def addSubscription(Subscriber, SubscribedTo, Subreddit, date=datetime.now(), single=True, Filter=None):
 	c = dbConn.cursor()
 	try:
 		c.execute('''
 			INSERT INTO subscriptions
-			(Subscriber, SubscribedTo, Subreddit, LastChecked, Single)
-			VALUES (?, ?, ?, ?, ?)
-		''', (Subscriber, SubscribedTo, Subreddit, date.strftime("%Y-%m-%d %H:%M:%S"), single))
+			(Subscriber, SubscribedTo, Subreddit, LastChecked, Single, Filter)
+			VALUES (?, ?, ?, ?, ?, ?)
+		''', (Subscriber, SubscribedTo, Subreddit, date.strftime("%Y-%m-%d %H:%M:%S"), single, Filter))
 	except sqlite3.IntegrityError:
 		return False
 
@@ -364,7 +364,7 @@ def getDeniedSubscriptions(Subreddit):
 	return results
 
 
-def activateSubreddit(Subreddit, DefaultSubscribe):
+def activateSubreddit(Subreddit, DefaultSubscribe,  Filter):
 	c = dbConn.cursor()
 	result = c.execute('''
 		SELECT count(*)
@@ -375,16 +375,17 @@ def activateSubreddit(Subreddit, DefaultSubscribe):
 	if result.fetchone()[0] == 0:
 		c.execute('''
 			INSERT INTO subredditWhitelist
-			(Subreddit, Status, DefaultSubscribe)
-			VALUES (?, 1, ?)
-		''', (Subreddit,DefaultSubscribe))
+			(Subreddit, Status, DefaultSubscribe, Filter)
+			VALUES (?, 1, ?, ?)
+		''', (Subreddit, DefaultSubscribe, Filter))
 	else:
 		c.execute('''
 			UPDATE subredditWhitelist
 			SET Status = 1
 				,DefaultSubscribe = ?
+				,Filter = ?
 			WHERE subreddit = ?
-		''', (DefaultSubscribe, Subreddit))
+		''', (DefaultSubscribe, Subreddit, Filter))
 
 	c.execute('''
 		UPDATE subscriptions
@@ -707,3 +708,26 @@ def isPrompt(user, subreddit):
 		return True
 	else:
 		return False
+
+
+def getFilter(subreddit, subscriber, subscribedTo):
+	c = dbConn.cursor()
+	if subscriber is None or subscribedTo is None:
+		results = c.execute('''
+			SELECT Filter
+			FROM subredditWhitelist
+			where Subreddit = ?
+		''', (subreddit,))
+	else:
+		results = c.execute('''
+			SELECT Filter
+			FROM subscriptions
+			where Subreddit = ?
+				and Subscriber = ?
+				and SubscribedTo = ?
+		''', (subreddit, subscriber, subscribedTo))
+
+	result = results.fetchone()
+
+	if not result: return None  # record doesn't exist
+	return result[0]

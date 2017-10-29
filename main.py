@@ -141,7 +141,7 @@ def processSubreddits():
 	return subredditsCount, postsCount, messagesSent
 
 
-def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single = True, replies = {}):
+def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single = True, filter = None, replies = {}):
 	data = {'subscriber': Subscriber.lower(), 'subscribedTo': SubscribedTo.lower(), 'subreddit': Subreddit.lower(), 'single': single}
 
 	if not database.isSubredditWhitelisted(data['subreddit']):
@@ -150,7 +150,7 @@ def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single = Tr
 		replies["couldnotadd"].append(data)
 		return
 
-	result = database.addSubscription(data['subscriber'], data['subscribedTo'], data['subreddit'], date, single)
+	result = database.addSubscription(data['subscriber'], data['subscribedTo'], data['subreddit'], date, single, filter)
 	if result:
 		log.info("/u/"+data['subscriber']+" "+("updated" if single else "subscribed")+" to /u/"+data['subscribedTo']+" in /r/"+data['subreddit'])
 		replies["added"].append(data)
@@ -192,6 +192,7 @@ def processMessages():
 						users = re.findall('(?: /u/)([\w-]*)', line)
 						subs = re.findall('(?: /r/)(\w*)', line)
 						links = re.findall('(?:reddit.com/r/\w*/comments/)(\w*)', line)
+						filters = re.findall('(?:filter=)(\S*)', line)
 
 						if len(links) != 0:
 							try:
@@ -209,14 +210,18 @@ def processMessages():
 							else:
 								subscriptionTypeSingle = not database.subredditDefaultSubscribe(subs[0].lower())
 
+							if len(filters):
+								filter = filters[0]
+							else:
+								filter = None
 							if len(users) > 1:
 								for user in users:
-									addUpdateSubscription(str(message.author), user, subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, replies)
+									addUpdateSubscription(str(message.author), user, subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, filter, replies)
 							elif len(subs) > 1:
 								for sub in subs:
-									addUpdateSubscription(str(message.author), users[0], sub, datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, replies)
+									addUpdateSubscription(str(message.author), users[0], sub, datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, filter, replies)
 							else:
-								addUpdateSubscription(str(message.author), users[0], subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, replies)
+								addUpdateSubscription(str(message.author), users[0], subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, filter, replies)
 
 					elif line.startswith("removeall"):
 						log.info("Removing all subscriptions for /u/"+msgAuthor)
@@ -256,6 +261,12 @@ def processMessages():
 
 					elif line.startswith("addsubreddit") and msgAuthor == globals.OWNER_NAME.lower():
 						subs = re.findall('(?:/r/)(\w*)', line)
+						filters = re.findall('(?:filter=)(\S*)', line)
+						if len(filters):
+							filter = filters[0]
+						else:
+							filter = None
+
 						for sub in subs:
 							log.info("Whitelisting subreddit /r/"+sub)
 							deniedRequests = database.getDeniedSubscriptions(sub.lower())
@@ -269,7 +280,7 @@ def processMessages():
 									log.warning("Could not send message to /u/%s when activating subreddit", user)
 							replies['subredditsAdded'].append({'subreddit': sub, 'subscribers': len(deniedRequests)})
 
-							database.activateSubreddit(sub, line.startswith("addsubredditsub"))
+							database.activateSubreddit(sub, line.startswith("addsubredditsub"), filter)
 
 					elif line.startswith("subredditpm") and msgAuthor == globals.OWNER_NAME.lower():
 						subs = re.findall('(?:/r/)(\w*)', line)
