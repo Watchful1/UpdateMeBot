@@ -3,12 +3,15 @@ from datetime import datetime
 import globals
 
 dbConn = 0
+log = 0
 
 
-def init():
+def init(logIn):
 	global dbConn
-
 	dbConn = sqlite3.connect(globals.DATABASE_NAME)
+
+	global log
+	log = logIn
 
 	setup()
 
@@ -16,6 +19,20 @@ def init():
 def close():
 	dbConn.commit()
 	dbConn.close()
+
+
+migrations = {
+	1: [
+		'''
+			ALTER TABLE subscriptions
+			ADD Filter VARCHAR(1000)
+		''',
+		'''
+			ALTER TABLE subredditWhitelist
+			ADD Filter VARCHAR(1000)
+		'''
+	]
+}
 
 
 def setup():
@@ -82,6 +99,28 @@ def setup():
 		)
 	''')
 	dbConn.commit()
+
+	results = c.execute('''
+		PRAGMA USER_VERSION
+	''')
+	result = results.fetchone()[0]
+
+	log.debug("Found database version: "+str(result))
+	if len(migrations) > result:
+		log.debug("Found migrations: "+str(len(migrations) - result))
+
+		for i in range(result + 1, len(migrations) + 1):
+			log.debug("Applying version: "+str(i))
+
+			for migration in migrations[i]:
+				c.execute(migration)
+
+			c.execute('''
+				PRAGMA USER_VERSION = {}
+			'''.format(i))
+
+
+
 
 
 def printSubscriptions():

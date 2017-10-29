@@ -622,7 +622,7 @@ else:
 if not reddit.init(log, responseWhitelist, user):
 	sys.exit(0)
 
-database.init()
+database.init(log)
 
 signal.signal(signal.SIGINT, signal_handler)
 
