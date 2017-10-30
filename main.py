@@ -504,7 +504,7 @@ def searchComments(searchTerm):
 					datetime.utcfromtimestamp(comment['created_utc']), subscriptionType, replies)
 
 			posted = False
-			if len(replies['couldnotadd']) == 0 and not database.alwaysPMForSubreddit(comment['subreddit']) and not database.isThreadReplied(comment['link_id'][3:]):
+			if len(replies['couldnotadd']) == 0 and not database.alwaysPMForSubreddit(comment['subreddit'].lower()) and not database.isThreadReplied(comment['link_id'][3:]):
 				strList = []
 				existingSubscribers = database.getAuthorSubscribersCount(comment['subreddit'].lower(), comment['link_author'].lower())
 				strList.extend(strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'], comment['link_id'][3:], existingSubscribers))
@@ -641,6 +641,7 @@ errors = []
 i = 1
 while True:
 	log.debug("Starting run")
+
 	errors = []
 
 	timings = {
