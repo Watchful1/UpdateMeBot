@@ -501,7 +501,7 @@ def searchComments(searchTerm):
 			comment['link_author'] = str(reddit.getSubmission(comment['link_id'][3:]).author)
 
 			addUpdateSubscription(comment['author'], comment['link_author'], comment['subreddit'],
-					datetime.utcfromtimestamp(comment['created_utc']), subscriptionType, replies)
+					datetime.utcfromtimestamp(comment['created_utc']), subscriptionType, None, replies)
 
 			posted = False
 			if len(replies['couldnotadd']) == 0 and not database.alwaysPMForSubreddit(comment['subreddit'].lower()) and not database.isThreadReplied(comment['link_id'][3:]):
