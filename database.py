@@ -196,9 +196,9 @@ def addSubscription(Subscriber, SubscribedTo, Subreddit, date=datetime.now(), si
 	try:
 		c.execute('''
 			INSERT INTO subscriptions
-			(Subscriber, SubscribedTo, Subreddit, LastChecked, Single, Filter)
-			VALUES (?, ?, ?, ?, ?, ?)
-		''', (Subscriber, SubscribedTo, Subreddit, date.strftime("%Y-%m-%d %H:%M:%S"), single, Filter))
+			(Subscriber, SubscribedTo, Subreddit, LastChecked, Single)
+			VALUES (?, ?, ?, ?, ?)
+		''', (Subscriber, SubscribedTo, Subreddit, date.strftime("%Y-%m-%d %H:%M:%S"), single))
 	except sqlite3.IntegrityError:
 		return False
 
