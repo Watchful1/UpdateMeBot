@@ -6,12 +6,13 @@ dbConn = 0
 log = 0
 
 
-def init(logIn):
+def init(logIn=None):
 	global dbConn
 	dbConn = sqlite3.connect(globals.DATABASE_NAME)
 
-	global log
-	log = logIn
+	if logIn is not None:
+		global log
+		log = logIn
 
 	setup()
 
