@@ -73,6 +73,38 @@ def addDeniedRequest(deniedRequests):
 				log.warning("Could not send message to owner when notifying on subreddit threshold")
 
 
+def passesFilter(submission, filter):
+	if filter is None: return True
+	log.debug("Filter: "+filter)
+	for filStr in filter.split(','):
+		if filStr.startswith('-'):
+			require = False
+		elif filStr.startswith('+'):
+			require = True
+		else:
+			log.debug("Bad filter, skipping: "+filStr)
+			continue
+
+		if filStr.find('=') == -1:
+			fil = filStr[1:].lower()
+			value = None
+		else:
+			fil = filStr[1:filStr.find('=')].lower()
+			value = filStr[filStr.find('=')+1:].lower()
+
+		matches = False
+		if fil == "flair":
+			log.debug("Comparing flair: "+str(submission.link_flair_text).lower()+" : "+value)
+			if str(submission.link_flair_text).lower() == value: matches = True
+
+		if matches and not require:
+			return False
+		elif not matches and require:
+			return False
+
+	return True
+
+
 def processSubreddits():
 	subredditsCount = 0
 	postsCount = 0
@@ -96,6 +128,7 @@ def processSubreddits():
 				                ,'dateCreated': submissionCreated
 				                ,'author': str(submission.author)
 				                ,'link': "https://www.reddit.com"+submission.permalink
+				                ,'submission': submission
 			                })
 			if len(submissions) % 50 == 0:
 				log.info("Posts searched: "+str(len(submissions)))
@@ -112,7 +145,10 @@ def processSubreddits():
 			for submission in submissions:
 				postsCount += 1
 				subPostsCount += 1
-				if database.isPrompt(submission['author'].lower(), subreddit['subreddit']):
+
+				passesSubFilter = passesFilter(submission['submission'], database.getFilter(subreddit['subreddit']))
+
+				if database.isPrompt(submission['author'].lower(), subreddit['subreddit']) and passesSubFilter:
 					log.info("Posting a prompt for /u/"+submission['author'].lower()+" in /r/"+subreddit['subreddit'])
 					promptStrList = strings.promptPublicComment(submission['author'].lower(), subreddit['subreddit'])
 					promptStrList.append("\n\n*****\n\n")
@@ -121,18 +157,19 @@ def processSubreddits():
 
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], submission['author'].lower()):
 					if submission['dateCreated'] >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
-						messagesSent += 1
-						log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s: %s",
-						         subscriber['subscriber'], submission['author'], subreddit['subreddit'], submission['id'])
-						strList = strings.alertMessage(submission['author'], subreddit['subreddit'], submission['link'], subscriber['single'])
+						if (subscriber['filter'].lower() != "none" and passesFilter(submission, subscriber['filter'].lower())) or (subscriber['filter'].lower() == "none" and passesSubFilter):
+							messagesSent += 1
+							log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s: %s",
+							         subscriber['subscriber'], submission['author'], subreddit['subreddit'], submission['id'])
+							strList = strings.alertMessage(submission['author'], subreddit['subreddit'], submission['link'], subscriber['single'])
 
-						strList.append("\n\n*****\n\n")
-						strList.append(strings.footer)
+							strList.append("\n\n*****\n\n")
+							strList.append(strings.footer)
 
-						if reddit.sendMessage(subscriber['subscriber'], strings.messageSubject(subscriber['subscriber']), ''.join(strList)):
-							database.checkRemoveSubscription(subscriber['ID'], subscriber['single'], submission['dateCreated'] + timedelta(0,1))
-						else:
-							log.warning("Could not send message to /u/%s when sending update", subscriber['subscriber'])
+							if reddit.sendMessage(subscriber['subscriber'], strings.messageSubject(subscriber['subscriber']), ''.join(strList)):
+								database.checkRemoveSubscription(subscriber['ID'], subscriber['single'], submission['dateCreated'] + timedelta(0,1))
+							else:
+								log.warning("Could not send message to /u/%s when sending update", subscriber['subscriber'])
 
 		database.checkSubreddit(subreddit['subreddit'], startTimestamp)
 
@@ -264,6 +301,7 @@ def processMessages():
 						filters = re.findall('(?:filter=)(\S*)', line)
 						if len(filters):
 							filter = filters[0]
+							log.debug("Found filter in addsubreddit: "+filter)
 						else:
 							filter = None
 

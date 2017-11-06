@@ -163,13 +163,13 @@ def getSubredditAuthorSubscriptions(Subreddit, SubscribedTo):
 	c = dbConn.cursor()
 	results = []
 	for row in c.execute('''
-		SELECT ID, Subscriber, LastChecked, Single
+		SELECT ID, Subscriber, LastChecked, Single, Filter
 		FROM subscriptions
 		WHERE Subreddit = ?
 			and SubscribedTo = ?
 			and Approved = 1
 	''', (Subreddit, SubscribedTo)):
-		results.append({'ID': row[0], 'subscriber': row[1], 'lastChecked': row[2], 'single': row[3] == 1})
+		results.append({'ID': row[0], 'subscriber': row[1], 'lastChecked': row[2], 'single': row[3] == 1, 'filter': row[4]})
 
 	return results
 
@@ -386,7 +386,7 @@ def activateSubreddit(Subreddit, DefaultSubscribe,  Filter):
 				,DefaultSubscribe = ?
 				,Filter = ?
 			WHERE subreddit = ?
-		''', (DefaultSubscribe, Subreddit, Filter))
+		''', (DefaultSubscribe, Filter, Subreddit))
 
 	c.execute('''
 		UPDATE subscriptions
@@ -711,7 +711,7 @@ def isPrompt(user, subreddit):
 		return False
 
 
-def getFilter(subreddit, subscriber, subscribedTo):
+def getFilter(subreddit, subscriber=None, subscribedTo=None):
 	c = dbConn.cursor()
 	if subscriber is None or subscribedTo is None:
 		results = c.execute('''
@@ -731,4 +731,4 @@ def getFilter(subreddit, subscriber, subscribedTo):
 	result = results.fetchone()
 
 	if not result: return None  # record doesn't exist
-	return result[0]
+	return str(result[0])
