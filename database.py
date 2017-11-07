@@ -169,7 +169,7 @@ def getSubredditAuthorSubscriptions(Subreddit, SubscribedTo):
 			and SubscribedTo = ?
 			and Approved = 1
 	''', (Subreddit, SubscribedTo)):
-		results.append({'ID': row[0], 'subscriber': row[1], 'lastChecked': row[2], 'single': row[3] == 1, 'filter': row[4]})
+		results.append({'ID': row[0], 'subscriber': row[1], 'lastChecked': row[2], 'single': row[3] == 1, 'filter': str(row[4]).lower()})
 
 	return results
 
@@ -731,4 +731,4 @@ def getFilter(subreddit, subscriber=None, subscribedTo=None):
 	result = results.fetchone()
 
 	if not result: return None  # record doesn't exist
-	return str(result[0])
+	return str(result[0]).lower()

@@ -74,7 +74,7 @@ def addDeniedRequest(deniedRequests):
 
 
 def passesFilter(submission, filter):
-	if filter is None or filter.lower() == "none": return True
+	if filter == "none": return True
 	log.debug("Filter: "+filter)
 	for filStr in filter.split(','):
 		if filStr.startswith('-'):
@@ -156,7 +156,7 @@ def processSubreddits():
 
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], submission['author'].lower()):
 					if submission['dateCreated'] >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
-						if (subscriber['filter'].lower() != "none" and passesFilter(submission, subscriber['filter'].lower())) or (subscriber['filter'].lower() == "none" and passesSubFilter):
+						if (subscriber['filter'] != "none" and passesFilter(submission, subscriber['filter'])) or (subscriber['filter'] == "none" and passesSubFilter):
 							messagesSent += 1
 							log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s: %s",
 							         subscriber['subscriber'], submission['author'], subreddit['subreddit'], submission['id'])
