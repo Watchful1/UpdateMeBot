@@ -74,7 +74,7 @@ def addDeniedRequest(deniedRequests):
 
 
 def passesFilter(submission, filter):
-	if filter is None: return True
+	if filter is None or filter.lower() == "none": return True
 	log.debug("Filter: "+filter)
 	for filStr in filter.split(','):
 		if filStr.startswith('-'):
