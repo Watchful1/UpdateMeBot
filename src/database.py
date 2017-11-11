@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime
-import globals
+
+from src import globals
 
 dbConn = 0
 log = 0

@@ -1,23 +1,23 @@
 #!/usr/bin/python3
 
-import praw
-import time
-from datetime import datetime
-from datetime import timedelta
-import database
 import logging.handlers
 import os
-import strings
 import re
-import globals
-import traceback
-import sys
 import signal
-import requests
+import sys
+import time
+import traceback
+from datetime import datetime
+from datetime import timedelta
 from shutil import copyfile
-import reddit
-import configparser
 
+import database
+import globals
+import praw
+import reddit
+import requests
+
+from src import strings
 
 ### Constants ###
 ## column numbers
@@ -134,7 +134,7 @@ def processSubreddits():
 
 		if hitEnd and len(submissions):
 			log.info("Messaging owner that that we might have missed a post in /r/"+subreddit['subreddit'])
-			strList = strings.possibleMissedPostMessage(submissions[len(submissions)-1]['dateCreated'], subredditDatetime, subreddit['subreddit'])
+			strList = strings.possibleMissedPostMessage(submissions[len(submissions) - 1]['dateCreated'], subredditDatetime, subreddit['subreddit'])
 			strList.append("\n\n*****\n\n")
 			strList.append(strings.footer)
 			if not reddit.sendMessage(globals.OWNER_NAME, "Missed Post", ''.join(strList)):
@@ -544,7 +544,8 @@ def searchComments(searchTerm):
 			if len(replies['couldnotadd']) == 0 and not database.alwaysPMForSubreddit(comment['subreddit'].lower()) and not database.isThreadReplied(comment['link_id'][3:]):
 				strList = []
 				existingSubscribers = database.getAuthorSubscribersCount(comment['subreddit'].lower(), comment['link_author'].lower())
-				strList.extend(strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'], comment['link_id'][3:], existingSubscribers))
+				strList.extend(
+					strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'], comment['link_id'][3:], existingSubscribers))
 				strList.append("\n\n*****\n\n")
 				strList.append(strings.footer)
 

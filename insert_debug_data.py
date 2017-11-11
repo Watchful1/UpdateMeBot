@@ -1,4 +1,4 @@
-import database
+from src import database
 
 database.init()
 

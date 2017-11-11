@@ -1,7 +1,9 @@
-import praw
-import globals
-import traceback
 import configparser
+import traceback
+
+import praw
+
+from src import globals
 
 reddit = None
 log = None
@@ -26,7 +28,7 @@ def init(logger, responseWhitelist, user):
 	log = logger
 	whitelist = responseWhitelist
 
-	log.info("Logged into reddit as /u/"+globals.ACCOUNT_NAME)
+	log.info("Logged into reddit as /u/" + globals.ACCOUNT_NAME)
 	return True
 
 

@@ -1,4 +1,4 @@
-import globals
+from src import globals
 
 
 def messageSubject(user):
@@ -158,7 +158,7 @@ def couldNotSubscribeSection(couldNotSubscribeList):
 	else:
 		strList.append("This bot works by checking every subreddit that someone is subscribed to every few minutes. ")
 		strList.append("Each subreddit it checks takes several seconds, so I have to limit the number of subreddits or the bot will get overloaded. ")
-		strList.append("If you think this would be a good subreddit for this bot, message /u/"+globals.OWNER_NAME+" and he'll take a look. ")
+		strList.append("If you think this would be a good subreddit for this bot, message /u/" + globals.OWNER_NAME + " and he'll take a look. ")
 		strList.append("I've also logged your request, so if the subreddit does get added, I'll automatically start sending your updates.")
 
 	strList.append("\n\n")
@@ -502,18 +502,18 @@ def longRunMessage(timings, counts, errors):
 
 couldNotUnderstandSection = (
 	"Well, I got your message, but I didn't understand anything in it. "
-	"If I should have, message /u/"+globals.OWNER_NAME+" and he'll look into it."
+	"If I should have, message /u/" + globals.OWNER_NAME + " and he'll look into it."
 )
 
 footer = (
 	"|[^(FAQs)](https://np.reddit.com/r/UpdateMeBot/comments/4wirnm/updatemebot_info/)"
-	"|[^(Request An Update)](http://np.reddit.com/message/compose/?to="+globals.ACCOUNT_NAME+"&subject=Update&message="
+	"|[^(Request An Update)](http://np.reddit.com/message/compose/?to=" + globals.ACCOUNT_NAME + "&subject=Update&message="
 		"Replace this text with a line starting with UpdateMe and then either a username and subreddit, or a link to a thread. "
 		"You can also use SubscribeMe to get a message each time that user posts instead of just the next time"
 	    ")"
-	"|[^(Your Updates)](http://np.reddit.com/message/compose/?to="+globals.ACCOUNT_NAME+"&subject=List Of Updates&message=MyUpdates)"
-	"|[^(Remove All Updates)](http://np.reddit.com/message/compose/?to="+globals.ACCOUNT_NAME+"&subject=Remove All Updates&message=RemoveAll)"
-	"|[^(Feedback)](http://np.reddit.com/message/compose/?to="+globals.OWNER_NAME+"&subject=UpdateMeBot Feedback)"
+	"|[^(Your Updates)](http://np.reddit.com/message/compose/?to=" + globals.ACCOUNT_NAME + "&subject=List Of Updates&message=MyUpdates)"
+	"|[^(Remove All Updates)](http://np.reddit.com/message/compose/?to=" + globals.ACCOUNT_NAME + "&subject=Remove All Updates&message=RemoveAll)"
+	"|[^(Feedback)](http://np.reddit.com/message/compose/?to=" + globals.OWNER_NAME + "&subject=UpdateMeBot Feedback)"
 	"|[^(Code)](https://github.com/Watchful1/RedditSubsBot)"
 	"\n|-|-|-|-|-|-|"
 )
