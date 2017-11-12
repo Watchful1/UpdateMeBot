@@ -10,3 +10,6 @@ BACKUP_ITERATIONS = 60
 DATABASE_NAME = "database.db"
 LOGFOLDER_NAME = "logs"
 BACKUPFOLDER_NAME = "backup"
+
+SUBSCRIPTION_NAME = "subscribeme"
+UPDATE_NAME = "updateme"

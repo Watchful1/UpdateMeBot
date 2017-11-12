@@ -1,19 +1,16 @@
 import sqlite3
+import logging.handlers
 from datetime import datetime
 
 from src import globals
 
 dbConn = 0
-log = 0
+log = logging.getLogger("bot")
 
 
-def init(logIn=None):
+def init():
 	global dbConn
 	dbConn = sqlite3.connect(globals.DATABASE_NAME)
-
-	if logIn is not None:
-		global log
-		log = logIn
 
 	setup()
 
