@@ -2,6 +2,7 @@ from src import reddit
 from src import database
 from src import strings
 from src import utility
+from src import globals
 import praw
 import re
 from datetime import datetime
@@ -9,6 +10,7 @@ import traceback
 import logging.handlers
 
 log = logging.getLogger("bot")
+
 
 def processMessages():
 	messagesProcessed = 0
@@ -18,8 +20,8 @@ def processMessages():
 			if isinstance(message, praw.models.Message):
 				messagesProcessed += 1
 				replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': [], 'removed': [], 'notremoved': [],
-				            'subredditsAdded': [], 'commentsDeleted': [], 'alwaysPM': [], 'blacklist': [], 'prompt': [],
-				            'blacklistNot': False, 'list': False}
+				           'subredditsAdded': [], 'commentsDeleted': [], 'alwaysPM': [], 'blacklist': [], 'prompt': [],
+				           'blacklistNot': False, 'list': False}
 				msgAuthor = str(message.author).lower()
 				log.info("Parsing message from /u/"+msgAuthor)
 				for line in message.body.lower().splitlines():
@@ -51,12 +53,18 @@ def processMessages():
 								filter = None
 							if len(users) > 1:
 								for user in users:
-									utility.addUpdateSubscription(str(message.author), user, subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, filter, replies)
+									utility.addUpdateSubscription(str(message.author), user, subs[0],
+									                              datetime.utcfromtimestamp(message.created_utc),
+									                              subscriptionTypeSingle, filter, replies)
 							elif len(subs) > 1:
 								for sub in subs:
-									utility.addUpdateSubscription(str(message.author), users[0], sub, datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, filter, replies)
+									utility.addUpdateSubscription(str(message.author), users[0], sub,
+									                              datetime.utcfromtimestamp(message.created_utc),
+									                              subscriptionTypeSingle, filter, replies)
 							else:
-								utility.addUpdateSubscription(str(message.author), users[0], subs[0], datetime.utcfromtimestamp(message.created_utc), subscriptionTypeSingle, filter, replies)
+								utility.addUpdateSubscription(str(message.author), users[0], subs[0],
+								                              datetime.utcfromtimestamp(message.created_utc),
+								                              subscriptionTypeSingle, filter, replies)
 
 					elif line.startswith("removeall"):
 						log.info("Removing all subscriptions for /u/"+msgAuthor)
@@ -228,7 +236,7 @@ def processMessages():
 					strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
 					strList.append("\n\n*****\n\n")
 
-					addDeniedRequest(replies['couldnotadd'])
+					utility.addDeniedRequest(replies['couldnotadd'])
 				if len(replies['subredditsAdded']):
 					sectionCount += 1
 					strList.extend(strings.subredditActivatedMessage(replies['subredditsAdded']))

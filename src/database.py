@@ -167,7 +167,8 @@ def getSubredditAuthorSubscriptions(Subreddit, SubscribedTo):
 			and SubscribedTo = ?
 			and Approved = 1
 	''', (Subreddit, SubscribedTo)):
-		results.append({'ID': row[0], 'subscriber': row[1], 'lastChecked': row[2], 'single': row[3] == 1, 'filter': str(row[4]).lower()})
+		results.append({'ID': row[0], 'subscriber': row[1], 'lastChecked': row[2], 'single': row[3] == 1,
+		                'filter': str(row[4]).lower()})
 
 	return results
 
@@ -190,14 +191,14 @@ def getMySubscriptions(Subscriber):
 	return results
 
 
-def addSubscription(Subscriber, SubscribedTo, Subreddit, date=datetime.now(), single=True, Filter=None):
+def addSubscription(Subscriber, SubscribedTo, Subreddit, date=datetime.now(), single=True, filter=None):
 	c = dbConn.cursor()
 	try:
 		c.execute('''
 			INSERT INTO subscriptions
-			(Subscriber, SubscribedTo, Subreddit, LastChecked, Single)
-			VALUES (?, ?, ?, ?, ?)
-		''', (Subscriber, SubscribedTo, Subreddit, date.strftime("%Y-%m-%d %H:%M:%S"), single))
+			(Subscriber, SubscribedTo, Subreddit, LastChecked, Single, Filter)
+			VALUES (?, ?, ?, ?, ?, ?)
+		''', (Subscriber, SubscribedTo, Subreddit, date.strftime("%Y-%m-%d %H:%M:%S"), single, filter))
 	except sqlite3.IntegrityError:
 		return False
 

@@ -17,19 +17,12 @@ from src import comments
 from src import messages
 from src import subreddits
 
-
-### Constants ###
-## column numbers
-# getSubscribedSubreddits query
-SUBBED_SUBREDDIT = 0
-SUBBED_LASTCHECKED = 1
-
 ### Logging setup ###
 LOG_LEVEL = logging.DEBUG
 if not os.path.exists(globals.LOGFOLDER_NAME):
-    os.makedirs(globals.LOGFOLDER_NAME)
-LOG_FILENAME = globals.LOGFOLDER_NAME+"/"+"bot.log"
-LOG_FILE_BACKUPCOUNT = 5
+	os.makedirs(globals.LOGFOLDER_NAME)
+LOG_FILENAME = globals.LOGFOLDER_NAME + "/" + "bot.log"
+LOG_FILE_BACKUP_COUNT = 5
 LOG_FILE_MAXSIZE = 1024 * 256 * 16
 
 log = logging.getLogger("bot")
@@ -39,7 +32,8 @@ log_stderrHandler = logging.StreamHandler()
 log_stderrHandler.setFormatter(log_formatter)
 log.addHandler(log_stderrHandler)
 if LOG_FILENAME is not None:
-	log_fileHandler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=LOG_FILE_MAXSIZE, backupCount=LOG_FILE_BACKUPCOUNT)
+	log_fileHandler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=LOG_FILE_MAXSIZE,
+	                                                       backupCount=LOG_FILE_BACKUP_COUNT)
 	log_formatter_file = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 	log_fileHandler.setFormatter(log_formatter_file)
 	log.addHandler(log_fileHandler)
@@ -48,7 +42,7 @@ if LOG_FILENAME is not None:
 ### Functions ###
 
 def signal_handler(signal, frame):
-	log.info("Handling interupt")
+	log.info("Handling interrupt")
 	database.close()
 	sys.exit(0)
 
@@ -57,21 +51,22 @@ def backupDatabase():
 	database.close()
 
 	if not os.path.exists(globals.BACKUPFOLDER_NAME):
-	    os.makedirs(globals.BACKUPFOLDER_NAME)
-	copyfile(globals.DATABASE_NAME, globals.BACKUPFOLDER_NAME + "/" + datetime.utcnow().strftime("%Y-%m-%d_%H:%M") + ".db")
+		os.makedirs(globals.BACKUPFOLDER_NAME)
+	copyfile(globals.DATABASE_NAME,
+	         globals.BACKUPFOLDER_NAME + "/" + datetime.utcnow().strftime("%Y-%m-%d_%H:%M") + ".db")
 
 	database.init()
 
-lastMark = None
-def markTime(name, startTime = None):
+
+def markTime(name, start=None):
 	global lastMark
 	global timings
-	if startTime == None:
+	if start is None:
 		timings[name] = time.perf_counter() - lastMark
 		lastMark = time.perf_counter()
 		return lastMark
 	else:
-		timings[name] = time.perf_counter() - startTime
+		timings[name] = time.perf_counter() - start
 		return time.perf_counter()
 
 
@@ -111,7 +106,7 @@ else:
 if not reddit.init(log, responseWhitelist, user):
 	sys.exit(0)
 
-database.init(log)
+database.init()
 
 signal.signal(signal.SIGINT, signal_handler)
 
@@ -148,12 +143,16 @@ while True:
 	subscribeRequestSeconds = 0
 	try:
 		if not noSearchComments:
-			counts['updateCommentsSearched'], counts['updateCommentsAdded'], updateRequestSeconds = comments.searchComments(globals.UPDATE_NAME, APP_START_TIME)
+			counts['updateCommentsSearched'], counts['updateCommentsAdded'], updateRequestSeconds, newErrors = \
+				comments.searchComments(globals.UPDATE_NAME, APP_START_TIME)
+			errors.append(newErrors)
 			markTime('SearchCommentsUpdate')
 
 			time.sleep(1)
 
-			counts['subCommentsSearched'], counts['subCommentsAdded'], subscribeRequestSeconds = comments.searchComments(globals.SUBSCRIPTION_NAME, APP_START_TIME)
+			counts['subCommentsSearched'], counts['subCommentsAdded'], subscribeRequestSeconds, newErrors = \
+				comments.searchComments(globals.SUBSCRIPTION_NAME, APP_START_TIME)
+			errors.append(newErrors)
 			markTime('SearchCommentsSubscribe')
 
 		if not noRespondMessages:
@@ -161,7 +160,8 @@ while True:
 			markTime('ProcessMessages')
 
 		if not noSearchPosts:
-			counts['subredditsCount'], counts['postsCount'], counts['subscriptionMessagesSent'] = subreddits.processSubreddits()
+			counts['subredditsCount'], counts['postsCount'], counts[
+				'subscriptionMessagesSent'] = subreddits.processSubreddits()
 			markTime('ProcessSubreddits')
 
 		if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
@@ -190,14 +190,14 @@ while True:
 		problemStrList = []
 		if recovered:
 			log.warning("Messaging owner that that we recovered from a problem")
-			problemStrList.append("Recovered from an exception after "+str(seconds)+" seconds.")
+			problemStrList.append("Recovered from an exception after " + str(seconds) + " seconds.")
 			problemStrList.append("\n\n*****\n\n")
 			problemStrList.append(strings.footer)
 			if not reddit.sendMessage(globals.OWNER_NAME, "Recovered", ''.join(problemStrList)):
 				log.warning("Could not send message to owner when notifying recovery")
 		else:
 			log.warning("Messaging owner that that we failed to recover from a problem")
-			problemStrList.append("Failed to recovered from an exception after "+str(seconds)+" seconds.")
+			problemStrList.append("Failed to recovered from an exception after " + str(seconds) + " seconds.")
 			problemStrList.append("\n\n*****\n\n")
 			problemStrList.append(strings.footer)
 			if not reddit.sendMessage(globals.OWNER_NAME, "Failed recovery", ''.join(problemStrList)):
@@ -212,17 +212,13 @@ while True:
 		log.debug("Could not build long run log")
 		log.warning(traceback.format_exc())
 
-	if timings['end'] > (
-					globals.WARNING_RUN_TIME +
-					counts['subscriptionMessagesSent'] +
-					counts['updateCommentsAdded'] +
-					counts['subCommentsAdded'] +
-					counts['existingCommentsUpdated'] +
-					updateRequestSeconds +
-					subscribeRequestSeconds
-			) or len(errors):
-		log.debug("updateRequestSeconds: "+str(updateRequestSeconds)+" subscribeRequestSeconds: "+str(subscribeRequestSeconds))
-		log.warning("Messaging owner that that the process took too long to run or we encountered errors: %d", int(timings['end']))
+	if timings['end'] > (globals.WARNING_RUN_TIME + counts['subscriptionMessagesSent'] + counts['updateCommentsAdded'] +
+				counts['subCommentsAdded'] + counts['existingCommentsUpdated'] + updateRequestSeconds +
+				subscribeRequestSeconds) or len(errors):
+		log.debug("updateRequestSeconds: " + str(updateRequestSeconds) + " subscribeRequestSeconds: " +
+		        str(subscribeRequestSeconds))
+		log.warning("Messaging owner that that the process took too long to run or we encountered errors: %d",
+		            int(timings['end']))
 		noticeStrList = strings.longRunMessage(timings, counts, errors)
 
 		noticeStrList.append("\n\n*****\n\n")
@@ -234,6 +230,5 @@ while True:
 		break
 	i += 1
 	time.sleep(globals.SLEEP_TIME)
-
 
 database.close()

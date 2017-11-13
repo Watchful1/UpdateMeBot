@@ -2,6 +2,7 @@ from src import database
 from src import reddit
 from src import strings
 from src import utility
+from src import globals
 from datetime import datetime
 from datetime import timedelta
 import logging.handlers
@@ -28,18 +29,15 @@ def processSubreddits():
 			if submissionCreated < subredditDatetime:
 				hitEnd = False
 				break
-			submissions.append({'id': submission.id
-				                ,'dateCreated': submissionCreated
-				                ,'author': str(submission.author)
-				                ,'link': "https://www.reddit.com"+submission.permalink
-				                ,'submission': submission
-			                })
+			submissions.append({'id': submission.id, 'dateCreated': submissionCreated, 'author': str(submission.author),
+								'link': "https://www.reddit.com"+submission.permalink, 'submission': submission})
 			if len(submissions) % 50 == 0:
 				log.info("Posts searched: "+str(len(submissions)))
 
 		if hitEnd and len(submissions):
 			log.info("Messaging owner that that we might have missed a post in /r/"+subreddit['subreddit'])
-			strList = strings.possibleMissedPostMessage(submissions[len(submissions) - 1]['dateCreated'], subredditDatetime, subreddit['subreddit'])
+			strList = strings.possibleMissedPostMessage(submissions[len(submissions) - 1]['dateCreated'], subredditDatetime,
+			                                            subreddit['subreddit'])
 			strList.append("\n\n*****\n\n")
 			strList.append(strings.footer)
 			if not reddit.sendMessage(globals.OWNER_NAME, "Missed Post", ''.join(strList)):
@@ -61,17 +59,21 @@ def processSubreddits():
 
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], submission['author'].lower()):
 					if submission['dateCreated'] >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
-						if (subscriber['filter'] != "none" and utility.passesFilter(submission, subscriber['filter'])) or (subscriber['filter'] == "none" and passesSubFilter):
+						if (subscriber['filter'] != "none" and utility.passesFilter(submission, subscriber['filter'])) or \
+								(subscriber['filter'] == "none" and passesSubFilter):
 							messagesSent += 1
 							log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s: %s",
 							         subscriber['subscriber'], submission['author'], subreddit['subreddit'], submission['id'])
-							strList = strings.alertMessage(submission['author'], subreddit['subreddit'], submission['link'], subscriber['single'])
+							strList = strings.alertMessage(submission['author'], subreddit['subreddit'], submission['link'],
+							                               subscriber['single'])
 
 							strList.append("\n\n*****\n\n")
 							strList.append(strings.footer)
 
-							if reddit.sendMessage(subscriber['subscriber'], strings.messageSubject(subscriber['subscriber']), ''.join(strList)):
-								database.checkRemoveSubscription(subscriber['ID'], subscriber['single'], submission['dateCreated'] + timedelta(0,1))
+							if reddit.sendMessage(subscriber['subscriber'], strings.messageSubject(subscriber['subscriber']),
+							                      ''.join(strList)):
+								database.checkRemoveSubscription(subscriber['ID'], subscriber['single'], submission['dateCreated']
+								                                 + timedelta(0,1))
 							else:
 								log.warning("Could not send message to /u/%s when sending update", subscriber['subscriber'])
 

@@ -66,7 +66,7 @@ def alertMessage(subscribedTo, subreddit, link, single):
 	return strList
 
 
-def eachHelper(item, includeMessageType = True):
+def eachHelper(item, includeMessageType=True):
 	strList = []
 	if 'single' in item and item['single']:
 		if includeMessageType:
@@ -154,12 +154,16 @@ def couldNotSubscribeSection(couldNotSubscribeList):
 	strList.append(".\n\n")
 	if writingprompts:
 		strList.append("The moderators of /r/WritingPrompts have requested that this bot not be turned on in the sub. ")
-		strList.append("If you think it would be useful, feel free to [message them](https://www.reddit.com/message/compose?to=%2Fr%2FWritingPrompts&subject=UpdateMeBot) and let them know.")
+		strList.append("If you think it would be useful, feel free to [message them](")
+		strList.append("https://www.reddit.com/message/compose?to=%2Fr%2FWritingPrompts&subject=UpdateMeBot")
+		strList.append(") and let them know.")
 	else:
 		strList.append("This bot works by checking every subreddit that someone is subscribed to every few minutes. ")
-		strList.append("Each subreddit it checks takes several seconds, so I have to limit the number of subreddits or the bot will get overloaded. ")
-		strList.append("If you think this would be a good subreddit for this bot, message /u/" + globals.OWNER_NAME + " and he'll take a look. ")
-		strList.append("I've also logged your request, so if the subreddit does get added, I'll automatically start sending your updates.")
+		strList.append("Each subreddit it checks takes several seconds, so I have to limit the number of subreddits or")
+		strList.append(" the bot will get overloaded. If you think this would be a good subreddit for this bot, message /u/")
+		strList.append(globals.OWNER_NAME)
+		strList.append(" and he'll take a look. I've also logged your request, so if the subreddit does get added, ")
+		strList.append("I'll automatically start sending your updates.")
 
 	strList.append("\n\n")
 
@@ -216,7 +220,9 @@ def removeUpdatesConfirmationSection(removedList):
 
 
 def activatingSubredditMessage(subreddit, subscriptions):
-	strList = ["/r/",subreddit," has been added to this bot. Following is the list of users you requested to be subscribed to.\n\n"]
+	strList = ["/r/"]
+	strList.append(subreddit)
+	strList.append(" has been added to this bot. Following is the list of users you requested to be subscribed to.\n\n")
 
 	for subscription in subscriptions:
 		if subscription['single']:
@@ -227,7 +233,8 @@ def activatingSubredditMessage(subreddit, subscriptions):
 		strList.append(subscription['subscribedTo'])
 		strList.append("  \n")
 
-	strList.append("\n\nNote, your subscription automatically starts at the time of your original request, so if it's been a while you might get a flood of messages.")
+	strList.append("\n\nNote, your subscription automatically starts at the time of your original request, ")
+	strList.append("so if it's been a while you might get a flood of messages.")
 
 	return strList
 
@@ -337,10 +344,6 @@ def promptPublicComment(user, subreddit):
 
 def subredditNoticeThresholdMessage(subreddit, count):
 	return ["/r/", subreddit, " has hit the notice threshold, which is ", str(count)]
-
-
-def longRunMessage(seconds):
-	return ["Loop run took too long: ", str(seconds)]
 
 
 def confirmationComment(subscriptionType, subscribeTo, subreddit, threadID, alreadySubscribed=0):
@@ -508,9 +511,10 @@ couldNotUnderstandSection = (
 footer = (
 	"|[^(FAQs)](https://np.reddit.com/r/UpdateMeBot/comments/4wirnm/updatemebot_info/)"
 	"|[^(Request An Update)](http://np.reddit.com/message/compose/?to=" + globals.ACCOUNT_NAME + "&subject=Update&message="
-		"Replace this text with a line starting with UpdateMe and then either a username and subreddit, or a link to a thread. "
-		"You can also use SubscribeMe to get a message each time that user posts instead of just the next time"
-	    ")"
+	"Replace this text with a line starting with UpdateMe and then either a username and subreddit, "
+	"or a link to a thread. You can also use SubscribeMe to get a message each time that user posts "
+	"instead of just the next time"
+	")"
 	"|[^(Your Updates)](http://np.reddit.com/message/compose/?to=" + globals.ACCOUNT_NAME + "&subject=List Of Updates&message=MyUpdates)"
 	"|[^(Remove All Updates)](http://np.reddit.com/message/compose/?to=" + globals.ACCOUNT_NAME + "&subject=Remove All Updates&message=RemoveAll)"
 	"|[^(Feedback)](http://np.reddit.com/message/compose/?to=" + globals.OWNER_NAME + "&subject=UpdateMeBot Feedback)"

@@ -14,21 +14,20 @@ log = logging.getLogger("bot")
 
 
 def searchComments(searchTerm, startTime):
-	global errors
+	errors = []
 	if searchTerm == globals.UPDATE_NAME:
 		subscriptionType = True
 	elif searchTerm == globals.SUBSCRIPTION_NAME:
 		subscriptionType = False
 
-	requestSeconds = 0
+	url = "https://api.pushshift.io/reddit/comment/search?q="+searchTerm+"&limit=100&sort=desc"
 	try:
-		url = "https://api.pushshift.io/reddit/comment/search?q="+searchTerm+"&limit=100&sort=desc"
 		requestTime = time.perf_counter()
 		json = requests.get(url, headers={'User-Agent': globals.USER_AGENT})
 		requestSeconds = int(time.perf_counter() - requestTime)
 		if json.status_code != 200:
-			log.warning("Could not parse data for search term: "+searchTerm + " status: "+str(json.status_code))
-			errors.append("Could not parse data for search term: "+str(json.status_code) + " : " +url)
+			log.warning("Could not parse data for search term: "+searchTerm + " status: " + str(json.status_code))
+			errors.append("Could not parse data for search term: "+str(json.status_code) + " : " + url)
 			return 0, 0, 0
 		comments = json.json()['data']
 	except Exception as err:
@@ -86,19 +85,25 @@ def searchComments(searchTerm, startTime):
 					datetime.utcfromtimestamp(comment['created_utc']), subscriptionType, None, replies)
 
 			posted = False
-			if len(replies['couldnotadd']) == 0 and not database.alwaysPMForSubreddit(comment['subreddit'].lower()) and not database.isThreadReplied(comment['link_id'][3:]):
+			if len(replies['couldnotadd']) == 0 and not database.alwaysPMForSubreddit(comment['subreddit'].lower()) \
+						and not database.isThreadReplied(comment['link_id'][3:]):
 				strList = []
-				existingSubscribers = database.getAuthorSubscribersCount(comment['subreddit'].lower(), comment['link_author'].lower())
+				existingSubscribers = database.getAuthorSubscribersCount(comment['subreddit'].lower(),
+				                                                         comment['link_author'].lower())
 				strList.extend(
-					strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'], comment['link_id'][3:], existingSubscribers))
+					strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'],
+					                            comment['link_id'][3:], existingSubscribers))
 				strList.append("\n\n*****\n\n")
 				strList.append(strings.footer)
 
-				log.info("Publicly replying to /u/%s for /u/%s in /r/%s:",comment['author'],comment['link_author'],comment['subreddit'])
+				log.info("Publicly replying to /u/%s for /u/%s in /r/%s:", comment['author'], comment['link_author'],
+				         comment['subreddit'])
 				resultCommentID = reddit.replyComment(comment['id'], ''.join(strList))
 				if resultCommentID is not None:
-					database.addThread(comment['link_id'][3:], resultCommentID, comment['link_author'].lower(), comment['subreddit'].lower(),
-				                comment['author'].lower(), datetime.utcfromtimestamp(comment['created_utc']), existingSubscribers, subscriptionType)
+					database.addThread(comment['link_id'][3:], resultCommentID, comment['link_author'].lower(),
+					                   comment['subreddit'].lower(), comment['author'].lower(),
+					                   datetime.utcfromtimestamp(comment['created_utc']), existingSubscribers,
+					                   subscriptionType)
 					posted = True
 				else:
 					log.warning("Could not publicly reply to /u/%s", comment['author'])
@@ -121,13 +126,17 @@ def searchComments(searchTerm, startTime):
 				strList.append("\n\n*****\n\n")
 				strList.append(strings.footer)
 
-				log.info("Messaging confirmation for public comment to /u/%s for /u/%s in /r/%s:",comment['author'],comment['link_author'],comment['subreddit'])
-				if not reddit.sendMessage(comment['author'], strings.messageSubject(comment['author']), ''.join(strList)):
-					log.warning("Could not send message to /u/%s when sending confirmation for public comment", comment['author'])
+				log.info("Messaging confirmation for public comment to /u/%s for /u/%s in /r/%s:", comment['author'],
+				         comment['link_author'], comment['subreddit'])
+				if not reddit.sendMessage(comment['author'], strings.messageSubject(comment['author']),
+				                          ''.join(strList)):
+					log.warning("Could not send message to /u/%s when sending confirmation for public comment",
+					            comment['author'])
 
-		database.updateCommentSearchSeconds(searchTerm, datetime.utcfromtimestamp(comment['created_utc']) + timedelta(0,1))
+		database.updateCommentSearchSeconds(searchTerm, datetime.utcfromtimestamp(comment['created_utc']) +
+		                                    timedelta(0, 1))
 
-	return commentsSearched, commentsAdded, requestSeconds
+	return commentsSearched, commentsAdded, requestSeconds, errors
 
 
 def updateExistingComments():
@@ -135,7 +144,8 @@ def updateExistingComments():
 	for thread in database.getIncorrectThreads(datetime.utcnow() - timedelta(days=globals.COMMENT_EDIT_DAYS_CUTOFF)):
 		commentsUpdated += 1
 		strList = []
-		strList.extend(strings.confirmationComment(thread['single'], thread['subscribedTo'], thread['subreddit'], thread['threadID'], thread['currentCount']))
+		strList.extend(strings.confirmationComment(thread['single'], thread['subscribedTo'], thread['subreddit'],
+		                                           thread['threadID'], thread['currentCount']))
 		strList.append("\n\n*****\n\n")
 		strList.append(strings.footer)
 
