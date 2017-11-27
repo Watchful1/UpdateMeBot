@@ -30,18 +30,18 @@ def searchComments(searchTerm, startTime):
 		if json.status_code != 200:
 			log.warning("Could not parse data for search term: "+searchTerm + " status: " + str(json.status_code))
 			errors.append("Could not parse data for search term: "+str(json.status_code) + " : " + url)
-			return 0, 0, 0
+			return 0, 0, 0, errors
 		comments = json.json()['data']
 	except Exception as err:
 		log.warning("Could not parse data for search term: "+searchTerm)
 		log.warning(traceback.format_exc())
 		errors.append("Could not parse data for search term: "+url)
-		return 0, 0, 0
+		return 0, 0, 0, errors
 
 	if len(comments) == 0:
 		log.warning("Could not parse data for search term, no results: "+searchTerm + " status: "+str(json.status_code))
 		errors.append("Could not parse data for search term, no results: "+str(json.status_code) + " : " +url)
-		return 0, 0, 0
+		return 0, 0, 0, errors
 	elif requestSeconds > 80 and len(comments) > 0:
 		log.warning("Long request, but returned successfully: "+str(requestSeconds))
 
@@ -67,7 +67,7 @@ def searchComments(searchTerm, startTime):
 
 
 	if oldestIndex == -1:
-		return 0, 0, requestSeconds
+		return 0, 0, requestSeconds, errors
 
 	commentsAdded = 0
 	commentsSearched = 0
