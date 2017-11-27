@@ -9,7 +9,7 @@ import traceback
 from datetime import datetime
 from shutil import copyfile
 
-from . import comments
+from src import comments
 from src import database
 from src import globals
 from src import messages
