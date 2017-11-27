@@ -1,13 +1,15 @@
-from src import reddit
+import logging.handlers
+import re
+import traceback
+from datetime import datetime
+
+import praw
+
 from src import database
+from src import globals
+from src import reddit
 from src import strings
 from src import utility
-from src import globals
-import praw
-import re
-from datetime import datetime
-import traceback
-import logging.handlers
 
 log = logging.getLogger("bot")
 

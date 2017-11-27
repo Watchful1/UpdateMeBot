@@ -1,5 +1,5 @@
-import sqlite3
 import logging.handlers
+import sqlite3
 from datetime import datetime
 
 from src import globals

@@ -1,8 +1,9 @@
-from src import database
-from src import strings
-from src import reddit
-from src import globals
 import logging.handlers
+
+from src import database
+from src import globals
+from src import reddit
+from src import strings
 
 log = logging.getLogger("bot")
 
