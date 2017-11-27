@@ -67,7 +67,7 @@ def addDeniedRequest(deniedRequests):
 
 def passesFilter(submission, filter):
 	if filter == "none": return True
-	log.debug("Filter: " + filter)
+	#log.debug("Filter: " + filter)
 	for filStr in filter.split(','):
 		if filStr.startswith('-'):
 			require = False
@@ -86,11 +86,12 @@ def passesFilter(submission, filter):
 
 		matches = False
 		if fil == "flair":
-			log.debug("Comparing flair: " + str(submission.link_flair_text).lower() + " : " + value)
+			#log.debug("Comparing flair: " + str(submission.link_flair_text).lower() + " : " + value)
 			if str(submission.link_flair_text).lower() == value: matches = True
 
 		if (matches and not require) or (not matches and require):
 			log.debug("Matched filter, returning false")
 			return False
 
+	log.debug("Passed filter, returning true")
 	return True
