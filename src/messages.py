@@ -5,11 +5,11 @@ from datetime import datetime
 
 import praw
 
-from src import database
-from src import globals
-from src import reddit
-from src import strings
-from src import utility
+import database
+import globals
+import reddit
+import strings
+import utility
 
 log = logging.getLogger("bot")
 

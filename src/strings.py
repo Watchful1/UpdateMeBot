@@ -1,4 +1,4 @@
-from src import globals
+import globals
 
 
 def messageSubject(user):

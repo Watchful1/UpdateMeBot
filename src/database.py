@@ -2,7 +2,7 @@ import logging.handlers
 import sqlite3
 from datetime import datetime
 
-from src import globals
+import globals
 
 dbConn = 0
 log = logging.getLogger("bot")

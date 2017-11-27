@@ -3,7 +3,7 @@ import traceback
 
 import praw
 
-from src import globals
+import globals
 
 reddit = None
 log = None

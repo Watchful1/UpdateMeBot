@@ -9,13 +9,13 @@ import traceback
 from datetime import datetime
 from shutil import copyfile
 
-from src import comments
-from src import database
-from src import globals
-from src import messages
-from src import reddit
-from src import strings
-from src import subreddits
+import comments
+import database
+import globals
+import messages
+import reddit
+import strings
+import subreddits
 
 ### Logging setup ###
 LOG_LEVEL = logging.DEBUG
