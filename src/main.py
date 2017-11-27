@@ -145,14 +145,14 @@ while True:
 		if not noSearchComments:
 			counts['updateCommentsSearched'], counts['updateCommentsAdded'], updateRequestSeconds, newErrors = \
 				comments.searchComments(globals.UPDATE_NAME, APP_START_TIME)
-			errors.append(newErrors)
+			errors.extend(newErrors)
 			markTime('SearchCommentsUpdate')
 
 			time.sleep(1)
 
 			counts['subCommentsSearched'], counts['subCommentsAdded'], subscribeRequestSeconds, newErrors = \
 				comments.searchComments(globals.SUBSCRIPTION_NAME, APP_START_TIME)
-			errors.append(newErrors)
+			errors.extend(newErrors)
 			markTime('SearchCommentsSubscribe')
 
 		if not noRespondMessages:
