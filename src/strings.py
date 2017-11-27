@@ -414,7 +414,7 @@ def subredditAlwaysPMMessage(subreddits):
 	return strList
 
 
-def longRunLog(timings, counts):
+def longRunLog(timings, counts, foundPosts):
 	logStrList = ["Run complete after: ", str(int(timings['end']))]
 	if counts['updateCommentsAdded'] > 0:
 		logStrList.append(" : Update comments added: ")
@@ -439,6 +439,11 @@ def longRunLog(timings, counts):
 	if 'lowKarmaCommentsDeleted' in counts and counts['lowKarmaCommentsDeleted'] > 0:
 		logStrList.append(" : Low karma comments deleted: ")
 		logStrList.append(str(counts['lowKarmaCommentsDeleted']))
+	if len(foundPosts):
+		logStrList.append(" :")
+		for post in foundPosts:
+			logStrList.append(" ")
+			logStrList.append(post)
 
 	return logStrList
 

@@ -136,6 +136,7 @@ while True:
 		'existingCommentsUpdated': 0,
 		'lowKarmaCommentsDeleted': 0
 	}
+	foundPosts = []
 	lastMark = time.perf_counter()
 	startTime = markTime('start')
 
@@ -160,8 +161,8 @@ while True:
 			markTime('ProcessMessages')
 
 		if not noSearchPosts:
-			counts['subredditsCount'], counts['postsCount'], counts[
-				'subscriptionMessagesSent'] = subreddits.processSubreddits()
+			counts['subredditsCount'], counts['postsCount'], \
+				counts['subscriptionMessagesSent'], foundPosts = subreddits.processSubreddits()
 			markTime('ProcessSubreddits')
 
 		if i % globals.COMMENT_EDIT_ITERATIONS == 0 or i == 1:
@@ -206,7 +207,7 @@ while True:
 
 	markTime('end', startTime)
 	try:
-		logStrList = strings.longRunLog(timings, counts)
+		logStrList = strings.longRunLog(timings, counts, foundPosts)
 		log.debug(''.join(logStrList))
 	except Exception as err:
 		log.debug("Could not build long run log")

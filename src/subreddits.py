@@ -15,6 +15,7 @@ def processSubreddits():
 	subredditsCount = 0
 	postsCount = 0
 	messagesSent = 0
+	foundPosts = []
 	for subreddit in database.getSubscribedSubreddits():
 		# subStartTime = time.perf_counter()
 		subPostsCount = 0
@@ -48,6 +49,7 @@ def processSubreddits():
 			for submission in submissions:
 				postsCount += 1
 				subPostsCount += 1
+				foundPosts.append(submission['id'])
 
 				passesSubFilter = utility.passesFilter(submission['submission'], database.getFilter(subreddit['subreddit']))
 
@@ -82,4 +84,4 @@ def processSubreddits():
 
 		#log.debug(str(subPostsCount)+" posts searched in: "+str(round(time.perf_counter() - subStartTime, 3)))
 
-	return subredditsCount, postsCount, messagesSent
+	return subredditsCount, postsCount, messagesSent, foundPosts
