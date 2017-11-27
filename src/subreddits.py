@@ -54,13 +54,14 @@ def processSubreddits():
 
 				passesSubFilter = utility.passesFilter(submission['submission'], database.getFilter(subreddit['subreddit']))
 
-				if database.isPrompt(submission['author'].lower(), subreddit['subreddit']) and passesSubFilter and \
-						submission['dateCreated'] >= recentDatetime:
-					log.info("Posting a prompt for /u/"+submission['author'].lower()+" in /r/"+subreddit['subreddit'])
-					promptStrList = strings.promptPublicComment(submission['author'].lower(), subreddit['subreddit'])
-					promptStrList.append("\n\n*****\n\n")
-					promptStrList.append(strings.footer)
-					reddit.replySubmission(submission['id'], ''.join(promptStrList))
+				if database.isPrompt(submission['author'].lower(), subreddit['subreddit']) and passesSubFilter:
+					log.debug("Checking date for prompt: "+str(submission['dateCreated'])+" : "+str(recentDatetime)+" : "+str(submission['dateCreated'] >= recentDatetime))
+					if submission['dateCreated'] >= recentDatetime:
+						log.info("Posting a prompt for /u/"+submission['author'].lower()+" in /r/"+subreddit['subreddit'])
+						promptStrList = strings.promptPublicComment(submission['author'].lower(), subreddit['subreddit'])
+						promptStrList.append("\n\n*****\n\n")
+						promptStrList.append(strings.footer)
+						reddit.replySubmission(submission['id'], ''.join(promptStrList))
 
 				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], submission['author'].lower()):
 					if submission['dateCreated'] >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
