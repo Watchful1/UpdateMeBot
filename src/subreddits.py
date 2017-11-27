@@ -24,6 +24,7 @@ def processSubreddits():
 		#log.debug("Checking subreddit: "+subreddit['subreddit'])
 
 		subredditDatetime = datetime.strptime(subreddit['lastChecked'], "%Y-%m-%d %H:%M:%S")
+		recentDatetime = datetime.strptime(subreddit['recentChecked'], "%Y-%m-%d %H:%M:%S")
 		submissions = []
 		hitEnd = True
 		for submission in reddit.getSubredditSubmissions(subreddit['subreddit']):
@@ -53,7 +54,8 @@ def processSubreddits():
 
 				passesSubFilter = utility.passesFilter(submission['submission'], database.getFilter(subreddit['subreddit']))
 
-				if database.isPrompt(submission['author'].lower(), subreddit['subreddit']) and passesSubFilter:
+				if database.isPrompt(submission['author'].lower(), subreddit['subreddit']) and passesSubFilter and \
+						submission['dateCreated'] >= recentDatetime:
 					log.info("Posting a prompt for /u/"+submission['author'].lower()+" in /r/"+subreddit['subreddit'])
 					promptStrList = strings.promptPublicComment(submission['author'].lower(), subreddit['subreddit'])
 					promptStrList.append("\n\n*****\n\n")

@@ -147,12 +147,12 @@ def getSubscribedSubreddits():
 	c = dbConn.cursor()
 	results = []
 	for row in c.execute('''
-		SELECT Subreddit, MIN(LastChecked)
+		SELECT Subreddit, MIN(LastChecked), MAX(LastChecked)
 		FROM subscriptions
 		WHERE Approved = 1
 		GROUP BY subreddit
 	'''):
-		results.append({'subreddit': row[0], 'lastChecked': row[1]})
+		results.append({'subreddit': row[0], 'lastChecked': row[1], 'recentChecked': row[2]})
 
 	return results
 
