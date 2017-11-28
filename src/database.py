@@ -600,7 +600,7 @@ def alwaysPMForSubreddit(subreddit):
 	result = results.fetchone()
 
 	if not result: return None  # shouldn't happen
-	if result == 1:
+	if len(result) and result[0] == 1:
 		return True
 	else:
 		return False
