@@ -55,7 +55,7 @@ def processSubreddits():
 				passesSubFilter = utility.passesFilter(submission['submission'], database.getFilter(subreddit['subreddit']))
 
 				if database.isPrompt(submission['author'].lower(), subreddit['subreddit']) and passesSubFilter:
-					log.debug("Checking date for prompt: "+str(submission['dateCreated'])+" : "+str(recentDatetime)+" : "+str(submission['dateCreated'] >= recentDatetime))
+					log.debug("Checking date for prompt: "+str(submission['dateCreated'])+" : "+str(recentDatetime)+" : "+str(submission['dateCreated'] >= recentDatetime)+" : "+submission['id'])
 					if submission['dateCreated'] >= recentDatetime:
 						log.info("Posting a prompt for /u/"+submission['author'].lower()+" in /r/"+subreddit['subreddit'])
 						promptStrList = strings.promptPublicComment(submission['author'].lower(), subreddit['subreddit'])
