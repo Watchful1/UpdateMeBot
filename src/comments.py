@@ -104,8 +104,7 @@ def searchComments(searchTerm, startTime):
 				if resultCommentID is not None:
 					database.addThread(comment['link_id'][3:], resultCommentID, comment['link_author'].lower(),
 					                   comment['subreddit'].lower(), comment['author'].lower(),
-					                   datetime.utcfromtimestamp(comment['created_utc']), existingSubscribers,
-					                   subscriptionType)
+					                   datetime.utcnow(), existingSubscribers, subscriptionType, False)
 					posted = True
 				else:
 					log.warning("Could not publicly reply to /u/%s", comment['author'])

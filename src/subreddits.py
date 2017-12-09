@@ -32,7 +32,7 @@ def processSubreddits():
 			if submissionCreated < subredditDatetime:
 				hitEnd = False
 				break
-			submissions.append({'id': submission.id, 'dateCreated': submissionCreated, 'author': str(submission.author),
+			submissions.append({'id': submission.id, 'dateCreated': submissionCreated, 'author': str(submission.author).lower(),
 								'link': "https://www.reddit.com"+submission.permalink, 'submission': submission})
 			if len(submissions) % 50 == 0:
 				log.info("Posts searched: "+str(len(submissions)))
@@ -54,16 +54,19 @@ def processSubreddits():
 
 				passesSubFilter = utility.passesFilter(submission['submission'], database.getFilter(subreddit['subreddit']))
 
-				if database.isPrompt(submission['author'].lower(), subreddit['subreddit']) and passesSubFilter:
-					log.debug("Checking date for prompt: "+str(submission['dateCreated'])+" : "+str(recentDatetime)+" : "+str(submission['dateCreated'] >= recentDatetime)+" : "+submission['id'])
-					if submission['dateCreated'] >= recentDatetime:
-						log.info("Posting a prompt for /u/"+submission['author'].lower()+" in /r/"+subreddit['subreddit'])
-						promptStrList = strings.promptPublicComment(submission['author'].lower(), subreddit['subreddit'])
-						promptStrList.append("\n\n*****\n\n")
-						promptStrList.append(strings.footer)
-						reddit.replySubmission(submission['id'], ''.join(promptStrList))
+				if database.isPrompt(submission['author'], subreddit['subreddit']) and passesSubFilter and \
+						not database.isThreadReplied(submission['id']):
+					log.info("Posting a prompt for /u/"+submission['author']+" in /r/"+subreddit['subreddit'])
+					subredditDefaultSubscribe = database.subredditDefaultSubscribe(subreddit['subreddit'])
+					promptStrList = strings.promptPublicComment(submission['author'], subreddit['subreddit'])
+					promptStrList.append("\n\n*****\n\n")
+					promptStrList.append(strings.footer)
+					resultCommentID = reddit.replySubmission(submission['id'], ''.join(promptStrList))
+					if resultCommentID is not None:
+						database.addThread(submission['id'], resultCommentID, submission['author'], subreddit['subreddit'],
+						                   "", datetime.utcnow(), 0, subredditDefaultSubscribe, True)
 
-				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], submission['author'].lower()):
+				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], submission['author']):
 					if submission['dateCreated'] >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
 						if (subscriber['filter'] != "none" and utility.passesFilter(submission, subscriber['filter'])) or \
 								(subscriber['filter'] == "none" and passesSubFilter):

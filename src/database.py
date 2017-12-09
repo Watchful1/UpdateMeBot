@@ -30,6 +30,12 @@ migrations = {
 			ALTER TABLE subredditWhitelist
 			ADD Filter VARCHAR(1000)
 		'''
+	],
+	2: [
+		'''
+			ALTER TABLE threads
+			ADD Prompt BOOLEAN DEFAULT 0
+		'''
 	]
 }
 
@@ -456,15 +462,15 @@ def checkUpdateDeniedRequestsNotice(Subreddit, current):
 		return False
 
 
-def addThread(threadID, commentID, subscribedTo, subreddit, parentAuthor, commentCreated, currentCount, single):
+def addThread(threadID, commentID, subscribedTo, subreddit, parentAuthor, commentCreated, currentCount, single, prompt):
 	c = dbConn.cursor()
 	try:
 		c.execute('''
 			INSERT INTO threads
-			(ThreadID, CommentID, SubscribedTo, Subreddit, ParentAuthor, CommentCreated, CurrentCount, Single)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			(ThreadID, CommentID, SubscribedTo, Subreddit, ParentAuthor, CommentCreated, CurrentCount, Single, Prompt)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		''', (threadID, commentID, subscribedTo, subreddit, parentAuthor, commentCreated.strftime("%Y-%m-%d %H:%M:%S"),
-		      currentCount, single))
+		      currentCount, single, prompt))
 	except sqlite3.IntegrityError:
 		return False
 
@@ -546,6 +552,7 @@ def getIncorrectThreads(cutoffDate):
 					AND threads.Subreddit = subscriptionCount.Subreddit
 		WHERE threads.CurrentCount <> subscriptionCount.Count
 			AND threads.CommentCreated > ?
+			AND threads.Prompt = 0
 	''', (cutoffDate.strftime("%Y-%m-%d %H:%M:%S"),))
 
 	output = []
