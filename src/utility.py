@@ -11,7 +11,10 @@ log = logging.getLogger("bot")
 def combineDictLists(dictA, dictB):
 	if dictB is not None:
 		for key in dictB:
-			dictA[key].extend(dictB[key])
+			if type(dictB[key]) is list:
+				dictA[key].extend(dictB[key])
+			else:
+				dictA[key] = dictB[key]
 
 
 def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single=True, filter=None):

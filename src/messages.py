@@ -257,10 +257,6 @@ def processMessages():
 						utility.combineDictLists(replies, MessageLineAddSubreddit(line))
 						utility.combineDictLists(replies, MessageLineSubredditPM(line))
 
-
-				reddit.markMessageRead(message)
-
-
 				sections = [
 					{'key': "added", 'function': strings.confirmationSection},
 					{'key': "updated", 'function': strings.updatedSubscriptionSection},
@@ -292,6 +288,8 @@ def processMessages():
 					strList.append("\n\n*****\n\n")
 
 				strList.append(strings.footer)
+
+				reddit.markMessageRead(message)
 
 				log.debug("Sending message to /u/"+str(message.author))
 				if not reddit.replyMessage(message, ''.join(strList)):
