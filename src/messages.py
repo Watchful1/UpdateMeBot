@@ -53,9 +53,7 @@ def MessageLineUpdateSubscribe(line, author, created):
 					results[result].append(data)
 			else:
 				result, data = utility.addUpdateSubscription(author, users[0], subs[0], created, subscriptionTypeSingle, filter)
-				log.debug("In MessageLineUpdateSubscribe: "+str(data))
 				results[result].append(data)
-				log.debug("In MessageLineUpdateSubscribe: "+str(results[result]))
 
 	return results
 
@@ -280,7 +278,6 @@ def processMessages():
 				strList = []
 				for section in sections:
 					if section['key'] in replies:
-						log.debug(section['key']+": "+str(replies[section['key']]))
 						strList.extend(section['function'](replies[section['key']]))
 						strList.append("\n\n*****\n\n")
 

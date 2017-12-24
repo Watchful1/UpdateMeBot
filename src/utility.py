@@ -11,15 +11,12 @@ log = logging.getLogger("bot")
 def combineDictLists(dictA, dictB):
 	if dictB is not None:
 		for key in dictB:
-			log.debug("combineDictLists1 "+key+": "+str(dictA)+" : "+str(dictB))
 			dictA[key].extend(dictB[key])
-			log.debug("combineDictLists2 "+key+": "+str(dictA)+" : "+str(dictB))
 
 
 def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single=True, filter=None):
 	data = {'subscriber': Subscriber.lower(), 'subscribedTo': SubscribedTo.lower(), 'subreddit': Subreddit.lower(),
 	        'single': single}
-	log.debug("In addUpdate: "+str(data))
 
 	if not database.isSubredditWhitelisted(data['subreddit']):
 		database.addDeniedRequest(data['subscriber'], data['subscribedTo'], data['subreddit'], date, data['single'])
