@@ -79,15 +79,14 @@ def searchComments(searchTerm, startTime):
 				continue
 
 			log.info("Found public comment by /u/"+comment['author'])
-			replies = {'added': [], 'updated': [], 'exist': [], 'couldnotadd': []}
 
 			comment['link_author'] = str(reddit.getSubmission(comment['link_id'][3:]).author)
 
-			utility.addUpdateSubscription(comment['author'], comment['link_author'], comment['subreddit'],
-					datetime.utcfromtimestamp(comment['created_utc']), subscriptionType, None, replies)
+			result, data = utility.addUpdateSubscription(comment['author'], comment['link_author'], comment['subreddit'],
+					datetime.utcfromtimestamp(comment['created_utc']), subscriptionType, None)
 
 			posted = False
-			if len(replies['couldnotadd']) == 0 and not database.alwaysPMForSubreddit(comment['subreddit'].lower()) \
+			if result == 'couldnotadd' and not database.alwaysPMForSubreddit(comment['subreddit'].lower()) \
 						and not database.isThreadReplied(comment['link_id'][3:]):
 				strList = []
 				existingSubscribers = database.getAuthorSubscribersCount(comment['subreddit'].lower(),
@@ -111,18 +110,18 @@ def searchComments(searchTerm, startTime):
 
 			if not posted:
 				strList = []
-				if len(replies['couldnotadd']) >= 1:
-					utility.addDeniedRequest(replies['couldnotadd'])
-					strList.extend(strings.couldNotSubscribeSection(replies['couldnotadd']))
+				if result == 'couldnotadd':
+					utility.checkDeniedRequests(data['subreddit'])
+					strList.extend(strings.couldNotSubscribeSection([data]))
 				else:
-					if replies['added']:
+					if result == 'added':
 						commentsAdded += 1
-						strList.extend(strings.confirmationSection(replies['added']))
-					elif replies['updated']:
+						strList.extend(strings.confirmationSection([data]))
+					elif result == 'updated':
 						commentsAdded += 1
-						strList.extend(strings.updatedSubscriptionSection(replies['updated']))
-					elif replies['exist']:
-						strList.extend(strings.alreadySubscribedSection(replies['exist']))
+						strList.extend(strings.updatedSubscriptionSection([data]))
+					elif result == 'exist':
+						strList.extend(strings.alreadySubscribedSection([data]))
 
 				strList.append("\n\n*****\n\n")
 				strList.append(strings.footer)

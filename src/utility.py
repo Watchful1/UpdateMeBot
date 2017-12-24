@@ -8,7 +8,13 @@ import strings
 log = logging.getLogger("bot")
 
 
-def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single=True, filter=None, replies={}):
+def combineDictLists(dictA, dictB):
+	if dictB is not None:
+		for key in dictB:
+			dictA[key].append(dictB[key])
+
+
+def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single=True, filter=None):
 	data = {'subscriber': Subscriber.lower(), 'subscribedTo': SubscribedTo.lower(), 'subreddit': Subreddit.lower(),
 	        'single': single}
 
@@ -16,14 +22,13 @@ def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single=True
 		database.addDeniedRequest(data['subscriber'], data['subscribedTo'], data['subreddit'], date, data['single'])
 		log.info("Could not add subscription for /u/" + data['subscriber'] + " to /u/" + data['subscribedTo'] + " in /r/" +
 			data['subreddit'] + ", not whitelisted")
-		replies["couldnotadd"].append(data)
-		return
+		return "couldnotadd", data
 
 	result = database.addSubscription(data['subscriber'], data['subscribedTo'], data['subreddit'], date, single, filter)
 	if result:
 		log.info("/u/" + data['subscriber'] + " " + ("updated" if single else "subscribed") + " to /u/" + data[
 			'subscribedTo'] + " in /r/" + data['subreddit'])
-		replies["added"].append(data)
+		return "added", data
 	else:
 		currentType = database.getSubscriptionType(data['subscriber'], data['subscribedTo'], data['subreddit'])
 		if currentType is not single:
@@ -31,38 +36,33 @@ def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single=True
 			log.info("/u/" + data['subscriber'] + " " +
 			         ("changed from subscription to update" if single else "changed from update to subscription") +
 			         " for /u/" + data['subscribedTo'] + " in /r/" + data['subreddit'])
-			replies["updated"].append(data)
+			return "updated", data
 		else:
 			log.info("/u/" + data['subscriber'] + " is already " + ("updated" if single else "subscribed") + " to /u/" +
 			         data['subscribedTo'] + " in /r/" + data['subreddit'])
-			replies["exist"].append(data)
+			return "exist", data
 
 
 def removeSubscription(Subscriber, SubscribedTo, Subreddit, replies={}):
 	data = {'subscriber': Subscriber.lower(), 'subscribedTo': SubscribedTo.lower(), 'subreddit': Subreddit.lower()}
 	if database.removeSubscription(data['subscriber'], data['subscribedTo'], data['subreddit']):
 		log.info("/u/" + data['subscriber'] + "'s removed /u/" + data['subscribedTo'] + " in /r/" + data['subreddit'])
-		replies["removed"].append(data)
+		return "removed", data
 	else:
 		log.info(
 			"/u/" + data['subscriber'] + "'s doesn't have a /u/" + data['subscribedTo'] + " in /r/" + data['subreddit'])
-		replies["notremoved"].append(data)
+		return "notremoved", data
 
 
-def addDeniedRequest(deniedRequests):
-	subreddits = set()
-	for request in deniedRequests:
-		subreddits.add(request['subreddit'])
-
-	for subreddit in subreddits:
-		count = database.getDeniedRequestsCount(subreddit)
-		if database.checkUpdateDeniedRequestsNotice(subreddit, count):
-			log.info("Messaging owner that that requests for /r/%s have hit %d", subreddit, count)
-			noticeStrList = strings.subredditNoticeThresholdMessage(subreddit, count)
-			noticeStrList.append("\n\n*****\n\n")
-			noticeStrList.append(strings.footer)
-			if not reddit.sendMessage(globals.OWNER_NAME, "Subreddit Threshold", ''.join(noticeStrList)):
-				log.warning("Could not send message to owner when notifying on subreddit threshold")
+def checkDeniedRequests(subreddit):
+	count = database.getDeniedRequestsCount(subreddit)
+	if database.checkUpdateDeniedRequestsNotice(subreddit, count):
+		log.info("Messaging owner that that requests for /r/%s have hit %d", subreddit, count)
+		noticeStrList = strings.subredditNoticeThresholdMessage(subreddit, count)
+		noticeStrList.append("\n\n*****\n\n")
+		noticeStrList.append(strings.footer)
+		if not reddit.sendMessage(globals.OWNER_NAME, "Subreddit Threshold", ''.join(noticeStrList)):
+			log.warning("Could not send message to owner when notifying on subreddit threshold")
 
 
 def passesFilter(submission, filter):

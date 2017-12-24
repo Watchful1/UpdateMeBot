@@ -300,9 +300,9 @@ def blacklistSection(blacklisted):
 	return strList
 
 
-blacklistNotSection = (
-	"It looks like you tried to blacklist something that you didn't have access to."
-)
+def blacklistNotSection(empty):
+	return "It looks like you tried to blacklist something that you didn't have access to."
+
 
 
 def promptSection(prompts):
