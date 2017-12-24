@@ -17,6 +17,7 @@ def combineDictLists(dictA, dictB):
 def addUpdateSubscription(Subscriber, SubscribedTo, Subreddit, date, single=True, filter=None):
 	data = {'subscriber': Subscriber.lower(), 'subscribedTo': SubscribedTo.lower(), 'subreddit': Subreddit.lower(),
 	        'single': single}
+	log.debug("In addUpdate: "+str(data))
 
 	if not database.isSubredditWhitelisted(data['subreddit']):
 		database.addDeniedRequest(data['subscriber'], data['subscribedTo'], data['subreddit'], date, data['single'])

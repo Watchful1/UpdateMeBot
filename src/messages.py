@@ -46,7 +46,9 @@ def MessageLineUpdateSubscribe(line, author, created):
 			if len(users) > 1:
 				for user in users:
 					result, data = utility.addUpdateSubscription(author, user, subs[0], created, subscriptionTypeSingle, filter)
+					log.debug("In MessageLineUpdateSubscribe: "+str(data))
 					results[result].append(data)
+					log.debug("In MessageLineUpdateSubscribe: "+str(results[result]))
 			elif len(subs) > 1:
 				for sub in subs:
 					result, data = utility.addUpdateSubscription(author, users[0], sub, created, subscriptionTypeSingle, filter)
