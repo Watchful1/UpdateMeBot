@@ -278,7 +278,7 @@ def processMessages():
 				strList = []
 				for section in sections:
 					if section['key'] in replies:
-						strList.extend(section['function'](section['key']))
+						strList.extend(section['function'](replies['key']))
 						strList.append("\n\n*****\n\n")
 
 				# this is special cased since we need to pull in the subscriptions now, rather than during line processing
