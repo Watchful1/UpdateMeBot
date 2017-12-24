@@ -278,6 +278,7 @@ def processMessages():
 				strList = []
 				for section in sections:
 					if section['key'] in replies:
+						log.debug(section['key']+": "+str(replies[section['key']]))
 						strList.extend(section['function'](replies[section['key']]))
 						strList.append("\n\n*****\n\n")
 
