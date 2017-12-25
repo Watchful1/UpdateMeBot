@@ -93,8 +93,8 @@ def passesFilter(submission, filter):
 			if str(submission.link_flair_text).lower() == value: matches = True
 
 		if (matches and not require) or (not matches and require):
-			log.debug("Matched filter: " + filter)
+			#log.debug("Matched filter: " + filter)
 			return False
 
-	log.debug("Passed filter: " + filter)
+	#log.debug("Passed filter: " + filter)
 	return True
