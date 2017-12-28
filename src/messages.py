@@ -62,7 +62,7 @@ def MessageLineRemove(line, author):
 	results = defaultdict(list)
 	if line.startswith("removeall"):
 		log.info("Removing all subscriptions for /u/"+author)
-		results['removed'].append(database.getMySubscriptions(author))
+		results['removed'].extend(database.getMySubscriptions(author))
 		database.removeAllSubscriptions(author)
 
 	elif line.startswith("remove"):
