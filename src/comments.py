@@ -86,7 +86,7 @@ def searchComments(searchTerm, startTime):
 					datetime.utcfromtimestamp(comment['created_utc']), subscriptionType, None)
 
 			posted = False
-			if result == 'couldnotadd' and not database.alwaysPMForSubreddit(comment['subreddit'].lower()) \
+			if result != 'couldnotadd' and not database.alwaysPMForSubreddit(comment['subreddit'].lower()) \
 						and not database.isThreadReplied(comment['link_id'][3:]):
 				strList = []
 				existingSubscribers = database.getAuthorSubscribersCount(comment['subreddit'].lower(),
