@@ -409,7 +409,7 @@ def subredditDefaultSubscribe(subreddit):
 		WHERE Subreddit = ?
 	''', (subreddit,))
 
-	result = results.fetchone()
+	result = results.fetchone()[0]
 
 	if result == 1:
 		return True
