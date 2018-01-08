@@ -111,6 +111,10 @@ database.init()
 
 signal.signal(signal.SIGINT, signal_handler)
 
+if once:
+
+	sys.exit(0)
+
 errors = []
 i = 1
 while True:

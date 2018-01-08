@@ -43,7 +43,7 @@ def processSubreddits():
 				break
 			submissions.append({'id': submission.id, 'dateCreated': submissionCreated, 'author': str(submission.author).lower(),
 								'link': "https://www.reddit.com"+submission.permalink, 'submission': submission,
-			                    'subreddit': str(submission.subreddit)})
+			                    'subreddit': str(submission.subreddit).lower()})
 			if len(submissions) % 50 == 0:
 				log.info("Posts searched: "+str(len(submissions)))
 
