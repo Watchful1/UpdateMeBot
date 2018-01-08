@@ -16,6 +16,7 @@ import messages
 import reddit
 import strings
 import subreddits
+import utility
 
 ### Logging setup ###
 LOG_LEVEL = logging.DEBUG
@@ -134,7 +135,8 @@ while True:
 		'postsCount': 0,
 		'subscriptionMessagesSent': 0,
 		'existingCommentsUpdated': 0,
-		'lowKarmaCommentsDeleted': 0
+		'lowKarmaCommentsDeleted': 0,
+		'subredditsProfiled': 0
 	}
 	foundPosts = []
 	lastMark = time.perf_counter()
@@ -172,9 +174,21 @@ while True:
 			counts['lowKarmaCommentsDeleted'] = comments.deleteLowKarmaComments()
 			markTime('DeleteLowKarmaComments')
 
+			for subreddit in database.getOldProfiles():
+				try:
+					result = utility.profileSubreddit(subreddit['subreddit'])
+					database.setProfile(subreddit['subreddit'], result)
+					counts['subredditsProfiled'] += 1
+					log.debug("Profiled subreddit "+subreddit['subreddit']+" from "+str(subreddit['postsPerDay'])+" to "+str(result))
+				except Exception as err:
+					log.warning("Error profiling subreddit: "+subreddit['subreddit'])
+					log.warning(traceback.format_exc())
+			markTime('ProfileSubreddits')
+
 		if i % globals.BACKUP_ITERATIONS == 0:
 			backupDatabase()
 			markTime('BackupDatabase')
+
 	except Exception as err:
 		log.warning("Error in main function")
 		log.warning(traceback.format_exc())

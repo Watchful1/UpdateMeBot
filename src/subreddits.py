@@ -16,31 +16,40 @@ def processSubreddits():
 	postsCount = 0
 	messagesSent = 0
 	foundPosts = []
-	for subreddit in database.getSubscribedSubreddits():
-		# subStartTime = time.perf_counter()
+	for subreddits in database.getSubscribedSubreddits():
 		subPostsCount = 0
-		subredditsCount += 1
 		startTimestamp = datetime.utcnow()
-		#log.debug("Checking subreddit: "+subreddit['subreddit'])
+		earliestDatetime = datetime.utcnow()
+		subredditsStrings = []
 
-		subredditDatetime = datetime.strptime(subreddit['lastChecked'], "%Y-%m-%d %H:%M:%S")
-		recentDatetime = datetime.strptime(subreddit['recentChecked'], "%Y-%m-%d %H:%M:%S")
+		for subreddit in subreddits:
+			subredditsStrings.append(subreddit['subreddit'])
+			subredditDatetime = datetime.strptime(subreddit['lastChecked'], "%Y-%m-%d %H:%M:%S")
+			if earliestDatetime - subredditDatetime < timedelta(seconds=0):
+				earliestDatetime = subredditDatetime
+
+			subredditsCount += 1
+
+		subredditString = ''.join(subredditsStrings)
+
+
 		submissions = []
 		hitEnd = True
-		for submission in reddit.getSubredditSubmissions(subreddit['subreddit']):
+		for submission in reddit.getSubredditSubmissions(subredditString):
 			submissionCreated = datetime.utcfromtimestamp(submission.created_utc)
-			if submissionCreated < subredditDatetime:
+			if submissionCreated < earliestDatetime:
 				hitEnd = False
 				break
 			submissions.append({'id': submission.id, 'dateCreated': submissionCreated, 'author': str(submission.author).lower(),
-								'link': "https://www.reddit.com"+submission.permalink, 'submission': submission})
+								'link': "https://www.reddit.com"+submission.permalink, 'submission': submission,
+			                    'subreddit': submission.subreddit})
 			if len(submissions) % 50 == 0:
 				log.info("Posts searched: "+str(len(submissions)))
 
 		if hitEnd and len(submissions):
-			log.info("Messaging owner that that we might have missed a post in /r/"+subreddit['subreddit'])
-			strList = strings.possibleMissedPostMessage(submissions[len(submissions) - 1]['dateCreated'], subredditDatetime,
-			                                            subreddit['subreddit'])
+			log.info("Messaging owner that that we might have missed a post in /r/"+subredditString)
+			strList = strings.possibleMissedPostMessage(submissions[len(submissions) - 1]['dateCreated'], earliestDatetime,
+			                                            subredditString)
 			strList.append("\n\n*****\n\n")
 			strList.append(strings.footer)
 			if not reddit.sendMessage(globals.OWNER_NAME, "Missed Post", ''.join(strList)):
@@ -52,28 +61,28 @@ def processSubreddits():
 				subPostsCount += 1
 				foundPosts.append(submission['id'])
 
-				passesSubFilter = utility.passesFilter(submission['submission'], database.getFilter(subreddit['subreddit']))
+				passesSubFilter = utility.passesFilter(submission['submission'], database.getFilter(submission['subreddit']))
 
-				if database.isPrompt(submission['author'], subreddit['subreddit']) and passesSubFilter and \
+				if database.isPrompt(submission['author'], submission['subreddit']) and passesSubFilter and \
 						not database.isThreadReplied(submission['id']):
-					log.info("Posting a prompt for /u/"+submission['author']+" in /r/"+subreddit['subreddit'])
-					subredditDefaultSubscribe = database.subredditDefaultSubscribe(subreddit['subreddit'])
-					promptStrList = strings.promptPublicComment(submission['author'], subreddit['subreddit'])
+					log.info("Posting a prompt for /u/"+submission['author']+" in /r/"+submission['subreddit'])
+					subredditDefaultSubscribe = database.subredditDefaultSubscribe(submission['subreddit'])
+					promptStrList = strings.promptPublicComment(submission['author'], submission['subreddit'])
 					promptStrList.append("\n\n*****\n\n")
 					promptStrList.append(strings.footer)
 					resultCommentID = reddit.replySubmission(submission['id'], ''.join(promptStrList))
 					if resultCommentID is not None:
-						database.addThread(submission['id'], resultCommentID, submission['author'], subreddit['subreddit'],
+						database.addThread(submission['id'], resultCommentID, submission['author'], submission['subreddit'],
 						                   "", datetime.utcnow(), 0, subredditDefaultSubscribe, True)
 
-				for subscriber in database.getSubredditAuthorSubscriptions(subreddit['subreddit'], submission['author']):
+				for subscriber in database.getSubredditAuthorSubscriptions(submission['subreddit'], submission['author']):
 					if submission['dateCreated'] >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
 						if (subscriber['filter'] != "none" and utility.passesFilter(submission, subscriber['filter'])) or \
 								(subscriber['filter'] == "none" and passesSubFilter):
 							messagesSent += 1
 							log.info("Messaging /u/%s that /u/%s has posted a new thread in /r/%s: %s",
-							         subscriber['subscriber'], submission['author'], subreddit['subreddit'], submission['id'])
-							strList = strings.alertMessage(submission['author'], subreddit['subreddit'], submission['link'],
+							         subscriber['subscriber'], submission['author'], submission['subreddit'], submission['id'])
+							strList = strings.alertMessage(submission['author'], submission['subreddit'], submission['link'],
 							                               subscriber['single'])
 
 							strList.append("\n\n*****\n\n")
@@ -86,7 +95,8 @@ def processSubreddits():
 							else:
 								log.warning("Could not send message to /u/%s when sending update", subscriber['subscriber'])
 
-		database.checkSubreddit(subreddit['subreddit'], startTimestamp)
+		for subreddit in subreddits:
+			database.checkSubreddit(subreddit['subreddit'], startTimestamp)
 
 		#log.debug(str(subPostsCount)+" posts searched in: "+str(round(time.perf_counter() - subStartTime, 3)))
 

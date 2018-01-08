@@ -439,6 +439,9 @@ def longRunLog(timings, counts, foundPosts):
 	if 'lowKarmaCommentsDeleted' in counts and counts['lowKarmaCommentsDeleted'] > 0:
 		logStrList.append(" : Low karma comments deleted: ")
 		logStrList.append(str(counts['lowKarmaCommentsDeleted']))
+	if counts['subredditsProfiled'] > 0:
+		logStrList.append(" : Subreddits profiled: ")
+		logStrList.append(str(counts['subredditsProfiled']))
 	if len(foundPosts):
 		logStrList.append(" :")
 		for post in foundPosts:
@@ -493,6 +496,10 @@ def longRunMessage(timings, counts, errors):
 		strList.append(str(counts['lowKarmaCommentsDeleted']))
 		strList.append(", ")
 		strList.append(str(round(timings['DeleteLowKarmaComments'], 3)))
+
+	if 'ProfileSubreddits' in timings:
+		strList.append("\n\nProfiling subreddits: ")
+		strList.append(str(round(timings['ProfileSubreddits'], 3)))
 
 	if 'BackupDatabase' in timings:
 		strList.append("\n\nBackup time: ")

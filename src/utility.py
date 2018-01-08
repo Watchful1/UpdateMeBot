@@ -4,6 +4,8 @@ import database
 import globals
 import reddit
 import strings
+import math
+from datetime import datetime
 
 log = logging.getLogger("bot")
 
@@ -98,3 +100,21 @@ def passesFilter(submission, filter):
 
 	#log.debug("Passed filter: " + filter)
 	return True
+
+
+def profileSubreddit(subredditName):
+	count = 0
+	submissionCreated = None
+	for submission in reddit.getSubredditSubmissions(subredditName):
+		count += 1
+		submissionCreated = datetime.utcfromtimestamp(submission.created_utc)
+		if count >= 50:
+			break
+
+	days = (datetime.utcnow() - submissionCreated).days
+	if days == 0 or count == 0:
+		postsDays = count
+	else:
+		postsDays = int(math.ceil(count / days))
+
+	return postsDays

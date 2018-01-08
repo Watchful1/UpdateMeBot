@@ -36,6 +36,16 @@ migrations = {
 			ALTER TABLE threads
 			ADD Prompt BOOLEAN DEFAULT 0
 		'''
+	],
+	3: [
+		'''
+			ALTER TABLE subredditWhitelist
+			ADD PostsPerDay INTEGER DEFAULT 50
+		''',
+		'''
+			ALTER TABLE subredditWhitelist
+			ADD LastProfiled TIMESTAMP DEFAULT '1970-1-1 12:00:00'
+		'''
 	]
 }
 
@@ -152,13 +162,26 @@ def getSubscriptions():
 def getSubscribedSubreddits():
 	c = dbConn.cursor()
 	results = []
+	currentGroup = []
+	maxGroupSize = 20
+	currentGroupSize = 0
 	for row in c.execute('''
-		SELECT Subreddit, MIN(LastChecked), MAX(LastChecked)
-		FROM subscriptions
-		WHERE Approved = 1
-		GROUP BY subreddit
+		SELECT subs.Subreddit, MIN(subs.LastChecked), white.PostsPerDay
+		FROM subscriptions as subs
+		LEFT JOIN subredditWhitelist as white
+			ON subs.Subreddit = white.Subreddit
+		WHERE subs.Approved = 1
+		GROUP BY subs.subreddit
 	'''):
-		results.append({'subreddit': row[0], 'lastChecked': row[1], 'recentChecked': row[2]})
+		subreddit = {'subreddit': row[0], 'lastChecked': row[1]}
+		subredditSize = row[2]
+		if currentGroupSize + subredditSize > maxGroupSize:
+			results.append(currentGroup)
+			currentGroup = [subreddit]
+			currentGroupSize = subredditSize
+		else:
+			currentGroup.append(subreddit)
+			currentGroupSize += subredditSize
 
 	return results
 
@@ -309,15 +332,6 @@ def clearSubscriptions():
 	c = dbConn.cursor()
 	c.execute('''
 		DELETE FROM subscriptions
-    ''')
-	dbConn.commit()
-
-
-def resetAllSubscriptionTimes():
-	c = dbConn.cursor()
-	c.execute('''
-		UPDATE subscriptions
-		SET LastChecked = '2016-07-18 17:00:00'
     ''')
 	dbConn.commit()
 
@@ -738,3 +752,28 @@ def getFilter(subreddit, subscriber=None, subscribedTo=None):
 
 	if not result: return None  # record doesn't exist
 	return str(result[0]).lower()
+
+
+def getOldProfiles():
+	c = dbConn.cursor()
+	results = []
+	for row in c.execute('''
+		SELECT Subreddit, PostsPerDay
+		FROM subredditWhitelist
+		WHERE LastProfiled < DATETIME('now', '-7 day')
+			AND Status = 1
+	'''):
+		results.append({'subreddit': row[0], 'postsPerDay': row[1]})
+
+	return results
+
+
+def setProfile(subreddit, postsPerDay):
+	c = dbConn.cursor()
+	c.execute('''
+		UPDATE subredditWhitelist
+		SET PostsPerDay = ?
+			,LastProfiled = CURRENT_TIMESTAMP
+		WHERE Subreddit = ?
+	''', (postsPerDay, subreddit))
+	dbConn.commit()
