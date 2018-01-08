@@ -25,12 +25,7 @@ def processSubreddits():
 		for subreddit in subreddits:
 			subredditsStrings.append(subreddit['subreddit'])
 			subredditDatetime = datetime.strptime(subreddit['lastChecked'], "%Y-%m-%d %H:%M:%S")
-			log.debug("earliestDatetime: "+str(earliestDatetime))
-			log.debug("subredditDatetime: "+str(subredditDatetime))
-			log.debug("earliestDatetime - subredditDatetime: "+str(earliestDatetime - subredditDatetime))
-			log.debug("timedelta(seconds=0): "+str(timedelta(seconds=0)))
-			log.debug("earliestDatetime - subredditDatetime < timedelta(seconds=0): "+str(earliestDatetime - subredditDatetime < timedelta(seconds=0)))
-			if earliestDatetime - subredditDatetime < timedelta(seconds=0):
+			if earliestDatetime - subredditDatetime > timedelta(seconds=0):
 				earliestDatetime = subredditDatetime
 
 			subredditsCount += 1
