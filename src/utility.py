@@ -71,7 +71,7 @@ def checkDeniedRequests(subreddit):
 
 
 def passesFilter(submission, filter):
-	if filter == "none": return True
+	if filter is None: return True
 	#log.debug("Filter: " + filter)
 	for filStr in filter.split(','):
 		if filStr.startswith('-'):
