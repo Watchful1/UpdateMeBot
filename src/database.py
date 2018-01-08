@@ -160,7 +160,6 @@ def getSubscriptions():
 
 
 def getSubscribedSubreddits():
-	log.debug("Getting subreddits")
 	c = dbConn.cursor()
 	results = []
 	currentGroup = []
@@ -175,22 +174,14 @@ def getSubscribedSubreddits():
 	'''):
 		subreddit = {'subreddit': row[0], 'lastChecked': row[1]}
 		subredditSize = row[2]
-		log.debug("subreddit: "+str(row[0]))
-		log.debug("lastChecked: "+str(row[1]))
-		log.debug("subredditSize: "+str(row[2]))
-		log.debug("currentGroupSize + subredditSize: "+str(currentGroupSize + subredditSize))
 		if currentGroupSize + subredditSize > globals.MAX_MULTIREDDIT_SIZE:
-			results.append(currentGroup)
+			if currentGroupSize > 0:
+				results.append(currentGroup)
 			currentGroup = [subreddit]
 			currentGroupSize = subredditSize
-			log.debug("In new group")
 		else:
 			currentGroup.append(subreddit)
 			currentGroupSize += subredditSize
-			log.debug("In old group")
-		log.debug("Results: "+str(results))
-		log.debug("currentGroup: "+str(currentGroup))
-		log.debug("currentGroupSize: "+str(currentGroupSize))
 
 	return results
 

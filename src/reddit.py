@@ -147,7 +147,6 @@ def getUserComments(user):
 
 
 def getSubredditSubmissions(subredditName):
-	log.debug("Subreddit: "+subredditName)
 	return reddit.subreddit(subredditName).new(limit=1000)
 
 
