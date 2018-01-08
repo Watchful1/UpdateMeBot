@@ -171,6 +171,7 @@ def getSubscribedSubreddits():
 			ON subs.Subreddit = white.Subreddit
 		WHERE subs.Approved = 1
 		GROUP BY subs.subreddit
+		ORDER BY white.PostsPerDay desc
 	'''):
 		subreddit = {'subreddit': row[0], 'lastChecked': row[1]}
 		subredditSize = row[2]
