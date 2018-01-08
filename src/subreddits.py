@@ -30,8 +30,7 @@ def processSubreddits():
 
 			subredditsCount += 1
 
-		subredditString = ''.join(subredditsStrings)
-
+		subredditString = '+'.join(subredditsStrings)
 
 		submissions = []
 		hitEnd = True
