@@ -36,14 +36,14 @@ def processSubreddits():
 		submissions = []
 		hitEnd = True
 		for submission in reddit.getSubredditSubmissions(subredditString):
-			log.debug("Found submission "+str(submission.id)+" in subreddit "+submission.subreddit)
+			log.debug("Found submission "+str(submission.id)+" in subreddit "+str(submission.subreddit))
 			submissionCreated = datetime.utcfromtimestamp(submission.created_utc)
 			if submissionCreated < earliestDatetime:
 				hitEnd = False
 				break
 			submissions.append({'id': submission.id, 'dateCreated': submissionCreated, 'author': str(submission.author).lower(),
 								'link': "https://www.reddit.com"+submission.permalink, 'submission': submission,
-			                    'subreddit': submission.subreddit})
+			                    'subreddit': str(submission.subreddit)})
 			if len(submissions) % 50 == 0:
 				log.info("Posts searched: "+str(len(submissions)))
 
