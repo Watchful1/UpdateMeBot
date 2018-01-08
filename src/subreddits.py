@@ -13,10 +13,12 @@ log = logging.getLogger("bot")
 
 def processSubreddits():
 	subredditsCount = 0
+	groupsCount = 0
 	postsCount = 0
 	messagesSent = 0
 	foundPosts = []
 	for subreddits in database.getSubscribedSubreddits():
+		groupsCount += 1
 		subPostsCount = 0
 		startTimestamp = datetime.utcnow()
 		earliestDatetime = datetime.utcnow()
@@ -100,4 +102,4 @@ def processSubreddits():
 
 		#log.debug(str(subPostsCount)+" posts searched in: "+str(round(time.perf_counter() - subStartTime, 3)))
 
-	return subredditsCount, postsCount, messagesSent, foundPosts
+	return subredditsCount, groupsCount, postsCount, messagesSent, foundPosts

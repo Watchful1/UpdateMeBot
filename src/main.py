@@ -136,6 +136,7 @@ while True:
 		'subCommentsAdded': 0,
 		'messagesProcessed': 0,
 		'subredditsCount': 0,
+		'groupsCount': 0,
 		'postsCount': 0,
 		'subscriptionMessagesSent': 0,
 		'existingCommentsUpdated': 0,
@@ -167,7 +168,7 @@ while True:
 			markTime('ProcessMessages')
 
 		if not noSearchPosts:
-			counts['subredditsCount'], counts['postsCount'], \
+			counts['subredditsCount'], counts['groupsCount'], counts['postsCount'], \
 				counts['subscriptionMessagesSent'], foundPosts = subreddits.processSubreddits()
 			markTime('ProcessSubreddits')
 
