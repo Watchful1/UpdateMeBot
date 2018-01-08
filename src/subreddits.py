@@ -31,10 +31,12 @@ def processSubreddits():
 			subredditsCount += 1
 
 		subredditString = '+'.join(subredditsStrings)
+		log.debug("Searching subreddit group: "+subredditString)
 
 		submissions = []
 		hitEnd = True
 		for submission in reddit.getSubredditSubmissions(subredditString):
+			log.debug("Found submission "+str(submission.id)+" in subreddit "+submission.subreddit)
 			submissionCreated = datetime.utcfromtimestamp(submission.created_utc)
 			if submissionCreated < earliestDatetime:
 				hitEnd = False
