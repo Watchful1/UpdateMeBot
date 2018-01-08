@@ -163,7 +163,6 @@ def getSubscribedSubreddits():
 	c = dbConn.cursor()
 	results = []
 	currentGroup = []
-	maxGroupSize = 20
 	currentGroupSize = 0
 	for row in c.execute('''
 		SELECT subs.Subreddit, MIN(subs.LastChecked), white.PostsPerDay
@@ -175,7 +174,7 @@ def getSubscribedSubreddits():
 	'''):
 		subreddit = {'subreddit': row[0], 'lastChecked': row[1]}
 		subredditSize = row[2]
-		if currentGroupSize + subredditSize > maxGroupSize:
+		if currentGroupSize + subredditSize > globals.MAX_MULTIREDDIT_SIZE:
 			results.append(currentGroup)
 			currentGroup = [subreddit]
 			currentGroupSize = subredditSize
