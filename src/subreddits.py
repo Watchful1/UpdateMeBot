@@ -31,12 +31,11 @@ def processSubreddits():
 			subredditsCount += 1
 
 		subredditString = '+'.join(subredditsStrings)
-		log.debug("Searching subreddit group: "+subredditString)
+		#log.debug("Searching subreddit group: "+subredditString)
 
 		submissions = []
 		hitEnd = True
 		for submission in reddit.getSubredditSubmissions(subredditString):
-			log.debug("Found submission "+str(submission.id)+" in subreddit "+str(submission.subreddit))
 			submissionCreated = datetime.utcfromtimestamp(submission.created_utc)
 			if submissionCreated < earliestDatetime:
 				hitEnd = False
@@ -45,7 +44,7 @@ def processSubreddits():
 								'link': "https://www.reddit.com"+submission.permalink, 'submission': submission,
 			                    'subreddit': str(submission.subreddit).lower()})
 			if len(submissions) % 50 == 0:
-				log.info("Posts searched: "+str(len(submissions)))
+				log.info("Posts searched in "+str(submission.subreddit)+": "+str(len(submissions)))
 
 		if hitEnd and len(submissions):
 			log.info("Messaging owner that that we might have missed a post in /r/"+subredditString)
