@@ -424,6 +424,9 @@ def subredditDefaultSubscribe(subreddit):
 		WHERE Subreddit = ?
 	''', (subreddit,))
 
+	if len(results) == 0:
+		return False
+
 	result = results.fetchone()[0]
 
 	if result == 1:
