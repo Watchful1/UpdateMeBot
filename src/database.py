@@ -424,10 +424,11 @@ def subredditDefaultSubscribe(subreddit):
 		WHERE Subreddit = ?
 	''', (subreddit,))
 
-	if len(results) == 0:
+	resultList = results.fetchone()
+	if resultList is None or len(resultList) == 0:
 		return False
 
-	result = results.fetchone()[0]
+	result = resultList[0]
 
 	if result == 1:
 		return True
