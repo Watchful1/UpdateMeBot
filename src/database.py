@@ -184,6 +184,7 @@ def getSubscribedSubreddits():
 			currentGroup.append(subreddit)
 			currentGroupSize += subredditSize
 
+	results.append(currentGroup)
 	return results
 
 
