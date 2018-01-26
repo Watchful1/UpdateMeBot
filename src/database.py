@@ -194,7 +194,8 @@ def getSubredditAuthorSubscriptions(Subreddit, SubscribedTo):
 		SELECT ID, Subscriber, LastChecked, Single, Filter
 		FROM subscriptions
 		WHERE Subreddit = ?
-			and SubscribedTo = ?
+			and (SubscribedTo = ?
+				OR SubscribedTo = 'sub')
 			and Approved = 1
 	''', (Subreddit, SubscribedTo)):
 		results.append({'ID': row[0], 'subscriber': row[1], 'lastChecked': row[2], 'single': row[3] == 1,
