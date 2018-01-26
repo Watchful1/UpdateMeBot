@@ -184,6 +184,7 @@ def getSubscribedSubreddits():
 			currentGroup.append(subreddit)
 			currentGroupSize += subredditSize
 
+	results.append(currentGroup)
 	return results
 
 
@@ -425,7 +426,11 @@ def subredditDefaultSubscribe(subreddit):
 		WHERE Subreddit = ?
 	''', (subreddit,))
 
-	result = results.fetchone()[0]
+	resultList = results.fetchone()
+	if resultList is None or len(resultList) == 0:
+		return False
+
+	result = resultList[0]
 
 	if result == 1:
 		return True
