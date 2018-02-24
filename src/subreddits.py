@@ -47,6 +47,7 @@ def processSubreddits():
 				break
 			if submissionCreated > startTimestamp:
 				log.debug("Found newer timestamp than start: {} : {}".format(submissionCreated, startTimestamp))
+				# startTimestamp = submissionCreated
 			if submission.id in submissionIds:
 				log.debug("Found duplicate submission: {} : {} : {}".format(submission.id, submissionCreated, earliestDatetime))
 			else:
