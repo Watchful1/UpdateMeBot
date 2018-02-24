@@ -433,7 +433,7 @@ def longRunLog(timings, counts, foundPosts):
 	logStrList.append(str(counts['groupsCount']))
 	logStrList.append(" groups")
 	if 'subscriptionMessagesSent' in counts and counts['subscriptionMessagesSent'] > 0:
-		logStrList.append(" subreddits : Sub messages sent: ")
+		logStrList.append(" : Sub messages sent: ")
 		logStrList.append(str(counts['subscriptionMessagesSent']))
 	if 'existingCommentsUpdated' in counts and counts['existingCommentsUpdated'] > 0:
 		logStrList.append(" : Existing comments updated: ")

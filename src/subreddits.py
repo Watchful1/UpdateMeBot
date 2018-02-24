@@ -45,10 +45,15 @@ def processSubreddits():
 			if submissionCreated < earliestDatetime:
 				hitEnd = False
 				break
+			if submissionCreated > startTimestamp:
+				log.debug("Found newer timestamp than start: {} : {}".format(submissionCreated, startTimestamp))
 			if submission.id in submissionIds:
 				log.debug("Found duplicate submission: {} : {} : {}".format(submission.id, submissionCreated, earliestDatetime))
 			else:
 				submissionIds.add(submission.id)
+			if len(submissionIds) > 5000:
+				log.debug("Purging submissionIds")
+				submissionIds.clear()
 			submissions.append({'id': submission.id, 'dateCreated': submissionCreated, 'author': str(submission.author).lower(),
 								'link': "https://www.reddit.com"+submission.permalink, 'submission': submission,
 			                    'subreddit': str(submission.subreddit).lower()})
