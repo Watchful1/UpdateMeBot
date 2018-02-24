@@ -11,6 +11,9 @@ import utility
 log = logging.getLogger("bot")
 
 
+submissionIds = set()
+
+
 def processSubreddits():
 	subredditsCount = 0
 	groupsCount = 0
@@ -42,6 +45,10 @@ def processSubreddits():
 			if submissionCreated < earliestDatetime:
 				hitEnd = False
 				break
+			if submission.id in submissionIds:
+				log.debug("Found duplicate submission: {} : {} : {}".format(submission.id, submissionCreated, earliestDatetime))
+			else:
+				submissionIds.add(submission.id)
 			submissions.append({'id': submission.id, 'dateCreated': submissionCreated, 'author': str(submission.author).lower(),
 								'link': "https://www.reddit.com"+submission.permalink, 'submission': submission,
 			                    'subreddit': str(submission.subreddit).lower()})
