@@ -243,7 +243,7 @@ def processMessages():
 				messagesProcessed += 1
 				replies = defaultdict(list)
 				msgAuthor = str(message.author).lower()
-				log.info("Parsing message from /u/"+msgAuthor)
+				log.info("Parsing message from /u/{} : {}".format(msgAuthor, message.id))
 				hasAdmin = msgAuthor == globals.OWNER_NAME.lower()
 
 				for line in message.body.lower().splitlines():
@@ -294,6 +294,11 @@ def processMessages():
 				log.debug("Sending message to /u/"+str(message.author))
 				if not reddit.replyMessage(message, ''.join(strList)):
 					log.warning("Exception sending confirmation message")
+			else:
+				body = message.body.lower()
+				if globals.SUBSCRIPTION_NAME in body or globals.UPDATE_NAME in body:
+					log.debug("Marking comment as read: {}".format(message.id))
+					reddit.markMessageRead(message)
 	except Exception as err:
 		log.warning("Exception reading messages")
 		log.warning(traceback.format_exc())
