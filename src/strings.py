@@ -343,7 +343,26 @@ def promptPublicComment(user, subreddit):
 
 
 def subredditNoticeThresholdMessage(subreddit, count):
-	return ["/r/", subreddit, " has hit the notice threshold, which is ", str(count)]
+	strList = []
+	strList.append("/r/")
+	strList.append(subreddit)
+	strList.append(" has hit the notice threshold, which is ")
+	strList.append(str(count))
+	strList.append(".\n\n")
+	strList.append("Add as [update](http://np.reddit.com/message/compose/?to=")
+	strList.append(globals.ACCOUNT_NAME)
+	strList.append("&subject=Add subreddit&message=")
+	strList.append("AddSubreddit")
+	strList.append(" /r/")
+	strList.append(subreddit)
+	strList.append(") or [subscribe](http://np.reddit.com/message/compose/?to=")
+	strList.append(globals.ACCOUNT_NAME)
+	strList.append("&subject=Add subreddit&message=")
+	strList.append("AddSubredditSub")
+	strList.append(" /r/")
+	strList.append(subreddit)
+	strList.append(").")
+	return strList
 
 
 def confirmationComment(subscriptionType, subscribeTo, subreddit, threadID, alreadySubscribed=0):
