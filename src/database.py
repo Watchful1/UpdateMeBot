@@ -413,6 +413,7 @@ def activateSubreddit(Subreddit, DefaultSubscribe,  Filter):
 	c.execute('''
 		UPDATE subscriptions
 		SET Approved = 1
+			,LastChecked = max(LastChecked, DATETIME(CURRENT_TIMESTAMP, '-2 days'))
 		WHERE subreddit = ?
 	''', (Subreddit,))
 	dbConn.commit()
