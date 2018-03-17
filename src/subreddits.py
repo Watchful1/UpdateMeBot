@@ -91,7 +91,7 @@ def processSubreddits():
 						                   "", datetime.utcnow(), 0, subredditDefaultSubscribe, True)
 
 				for subscriber in database.getSubredditAuthorSubscriptions(submission['subreddit'], submission['author']):
-					if submission['dateCreated'] >= datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
+					if submission['dateCreated'] > datetime.strptime(subscriber['lastChecked'], "%Y-%m-%d %H:%M:%S"):
 						if (subscriber['filter'] != "none" and utility.passesFilter(submission, subscriber['filter'])) or \
 								(subscriber['filter'] == "none" and passesSubFilter):
 							messagesSent += 1
