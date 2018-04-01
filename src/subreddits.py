@@ -36,7 +36,7 @@ def processSubreddits():
 			subredditsCount += 1
 
 		subredditString = '+'.join(subredditsStrings)
-		log.debug("Searching subreddit group: "+subredditString)
+		#log.debug("Searching subreddit group: "+subredditString)
 
 		submissions = []
 		hitEnd = True
