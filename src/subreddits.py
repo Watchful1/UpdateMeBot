@@ -40,6 +40,7 @@ def processSubreddits():
 
 		submissions = []
 		hitEnd = True
+		log.debug("subredditString: ".format(subredditString))
 		for submission in reddit.getSubredditSubmissions(subredditString):
 			submissionCreated = datetime.utcfromtimestamp(submission.created_utc)
 			if submissionCreated < earliestDatetime:
