@@ -27,9 +27,9 @@ def alertMessage(subscribedTo, subreddit, link, single):
 		strList.append("[Click here](")
 		strList.append("http://np.reddit.com/message/compose/?to=")
 		strList.append(globals.ACCOUNT_NAME)
-		strList.append("&subject=Update&message=UpdateMe /u/")
+		strList.append("&subject=Update&message=UpdateMe%20/u/")
 		strList.append(subscribedTo)
-		strList.append(" /r/")
+		strList.append("%20/r/")
 		strList.append(subreddit)
 		strList.append(") if you want to be updated the next time /u/")
 		strList.append(subscribedTo)
@@ -40,9 +40,9 @@ def alertMessage(subscribedTo, subreddit, link, single):
 		strList.append("[Click here](")
 		strList.append("http://np.reddit.com/message/compose/?to=")
 		strList.append(globals.ACCOUNT_NAME)
-		strList.append("&subject=Subscribe&message=SubscribeMe /u/")
+		strList.append("&subject=Subscribe&message=SubscribeMe%20/u/")
 		strList.append(subscribedTo)
-		strList.append(" /r/")
+		strList.append("%20/r/")
 		strList.append(subreddit)
 		strList.append(") if you want to be updated every time /u/")
 		strList.append(subscribedTo)
@@ -53,9 +53,9 @@ def alertMessage(subscribedTo, subreddit, link, single):
 		strList.append("[Click here](")
 		strList.append("http://np.reddit.com/message/compose/?to=")
 		strList.append(globals.ACCOUNT_NAME)
-		strList.append("&subject=Remove&message=Remove /u/")
+		strList.append("&subject=Remove&message=Remove%20/u/")
 		strList.append(subscribedTo)
-		strList.append(" /r/")
+		strList.append("%20/r/")
 		strList.append(subreddit)
 		strList.append(") to remove your subscription to /u/")
 		strList.append(subscribedTo)
@@ -330,9 +330,9 @@ def promptPublicComment(user, subreddit):
 	strList.append("[Click here](")
 	strList.append("http://np.reddit.com/message/compose/?to=")
 	strList.append(globals.ACCOUNT_NAME)
-	strList.append("&subject=Subscribe&message=SubscribeMe! /u/")
+	strList.append("&subject=Subscribe&message=SubscribeMe!%20/u/")
 	strList.append(user)
-	strList.append(" /r/")
+	strList.append("%20/r/")
 	strList.append(subreddit)
 	strList.append(") ")
 	strList.append(" to subscribe to /u/")
@@ -351,15 +351,15 @@ def subredditNoticeThresholdMessage(subreddit, count):
 	strList.append(".\n\n")
 	strList.append("Add as [update](http://np.reddit.com/message/compose/?to=")
 	strList.append(globals.ACCOUNT_NAME)
-	strList.append("&subject=Add subreddit&message=")
+	strList.append("&subject=Add%20subreddit&message=")
 	strList.append("AddSubreddit")
-	strList.append(" /r/")
+	strList.append("%20/r/")
 	strList.append(subreddit)
 	strList.append(") or [subscribe](http://np.reddit.com/message/compose/?to=")
 	strList.append(globals.ACCOUNT_NAME)
-	strList.append("&subject=Add subreddit&message=")
+	strList.append("&subject=Add%20subreddit&message=")
 	strList.append("AddSubredditSub")
-	strList.append(" /r/")
+	strList.append("%20/r/")
 	strList.append(subreddit)
 	strList.append(").")
 	return strList
@@ -548,13 +548,13 @@ couldNotUnderstandSection = (
 footer = (
 	"|[^(FAQs)](https://np.reddit.com/r/UpdateMeBot/comments/4wirnm/updatemebot_info/)"
 	"|[^(Request An Update)](http://np.reddit.com/message/compose/?to=" + globals.ACCOUNT_NAME + "&subject=Update&message="
-	"Replace this text with a line starting with UpdateMe and then either a username and subreddit, "
-	"or a link to a thread. You can also use SubscribeMe to get a message each time that user posts "
-	"instead of just the next time"
+	"Replace%20this%20text%20with%20a%20line%20starting%20with%20UpdateMe%20and%20then%20either%20a%20username%20and%20subreddit,%20"
+	"or%20a%20link%20to%20a%20thread.%20You%20can%20also%20use%20SubscribeMe%20to%20get%20a%20message%20each%20time%20that%20user%20posts%20"
+	"instead%20of%20just%20the%20next%20time"
 	")"
-	"|[^(Your Updates)](http://np.reddit.com/message/compose/?to=" + globals.ACCOUNT_NAME + "&subject=List Of Updates&message=MyUpdates)"
-	"|[^(Remove All Updates)](http://np.reddit.com/message/compose/?to=" + globals.ACCOUNT_NAME + "&subject=Remove All Updates&message=RemoveAll)"
-	"|[^(Feedback)](http://np.reddit.com/message/compose/?to=" + globals.OWNER_NAME + "&subject=UpdateMeBot Feedback)"
+	"|[^(Your Updates)](http://np.reddit.com/message/compose/?to=" + globals.ACCOUNT_NAME + "&subject=List%20Of%20Updates&message=MyUpdates)"
+	"|[^(Remove All Updates)](http://np.reddit.com/message/compose/?to=" + globals.ACCOUNT_NAME + "&subject=Remove%20All%20Updates&message=RemoveAll)"
+	"|[^(Feedback)](http://np.reddit.com/message/compose/?to=" + globals.OWNER_NAME + "&subject=UpdateMeBot%20Feedback)"
 	"|[^(Code)](https://github.com/Watchful1/RedditSubsBot)"
 	"\n|-|-|-|-|-|-|"
 )
