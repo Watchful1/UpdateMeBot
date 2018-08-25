@@ -541,8 +541,13 @@ def longRunMessage(timings, counts, errors):
 
 
 couldNotUnderstandSection = (
-	"Well, I got your message, but I didn't understand anything in it. "
-	"If I should have, message /u/" + globals.OWNER_NAME + " and he'll look into it."
+	"Well, I got your message, but I didn't understand anything in it.\n\n"
+	"If you are using the official reddit app and clicked one of the bot's links, it does not correctly fill "
+	"in the message. To subscribe to a user, reply with 'SubscribeMe! /r/subreddit /u/username' and fill in the "
+	"subreddit and username you want to subscribe to. To remove all your subscriptions, reply with 'removeall'.\n\n"
+	"If this did happen due to using the official reddit app. Feel free to make a post in /r/redditmobile. Maybe "
+	"admins will fix it if enough people complain.\n\n"
+	"If that's not the case, message /u/" + globals.OWNER_NAME + " and he'll look into what's going wrong."
 )
 
 footer = (
