@@ -111,6 +111,9 @@ def profileSubreddit(subredditName):
 		if count >= 50:
 			break
 
+	if count == 0:
+		return 1
+
 	days = (datetime.utcnow() - submissionCreated).days
 	if days == 0 or count == 0:
 		postsDays = count
