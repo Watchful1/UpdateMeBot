@@ -54,7 +54,7 @@ def backupDatabase():
 	if not os.path.exists(globals.BACKUPFOLDER_NAME):
 		os.makedirs(globals.BACKUPFOLDER_NAME)
 	copyfile(globals.DATABASE_NAME,
-	         globals.BACKUPFOLDER_NAME + "/" + datetime.utcnow().strftime("%Y-%m-%d_%H:%M") + ".db")
+	         globals.BACKUPFOLDER_NAME + "/" + datetime.utcnow().strftime("%Y-%m-%d_%H-%M") + ".db")
 
 	database.init()
 
