@@ -66,8 +66,8 @@ def MessageLineRemove(line, author):
 		database.removeAllSubscriptions(author)
 
 	elif line.startswith("remove"):
-		users = re.findall('(?:/u/)([\w-]*)', line)
-		subs = re.findall('(?:/r/)(\w*)', line)
+		users = re.findall('(?:/?u/)([\w-]*)', line)
+		subs = re.findall('(?:/?r/)(\w*)', line)
 
 		if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
 			if len(users) > 1:
@@ -115,7 +115,7 @@ def MessageLineDelete(line, author):
 def MessageLineAddSubreddit(line):
 	results = defaultdict(list)
 	if line.startswith("addsubreddit"):
-		subs = re.findall('(?:/r/)(\w*)', line)
+		subs = re.findall('(?:/?r/)(\w*)', line)
 		filters = re.findall('(?:filter=)(\S*)', line)
 		if len(filters):
 			filter = filters[0]
@@ -145,7 +145,7 @@ def MessageLineAddSubreddit(line):
 def MessageLineSubredditPM(line):
 	results = defaultdict(list)
 	if line.startswith("subredditpm"):
-		subs = re.findall('(?:/r/)(\w*)', line)
+		subs = re.findall('(?:/?r/)(\w*)', line)
 		if line.startswith("subredditpmtrue"):
 			alwaysPM = True
 		elif line.startswith("subredditpmfalse"):
@@ -165,8 +165,8 @@ def MessageLineMute(line, author, hasAdmin):
 	results = defaultdict(list)
 	if line.startswith("leavemealone") or line.startswith("talktome"):
 		addBlacklist = True if line.startswith("leavemealone") else False
-		subs = re.findall('(?:/r/)(\w*)', line)
-		users = re.findall('(?:/u/)([\w-]*)', line)
+		subs = re.findall('(?:/?r/)(\w*)', line)
+		users = re.findall('(?:/?u/)([\w-]*)', line)
 
 		if len(subs) or len(users):
 			if hasAdmin:
@@ -194,8 +194,8 @@ def MessageLinePrompt(line, author, hasAdmin):
 	results = defaultdict(list)
 	if line.startswith("prompt") or line.startswith("dontprompt"):
 		addPrompt = True if line.startswith("prompt") else False
-		subs = re.findall('(?:/r/)(\w*)', line)
-		users = re.findall('(?:/u/)([\w-]*)', line)
+		subs = re.findall('(?:/?r/)(\w*)', line)
+		users = re.findall('(?:/?u/)([\w-]*)', line)
 
 		skip = False
 		if len(subs) and len(users) and hasAdmin:
