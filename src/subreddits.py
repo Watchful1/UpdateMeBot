@@ -1,4 +1,5 @@
 import logging.handlers
+import traceback
 from datetime import datetime
 from datetime import timedelta
 
@@ -40,26 +41,31 @@ def processSubreddits():
 
 		submissions = []
 		hitEnd = True
-		for submission in reddit.getSubredditSubmissions(subredditString):
-			submissionCreated = datetime.utcfromtimestamp(submission.created_utc)
-			if submissionCreated < earliestDatetime:
-				hitEnd = False
-				break
-			if submissionCreated > startTimestamp:
-				log.debug("Found newer timestamp than start: {} : {}".format(submissionCreated, startTimestamp))
-				# startTimestamp = submissionCreated
-			if submission.id in submissionIds:
-				log.debug("Found duplicate submission: {} : {} : {}".format(submission.id, submissionCreated, earliestDatetime))
-			else:
-				submissionIds.add(submission.id)
-			if len(submissionIds) > 5000:
-				log.debug("Purging submissionIds")
-				submissionIds.clear()
-			submissions.append({'id': submission.id, 'dateCreated': submissionCreated, 'author': str(submission.author).lower(),
-								'link': "https://www.reddit.com"+submission.permalink, 'submission': submission,
-			                    'subreddit': str(submission.subreddit).lower()})
-			if len(submissions) % 50 == 0:
-				log.info("Posts searched in "+str(submission.subreddit)+": "+str(len(submissions)))
+		try:
+			for submission in reddit.getSubredditSubmissions(subredditString):
+				submissionCreated = datetime.utcfromtimestamp(submission.created_utc)
+				if submissionCreated < earliestDatetime:
+					hitEnd = False
+					break
+				if submissionCreated > startTimestamp:
+					log.debug("Found newer timestamp than start: {} : {}".format(submissionCreated, startTimestamp))
+					# startTimestamp = submissionCreated
+				if submission.id in submissionIds:
+					log.debug("Found duplicate submission: {} : {} : {}".format(submission.id, submissionCreated, earliestDatetime))
+				else:
+					submissionIds.add(submission.id)
+				if len(submissionIds) > 5000:
+					log.debug("Purging submissionIds")
+					submissionIds.clear()
+				submissions.append({'id': submission.id, 'dateCreated': submissionCreated, 'author': str(submission.author).lower(),
+									'link': "https://www.reddit.com"+submission.permalink, 'submission': submission,
+									'subreddit': str(submission.subreddit).lower()})
+				if len(submissions) % 50 == 0:
+					log.info("Posts searched in "+str(submission.subreddit)+": "+str(len(submissions)))
+		except Exception as err:
+			log.debug("Could not fetch subreddits: "+subredditString)
+			log.warning(traceback.format_exc())
+			continue
 
 		if hitEnd and len(submissions):
 			log.info("Messaging owner that that we might have missed a post in /r/"+subredditString)
