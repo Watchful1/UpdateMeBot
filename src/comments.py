@@ -22,7 +22,7 @@ def searchComments(searchTerm, startTime):
 	elif searchTerm == globals.SUBSCRIPTION_NAME:
 		subscriptionType = False
 
-	url = "https://api.pushshift.io/reddit/comment/search?q="+searchTerm+"&limit=100&sort=desc"
+	url = "https://api.pushshift.io/reddit/comment/search?q="+searchTerm+"&limit=200&sort=desc"
 	try:
 		requestTime = time.perf_counter()
 		json = requests.get(url, headers={'User-Agent': globals.USER_AGENT})
