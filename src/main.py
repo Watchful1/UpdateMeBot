@@ -232,8 +232,8 @@ while True:
 		log.debug("Could not build long run log")
 		log.warning(traceback.format_exc())
 
-	if timings['end'] > (globals.WARNING_RUN_TIME + counts['subscriptionMessagesSent'] + counts['updateCommentsAdded'] +
-				counts['subCommentsAdded'] + counts['existingCommentsUpdated'] + updateRequestSeconds +
+	if timings['end'] > (globals.WARNING_RUN_TIME + counts['subscriptionMessagesSent'] + counts['updateCommentsAdded'] * 2 +
+				counts['subCommentsAdded'] * 2 + counts['existingCommentsUpdated'] + updateRequestSeconds +
 				subscribeRequestSeconds) or len(errors):
 		log.debug("updateRequestSeconds: " + str(updateRequestSeconds) + " subscribeRequestSeconds: " +
 		        str(subscribeRequestSeconds))
