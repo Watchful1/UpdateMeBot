@@ -17,6 +17,7 @@ log = logging.getLogger("bot")
 
 def MessageLineUpdateSubscribe(line, author, created):
 	results = defaultdict(list)
+	line = line.replace("\u00A0"," ")
 	if line.startswith("updateme") or line.startswith("subscribeme") or line.startswith("http"):
 		users = re.findall('(?: /?u/)([\w-]*)', line)
 		subs = re.findall('(?: /?r/)(\w*)', line)
