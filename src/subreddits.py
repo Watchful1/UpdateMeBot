@@ -47,6 +47,7 @@ def processSubreddits():
 				if submissionCreated < earliestDatetime:
 					hitEnd = False
 					if submission.id not in submissionIds:
+						submissionIds.add(submission.id)
 						log.debug("Found submission before timestamp that isn't in history: {} : {} : {}".format(submission.id, submissionCreated, earliestDatetime))
 					break
 				if submissionCreated > startTimestamp:
