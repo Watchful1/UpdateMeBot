@@ -1,0 +1,25 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "e135103607d8c8a5f539fa6cf0f9e1b0902506454484e6514e006fb721378886"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.7"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "discord-logging": {
+            "git": "https://github.com/Watchful1/DiscordLogging.git",
+            "ref": "25306834745c982cbf325f98f0a3816f8860e20e"
+        }
+    },
+    "develop": {}
+}
