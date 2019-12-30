@@ -3,3 +3,7 @@ logs/*
 __pycache__/*
 *.db
 *.ini
+src/__pycache__/
+src/classes/__pycache__/
+src/database/__pycache__/
+test/__pycache__/
