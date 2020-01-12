@@ -12,12 +12,13 @@ import utils
 from ._subscription import _DatabaseSubscriptions
 from ._user import _DatabaseUsers
 from ._subreddit import _DatabaseSubreddit
+from ._comment import _DatabaseComments
 from ._keystore import _DatabaseKeystore
 
 log = discord_logging.get_logger()
 
 
-class Database(_DatabaseSubscriptions, _DatabaseUsers, _DatabaseSubreddit, _DatabaseKeystore):
+class Database(_DatabaseSubscriptions, _DatabaseUsers, _DatabaseSubreddit, _DatabaseComments, _DatabaseKeystore):
 	def __init__(self, debug=False, publish=False):
 		log.info(f"Initializing database class: debug={debug} publish={publish}")
 		self.debug = debug
@@ -27,6 +28,7 @@ class Database(_DatabaseSubscriptions, _DatabaseUsers, _DatabaseSubreddit, _Data
 		_DatabaseSubscriptions.__init__(self)
 		_DatabaseUsers.__init__(self)
 		_DatabaseSubreddit.__init__(self)
+		_DatabaseComments.__init__(self)
 		_DatabaseKeystore.__init__(self)
 
 	def init(self, debug, publish):
