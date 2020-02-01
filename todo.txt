@@ -1,0 +1,1 @@
+change names in database to proper case

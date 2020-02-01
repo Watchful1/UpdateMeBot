@@ -1,5 +1,6 @@
 import discord_logging
 import traceback
+import re
 from collections import defaultdict
 
 
@@ -9,13 +10,53 @@ log = discord_logging.get_logger()
 import static
 
 
+def line_update_subscribe(reddit, database, line, user):
+	results = defaultdict(list)
+	users = re.findall(r'(?: /?u/)([\w-]*)', line)
+	subs = re.findall(r'(?: /?r/)(\w*)', line)
+	links = re.findall(r'(?:reddit.com/r/\w*/comments/)(\w*)', line)
+	filters = re.findall(r'(?:filter=)(\S*)', line)
+
+	if len(links) != 0:
+		try:
+			submission = reddit.getSubmission(links[0])
+			users.append(str(submission.author))
+			subs.append(str(submission.subreddit))
+		except Exception as err:
+			log.debug("Exception parsing link")
+
+	if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
+		if line.startswith("updateme"):
+			subscriptionTypeSingle = True
+		elif line.startswith("subscribeme"):
+			subscriptionTypeSingle = False
+		else:
+			subscriptionTypeSingle = not database.subredditDefaultSubscribe(subs[0].lower())
+
+		if len(filters):
+			filter = filters[0]
+		else:
+			filter = None
+		if len(users) > 1:
+			for user in users:
+				result, data = utility.addUpdateSubscription(author, user, subs[0], created, subscriptionTypeSingle, filter)
+				results[result].append(data)
+		elif len(subs) > 1:
+			for sub in subs:
+				result, data = utility.addUpdateSubscription(author, users[0], sub, created, subscriptionTypeSingle, filter)
+				results[result].append(data)
+		else:
+			result, data = utility.addUpdateSubscription(author, users[0], subs[0], created, subscriptionTypeSingle, filter)
+			results[result].append(data)
+
+	return results
+
+
 def process_message(message, reddit, database, count_string=""):
 	log.info(f"{count_string}: Message u/{message.author.name} : {message.id}")
 	user = database.get_or_add_user(message.author.name)
-	user.recurring_sent = 0
-	body = message.body.lower()
+	body = message.body.lower().replace("\u00A0", " ")
 
-	bldr = None
 
 
 
@@ -25,10 +66,11 @@ def process_message(message, reddit, database, count_string=""):
 
 
 	replies = defaultdict(list)
-	msgAuthor = str(message.author).lower()
-	hasAdmin = msgAuthor == static.OWNER_NAME.lower()
 
-	for line in message.body.lower().splitlines():
+	for line in body.splitlines():
+		if line.startswith("updateme") or line.startswith("subscribeme") or line.startswith("http"):
+			line_update_subscribe(reddit, database, line, user)
+
 		utility.combineDictLists(replies, MessageLineUpdateSubscribe(line, msgAuthor, datetime.utcfromtimestamp(message.created_utc)))
 		utility.combineDictLists(replies, MessageLineRemove(line, msgAuthor))
 		utility.combineDictLists(replies, MessageLineList(line, msgAuthor))
