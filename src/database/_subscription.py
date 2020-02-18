@@ -14,3 +14,17 @@ class _DatabaseSubscriptions:
 	def add_subscription(self, subscription):
 		log.debug("Saving new subscription")
 		self.session.add(subscription)
+
+	def get_subscription_by_fields(self, subscriber_id, subscribed_to_id, subreddit_id):
+		log.debug(f"Fetching subscription by fields: {subscriber_id} : {subscribed_to_id} : {subreddit_id}")
+
+		subscription = self.session.query(Subscription)\
+			.options(joinedload(Subscription.subscriber))\
+			.options(joinedload(Subscription.subscribed_to))\
+			.options(joinedload(Subscription.subreddit))\
+			.filter_by(subscriber_id=subscriber_id)\
+			.filter_by(subscribed_to_id=subscribed_to_id)\
+			.filter_by(subreddit_id=subreddit_id)\
+			.first()
+
+		return subscription

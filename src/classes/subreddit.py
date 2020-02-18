@@ -15,7 +15,7 @@ class Subreddit(Base):
 	def __init__(
 		self,
 		name,
-		enabled,
+		enabled=False,
 		default_recurring=False,
 		no_comment=False,
 		blocked=False

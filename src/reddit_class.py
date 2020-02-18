@@ -79,3 +79,10 @@ class Reddit:
 		log.debug(f"Marking message as read: {message.id}")
 		if not self.no_post:
 			message.mark_read()
+
+	def get_submission(self, submission_id):
+		log.debug(f"Fetching submission by id: {submission_id}")
+		if submission_id == "xxxxxx":
+			return None
+		else:
+			return self.reddit.submission(submission_id)

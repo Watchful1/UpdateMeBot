@@ -7,49 +7,73 @@ from collections import defaultdict
 log = discord_logging.get_logger()
 
 
+from classes.subscription import Subscription
+
+
 import static
 
 
-def line_update_subscribe(reddit, database, line, user):
-	results = defaultdict(list)
-	users = re.findall(r'(?: /?u/)([\w-]*)', line)
-	subs = re.findall(r'(?: /?r/)(\w*)', line)
-	links = re.findall(r'(?:reddit.com/r/\w*/comments/)(\w*)', line)
-	filters = re.findall(r'(?:filter=)(\S*)', line)
+def line_update_subscribe(reddit, database, line, user, bldr):
+	authors = re.findall(r'(?: /?u/)([\w-]*)', line)
+	subreddits = re.findall(r'(?: /?r/)(\w*)', line)
 
-	if len(links) != 0:
-		try:
-			submission = reddit.getSubmission(links[0])
-			users.append(str(submission.author))
-			subs.append(str(submission.subreddit))
-		except Exception as err:
-			log.debug("Exception parsing link")
+	author_name = None
+	subreddit_name = None
+	if len(authors) and len(subreddits):
+		author_name = authors[0]
+		subreddit_name = subreddits[0]
 
-	if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
+	else:
+		links = re.findall(r'(?:reddit.com/r/\w*/comments/)(\w*)', line)
+		if len(links):
+			submission = reddit.get_submission(links[0])
+			author_name = submission.author.name
+			subreddit_name = submission.subreddit.display_name
+
+	if author_name is not None and subreddit_name is not None:
+		author = database.get_or_add_user(author_name)
+		subreddit = database.get_or_add_subreddit(subreddit_name)
+
 		if line.startswith("updateme"):
-			subscriptionTypeSingle = True
+			recurring = False
 		elif line.startswith("subscribeme"):
-			subscriptionTypeSingle = False
+			recurring = True
 		else:
-			subscriptionTypeSingle = not database.subredditDefaultSubscribe(subs[0].lower())
+			recurring = subreddit.default_recurring
 
-		if len(filters):
-			filter = filters[0]
-		else:
-			filter = None
-		if len(users) > 1:
-			for user in users:
-				result, data = utility.addUpdateSubscription(author, user, subs[0], created, subscriptionTypeSingle, filter)
-				results[result].append(data)
-		elif len(subs) > 1:
-			for sub in subs:
-				result, data = utility.addUpdateSubscription(author, users[0], sub, created, subscriptionTypeSingle, filter)
-				results[result].append(data)
-		else:
-			result, data = utility.addUpdateSubscription(author, users[0], subs[0], created, subscriptionTypeSingle, filter)
-			results[result].append(data)
+		subscription = database.get_subscription_by_fields(user.id, author.id, subreddit.id)
+		if subscription is not None:
+			if subscription.recurring != recurring:
+				log.info(f"Recurring changed from {subscription.recurring} to {recurring}, u/{author.name}, r/{subreddit.name}")
+				bldr.append(
+					f"I have updated your subscription type and will now message you {'each' if recurring else 'next'} "
+					f"time u/{author.name} posts in r/{subreddit.name}  \n")
+				subscription.recurring = recurring
 
-	return results
+			else:
+				log.info(f"Already subscribed, u/{author.name}, r/{subreddit.name}")
+				bldr.append(
+					f"You had already asked me to message you {'each' if recurring else 'next'} time u/{author.name} "
+					f"posts in r/{subreddit.name}  \n")
+
+		else:
+			subscription = Subscription(
+				subscriber=user,
+				subscribed_to=author,
+				subreddit=subreddit,
+				recurring=recurring
+			)
+			database.add_subscription(subscription)
+
+			if not subreddit.enabled:
+				log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}, subreddit not enabled")
+				bldr.append()
+				---
+			else:
+				log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}")
+				bldr.append(
+					f"I will message you {'each' if recurring else 'next'} time u/{author.name} posts in "
+					f"r/{subreddit.name}  \n")
 
 
 def process_message(message, reddit, database, count_string=""):
