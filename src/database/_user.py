@@ -18,3 +18,9 @@ class _DatabaseUsers:
 			self.session.add(user)
 
 		return user
+
+	def get_user(self, user_name):
+		log.debug(f"Fetching user: {user_name}")
+		user = self.session.query(User).filter_by(name=user_name).first()
+
+		return user

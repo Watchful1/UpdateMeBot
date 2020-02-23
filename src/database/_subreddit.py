@@ -20,3 +20,11 @@ class _DatabaseSubreddit:
 			self.session.add(subreddit)
 
 		return subreddit
+
+	def get_subreddit(self, subreddit_name):
+		log.debug(f"Fetching subreddit by name: {subreddit_name}")
+		subreddit = self.session.query(Subreddit)\
+			.filter_by(name=subreddit_name)\
+			.first()
+
+		return subreddit

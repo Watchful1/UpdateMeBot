@@ -13,7 +13,7 @@ from classes.subscription import Subscription
 import static
 
 
-def line_update_subscribe(reddit, database, line, user, bldr):
+def line_update_subscribe(line, user, bldr, database, reddit):
 	authors = re.findall(r'(?: /?u/)([\w-]*)', line)
 	subreddits = re.findall(r'(?: /?r/)(\w*)', line)
 
@@ -41,20 +41,22 @@ def line_update_subscribe(reddit, database, line, user, bldr):
 		else:
 			recurring = subreddit.default_recurring
 
-		subscription = database.get_subscription_by_fields(user.id, author.id, subreddit.id)
+		subscription = database.get_subscription_by_fields(user, author, subreddit)
 		if subscription is not None:
 			if subscription.recurring != recurring:
-				log.info(f"Recurring changed from {subscription.recurring} to {recurring}, u/{author.name}, r/{subreddit.name}")
+				log.info(
+					f"Recurring changed from {subscription.recurring} to {recurring}, u/{author.name}, "
+					f"r/{subreddit.name}")
 				bldr.append(
 					f"I have updated your subscription type and will now message you {'each' if recurring else 'next'} "
-					f"time u/{author.name} posts in r/{subreddit.name}  \n")
+					f"time u/{author.name} posts in r/{subreddit.name}")
 				subscription.recurring = recurring
 
 			else:
 				log.info(f"Already subscribed, u/{author.name}, r/{subreddit.name}")
 				bldr.append(
 					f"You had already asked me to message you {'each' if recurring else 'next'} time u/{author.name} "
-					f"posts in r/{subreddit.name}  \n")
+					f"posts in r/{subreddit.name}")
 
 		else:
 			subscription = Subscription(
@@ -67,13 +69,56 @@ def line_update_subscribe(reddit, database, line, user, bldr):
 
 			if not subreddit.enabled:
 				log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}, subreddit not enabled")
-				bldr.append()
-				---
+				bldr.append(
+					f"Subreddit r/{subreddit.name} is not being tracked by the bot. More details [here]"
+					f"({static.TRACKING_INFO_URL})")
 			else:
 				log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}")
 				bldr.append(
 					f"I will message you {'each' if recurring else 'next'} time u/{author.name} posts in "
-					f"r/{subreddit.name}  \n")
+					f"r/{subreddit.name}")
+
+
+def line_remove(line, user, bldr, database):
+	if line.startswith("removeall"):
+		subscriptions = database.get_user_subscription(user)
+		if not len(subscriptions):
+			log.info(f"u/{user.name} doesn't have any subscriptions to remove")
+			bldr.append("You don't have any subscriptions to remove")
+
+		else:
+			for subscription in subscriptions:
+				bldr.append(
+					f"Removed your subscription to u/{subscription.subscribed_to.name} in "
+					f"r/{subscription.subreddit.name}")
+
+			count_removed = database.delete_user_subscriptions(user)
+			if count_removed != len(subscriptions):
+				log.warning(f"Error removing subscriptions for u/{user.name} : {len(subscriptions)} : {count_removed}")
+
+	else:
+		users = re.findall(r'(?:/?u/)([\w-]*)', line)
+		subs = re.findall(r'(?:/?r/)(\w*)', line)
+
+		if not len(users) or not len(subs):
+			log.info("Couldn't find anything in removal message")
+			bldr.append("I couldn't figure out what subscription to remove")
+
+		else:
+			author = database.get_user(users[0])
+			subreddit = database.get_subreddit(subs[0])
+			subscription = None
+			if author is not None and subreddit is not None:
+				subscription = database.get_subscription_by_fields(user, author, subreddit)
+
+			if subscription is None:
+				log.info(f"Could not find subscription for u/{user.name} to u/{users[0]} in r/{subs[0]} to remove")
+				bldr.append(f"I couldn't find a subscription for you to u/{users[0]} in r/{subs[0]} to remove")
+
+			else:
+				log.info(f"Removed subscription for u/{user.name} to u/{users[0]} in r/{subs[0]}")
+				bldr.append(f"I removed your subscription to u/{users[0]} in r/{subs[0]}")
+				database.delete_subscription(subscription)
 
 
 def process_message(message, reddit, database, count_string=""):
@@ -81,21 +126,15 @@ def process_message(message, reddit, database, count_string=""):
 	user = database.get_or_add_user(message.author.name)
 	body = message.body.lower().replace("\u00A0", " ")
 
-
-
-
-
-
-
-
-
-	replies = defaultdict(list)
-
+	bldr = []
 	for line in body.splitlines():
 		if line.startswith("updateme") or line.startswith("subscribeme") or line.startswith("http"):
-			line_update_subscribe(reddit, database, line, user)
+			line_update_subscribe(line, user, bldr, database, reddit)
+		elif line.startswith("remove"):
+			line_remove(line, user, bldr, database)
 
-		utility.combineDictLists(replies, MessageLineUpdateSubscribe(line, msgAuthor, datetime.utcfromtimestamp(message.created_utc)))
+		bldr.append("  \n")
+
 		utility.combineDictLists(replies, MessageLineRemove(line, msgAuthor))
 		utility.combineDictLists(replies, MessageLineList(line, msgAuthor))
 		utility.combineDictLists(replies, MessageLineDelete(line, msgAuthor))
