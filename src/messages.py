@@ -78,6 +78,8 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 					f"I will message you {'each' if recurring else 'next'} time u/{author.name} posts in "
 					f"r/{subreddit.name}")
 
+	bldr.append("  \n")
+
 
 def line_remove(line, user, bldr, database):
 	if line.startswith("removeall"):
@@ -120,6 +122,36 @@ def line_remove(line, user, bldr, database):
 				bldr.append(f"I removed your subscription to u/{users[0]} in r/{subs[0]}")
 				database.delete_subscription(subscription)
 
+	bldr.append("  \n")
+
+
+def line_delete(line, user, bldr, database, reddit):
+	ids = re.findall(r'delete\s+(\w+)', line)
+
+	if len(ids) == 0:
+		log.info("Couldn't find a thread id to delete")
+		return
+	else:
+		db_comment = database.get_comment_by_thread(ids[0])
+		if db_comment is not None:
+			if db_comment.user == user.name:
+				comment = reddit.get_comment(db_comment.comment_id)
+				if not reddit.delete_comment(comment):
+					log.debug(f"Unable to delete comment: {db_comment.comment_id}")
+					bldr.append("Something went wrong deleting the comment")
+				else:
+					database.delete_comment(db_comment)
+					log.debug(f"Deleted comment: {db_comment.comment_id}")
+					bldr.append("Comment deleted.")
+			else:
+				log.debug(f"Bot wasn't replying to owner: {db_comment.user} : {user.name}")
+				bldr.append("It looks like the bot wasn't replying to you.")
+		else:
+			log.debug(f"Comment doesn't exist: {ids[0]}")
+			bldr.append("This comment doesn't exist or was already deleted.")
+
+	bldr.append("  \n")
+
 
 def process_message(message, reddit, database, count_string=""):
 	log.info(f"{count_string}: Message u/{message.author.name} : {message.id}")
@@ -132,12 +164,11 @@ def process_message(message, reddit, database, count_string=""):
 			line_update_subscribe(line, user, bldr, database, reddit)
 		elif line.startswith("remove"):
 			line_remove(line, user, bldr, database)
+		elif line.startswith("delete"):
+			line_delete(line, user, bldr, database, reddit)
 
-		bldr.append("  \n")
 
-		utility.combineDictLists(replies, MessageLineRemove(line, msgAuthor))
 		utility.combineDictLists(replies, MessageLineList(line, msgAuthor))
-		utility.combineDictLists(replies, MessageLineDelete(line, msgAuthor))
 		utility.combineDictLists(replies, MessageLineMute(line, msgAuthor, hasAdmin))
 		utility.combineDictLists(replies, MessageLinePrompt(line, msgAuthor, hasAdmin))
 		if hasAdmin:

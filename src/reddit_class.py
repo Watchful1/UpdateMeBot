@@ -1,6 +1,7 @@
 import discord_logging
 import praw
 import prawcore
+import traceback
 
 
 log = discord_logging.get_logger()
@@ -86,3 +87,32 @@ class Reddit:
 			return None
 		else:
 			return self.reddit.submission(submission_id)
+
+	def get_comment(self, comment_id):
+		log.debug(f"Fetching comment by id: {comment_id}")
+		if comment_id == "xxxxxx":
+			return None
+		else:
+			return self.reddit.comment(comment_id)
+
+	def edit_comment(self, body, comment=None, comment_id=None):
+		if comment is None:
+			comment = self.get_comment(comment_id)
+		log.debug(f"Editing comment: {comment.id}")
+
+		if self.no_post:
+			log.info(body)
+		else:
+			output, result = self.run_function(comment.edit, [body])
+			return result
+
+	def delete_comment(self, comment):
+		log.debug(f"Deleting comment: {comment.id}")
+		if not self.no_post:
+			try:
+				comment.delete()
+			except Exception:
+				log.warning(f"Error deleting comment: {comment.comment_id}")
+				log.warning(traceback.format_exc())
+				return False
+		return True

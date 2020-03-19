@@ -1,1 +1,17 @@
-change names in database to proper case
+messages
+	subscribe
+	remove
+	delete
+	list
+	mute?
+	prompt?
+	add sub
+	subreddit pm
+comments
+subreddit checking
+	profile subreddit
+message sending
+
+
+
+does replying to a message mark it as read
