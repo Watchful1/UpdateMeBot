@@ -15,8 +15,8 @@ class DbComment(Base):
 	recurring = Column(Boolean, nullable=False)
 	current_count = Column(Integer, nullable=False)
 
-	subscriber = relationship("User")
-	subscribed_to = relationship("User")
+	subscriber = relationship("User", foreign_keys=[subscriber_id])
+	subscribed_to = relationship("User", foreign_keys=[subscriber_id])
 	subreddit = relationship("Subreddit")
 
 	def __init__(

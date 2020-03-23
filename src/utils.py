@@ -2,12 +2,33 @@ from datetime import datetime
 import discord_logging
 import re
 import urllib.parse
+import random
 
 
 log = discord_logging.get_logger()
 
 
 import static
+
+
+def random_id():
+	values = list(map(chr, range(97, 123)))
+	for num in range(1, 10):
+		values.append(str(num))
+	return ''.join(random.choices(values, k=6))
+
+
+def fullname_type(fullname):
+	if fullname.startswith("t1"):
+		return "comment"
+	elif fullname.startswith("t4"):
+		return "message"
+	else:
+		return None
+
+
+def id_from_fullname(fullname):
+	return re.sub(r't\d_', "", fullname)
 
 
 def datetime_now():

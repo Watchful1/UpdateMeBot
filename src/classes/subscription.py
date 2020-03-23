@@ -20,8 +20,8 @@ class Subscription(Base):
 	subreddit_id = Column(Integer, ForeignKey('subreddits.id'), nullable=False)
 	recurring = Column(Boolean, nullable=False)
 
-	subscriber = relationship("User")
-	subscribed_to = relationship("User")
+	subscriber = relationship("User", foreign_keys=[subscriber_id])
+	subscribed_to = relationship("User", foreign_keys=[subscribed_to_id])
 	subreddit = relationship("Subreddit")
 
 	def __init__(

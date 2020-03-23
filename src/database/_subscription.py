@@ -29,6 +29,13 @@ class _DatabaseSubscriptions:
 
 		return subscription
 
+	def get_user_subscriptions_by_name(self, user_name):
+		user = self.session.query(User).filter_by(name=user_name).first()
+		if user is None:
+			return []
+		else:
+			return self.get_user_subscriptions(user)
+
 	def get_user_subscriptions(self, user):
 		log.debug(f"Fetching user subscriptions u/{user.name}")
 
