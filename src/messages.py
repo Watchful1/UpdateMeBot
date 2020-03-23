@@ -1,16 +1,15 @@
 import discord_logging
 import traceback
 import re
-from collections import defaultdict
 
 
 log = discord_logging.get_logger()
 
 
 from classes.subscription import Subscription
-
-
+from classes.enums import ReturnType
 import static
+import utils
 
 
 def line_update_subscribe(line, user, bldr, database, reddit):
@@ -83,7 +82,7 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 
 def line_remove(line, user, bldr, database):
 	if line.startswith("removeall"):
-		subscriptions = database.get_user_subscription(user)
+		subscriptions = database.get_user_subscriptions(user)
 		if not len(subscriptions):
 			log.info(f"u/{user.name} doesn't have any subscriptions to remove")
 			bldr.append("You don't have any subscriptions to remove")
@@ -153,12 +152,36 @@ def line_delete(line, user, bldr, database, reddit):
 	bldr.append("  \n")
 
 
+def line_list(user, bldr, database):
+	subscriptions = database.get_user_subscriptions(user)
+	if not len(subscriptions):
+		log.info(f"u/{user.name} doesn't have any subscriptions to list")
+		bldr.append("You don't have any subscriptions")
+
+	else:
+		log.info(f"Listing subscriptions for u/{user.name}")
+		bldr.append("I'll message you for each of the following:  \n")
+		for subscription in subscriptions:
+			if subscription.recurring:
+				bldr.append("Each")
+			else:
+				bldr.append("Next")
+			bldr.append(" time u/")
+			bldr.append(subscription.subscribed_to.name)
+			bldr.append(" posts in r/")
+			bldr.append(subscription.subreddit.name)
+			bldr.append("  \n")
+
+	bldr.append("  \n")
+
+
 def process_message(message, reddit, database, count_string=""):
 	log.info(f"{count_string}: Message u/{message.author.name} : {message.id}")
 	user = database.get_or_add_user(message.author.name)
 	body = message.body.lower().replace("\u00A0", " ")
 
 	bldr = []
+	append_list = False
 	for line in body.splitlines():
 		if line.startswith("updateme") or line.startswith("subscribeme") or line.startswith("http"):
 			line_update_subscribe(line, user, bldr, database, reddit)
@@ -166,66 +189,15 @@ def process_message(message, reddit, database, count_string=""):
 			line_remove(line, user, bldr, database)
 		elif line.startswith("delete"):
 			line_delete(line, user, bldr, database, reddit)
+		elif line.startswith("mysubscriptions") or line.startswith("myupdates"):
+			append_list = True
 
+	if append_list:
+		line_list(user, bldr, database)
 
-		utility.combineDictLists(replies, MessageLineList(line, msgAuthor))
-		utility.combineDictLists(replies, MessageLineMute(line, msgAuthor, hasAdmin))
-		utility.combineDictLists(replies, MessageLinePrompt(line, msgAuthor, hasAdmin))
-		if hasAdmin:
-			utility.combineDictLists(replies, MessageLineAddSubreddit(line))
-			utility.combineDictLists(replies, MessageLineSubredditPM(line))
-
-	sections = [
-		{'key': "added", 'function': strings.confirmationSection},
-		{'key': "updated", 'function': strings.updatedSubscriptionSection},
-		{'key': "exist", 'function': strings.alreadySubscribedSection},
-		{'key': "removed", 'function': strings.removeUpdatesConfirmationSection},
-		{'key': "commentsDeleted", 'function': strings.deletedCommentSection},
-		{'key': "couldnotadd", 'function': strings.couldNotSubscribeSection},
-		{'key': "subredditsAdded", 'function': strings.subredditActivatedMessage},
-		{'key': "alwaysPM", 'function': strings.subredditAlwaysPMMessage},
-		{'key': "blacklist", 'function': strings.blacklistSection},
-		{'key': "blacklistNot", 'function': strings.blacklistNotSection},
-		{'key': "prompt", 'function': strings.promptSection},
-	]
-
-	strList = []
-	for section in sections:
-		if section['key'] in replies:
-			strList.extend(section['function'](replies[section['key']]))
-			strList.append("\n\n*****\n\n")
-
-	# this is special cased since we need to pull in the subscriptions now, rather than during line processing
-	if 'list' in replies:
-		strList.extend(strings.yourUpdatesSection(database.getMySubscriptions(msgAuthor)))
-		strList.append("\n\n*****\n\n")
-
-	if len(strList) == 0:
+	if not len(bldr):
 		log.info("Nothing found in message")
-		strList.append(strings.couldNotUnderstandSection)
-		strList.append("\n\n*****\n\n")
-
-	strList.append(strings.footer)
-
-	reddit.markMessageRead(message)
-
-	log.debug("Sending message to /u/"+str(message.author))
-	if not reddit.replyMessage(message, ''.join(strList)):
-		log.warning("Exception sending confirmation message")
-
-
-
-
-
-
-
-
-
-
-
-
-	if bldr is None:
-		bldr = ["I couldn't find anything in your message."]
+		bldr.append("I couldn't find anything in your message.")
 
 	bldr.extend(utils.get_footer())
 	result = reddit.reply_message(message, ''.join(bldr))

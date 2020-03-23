@@ -29,7 +29,7 @@ class _DatabaseSubscriptions:
 
 		return subscription
 
-	def get_user_subscription(self, user):
+	def get_user_subscriptions(self, user):
 		log.debug(f"Fetching user subscriptions u/{user.name}")
 
 		subscriptions = self.session.query(Subscription)\
@@ -37,6 +37,8 @@ class _DatabaseSubscriptions:
 			.options(joinedload(Subscription.subscribed_to))\
 			.options(joinedload(Subscription.subreddit))\
 			.filter(Subscription.subscriber == user)\
+			.order_by(Subscription.subreddit.name)\
+			.order_by(Subscription.subscribed_to.name)\
 			.all()
 
 		return subscriptions
