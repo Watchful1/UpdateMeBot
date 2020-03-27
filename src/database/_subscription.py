@@ -1,8 +1,7 @@
 import discord_logging
-from sqlalchemy.orm import joinedload, contains_eager
+from sqlalchemy.orm import joinedload
 
 from classes.subscription import Subscription
-from classes.subreddit import Subreddit
 from classes.user import User
 
 log = discord_logging.get_logger()

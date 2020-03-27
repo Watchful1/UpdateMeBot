@@ -13,6 +13,11 @@ class User:
 		self.created_utc = created_utc
 
 
+class Subreddit:
+	def __init__(self, name):
+		self.display_name = name
+
+
 class RedditObject:
 	def __init__(
 		self,
@@ -85,6 +90,7 @@ class Reddit:
 		self.sent_messages = []
 		self.self_comments = []
 		self.all_comments = {}
+		self.all_submissions = {}
 		self.users = {}
 		self.banned_subreddits = set()
 		self.locked_threads = set()
@@ -94,6 +100,9 @@ class Reddit:
 		self.all_comments[comment.id] = comment
 		if self_comment:
 			self.self_comments.append(comment)
+
+	def add_submission(self, submission):
+		self.all_submissions[submission.id] = submission
 
 	def reply_message(self, message, body):
 		self.sent_messages.append(message.reply(body))
@@ -124,6 +133,12 @@ class Reddit:
 			return self.all_comments[comment_id]
 		else:
 			return RedditObject(id=comment_id)
+
+	def get_submission(self, submission_id):
+		if submission_id in self.all_submissions:
+			return self.all_submissions[submission_id]
+		else:
+			return None
 
 	def edit_comment(self, body, comment=None, comment_id=None):
 		if comment is None:
