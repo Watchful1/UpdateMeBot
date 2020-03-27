@@ -95,9 +95,6 @@ class Reddit:
 		if self_comment:
 			self.self_comments.append(comment)
 
-	def add_user(self, user):
-		self.users[user.name] = user
-
 	def reply_message(self, message, body):
 		self.sent_messages.append(message.reply(body))
 		return ReturnType.SUCCESS
@@ -159,9 +156,3 @@ class Reddit:
 
 	def lock_thread(self, thread_id):
 		self.locked_threads.add(thread_id)
-
-	def get_user_creation_date(self, user_name):
-		if user_name in self.users:
-			return self.users[user_name].created_utc
-		else:
-			return None

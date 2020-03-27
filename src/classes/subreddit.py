@@ -6,7 +6,7 @@ class Subreddit(Base):
 	__tablename__ = 'subreddits'
 
 	id = Column(Integer, primary_key=True)
-	name = Column(String(80), unique=True)
+	name = Column(String(80, collation="NOCASE"), unique=True)
 	enabled = Column(Boolean, nullable=False)
 	default_recurring = Column(Boolean, nullable=False)
 	no_comment = Column(Boolean, nullable=False)

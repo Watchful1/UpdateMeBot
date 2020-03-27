@@ -18,7 +18,9 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 
 	author_name = None
 	subreddit_name = None
+	case_is_user_supplied = False
 	if len(authors) and len(subreddits):
+		case_is_user_supplied = True
 		author_name = authors[0]
 		subreddit_name = subreddits[0]
 
@@ -30,8 +32,8 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 			subreddit_name = submission.subreddit.display_name
 
 	if author_name is not None and subreddit_name is not None:
-		author = database.get_or_add_user(author_name)
-		subreddit = database.get_or_add_subreddit(subreddit_name)
+		author = database.get_or_add_user(author_name, case_is_user_supplied)
+		subreddit = database.get_or_add_subreddit(subreddit_name, case_is_user_supplied)
 
 		if line.startswith("updateme"):
 			recurring = False

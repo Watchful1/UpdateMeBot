@@ -1,7 +1,8 @@
 import discord_logging
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, contains_eager
 
 from classes.subscription import Subscription
+from classes.subreddit import Subreddit
 from classes.user import User
 
 log = discord_logging.get_logger()
@@ -44,11 +45,9 @@ class _DatabaseSubscriptions:
 			.options(joinedload(Subscription.subscribed_to))\
 			.options(joinedload(Subscription.subreddit))\
 			.filter(Subscription.subscriber == user)\
-			.order_by(Subscription.subreddit.name)\
-			.order_by(Subscription.subscribed_to.name)\
 			.all()
 
-		return subscriptions
+		return sorted(subscriptions, key=lambda subscription: (subscription.subreddit.name, subscription.subscribed_to.name))
 
 	def delete_user_subscriptions(self, user):
 		log.debug(f"Deleting all subscriptions for u/{user.name}")
