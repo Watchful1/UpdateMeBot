@@ -326,3 +326,47 @@ def test_delete_comment_doesnt_exist(database, reddit):
 
 	messages.process_message(message, reddit, database)
 	assert_message(message.get_first_child().body, ["comment doesn't exist or was already"])
+
+
+def test_list(database, reddit):
+	username = "Watchful1"
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user("Author1"),
+			database.get_or_add_subreddit("Subreddit1"),
+			True
+		)
+	)
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user("Author2"),
+			database.get_or_add_subreddit("Subreddit2"),
+			False
+		)
+	)
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user("Watchful2"),
+			database.get_or_add_user("Author3"),
+			database.get_or_add_subreddit("Subreddit3"),
+			False
+		)
+	)
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"MySubscriptions",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	response = message.get_first_child().body
+	assert "Author1" in response
+	assert "Author2" in response
+	assert "Subreddit1" in response
+	assert "Subreddit2" in response
+	assert "Each" in response
+	assert "Next" in response
+	assert "Author3" not in response
+	assert "Subreddit3" not in response
