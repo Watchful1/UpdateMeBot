@@ -16,7 +16,7 @@ class DbComment(Base):
 	current_count = Column(Integer, nullable=False)
 
 	subscriber = relationship("User", foreign_keys=[subscriber_id])
-	subscribed_to = relationship("User", foreign_keys=[subscriber_id])
+	subscribed_to = relationship("User", foreign_keys=[subscribed_to_id])
 	subreddit = relationship("Subreddit")
 
 	def __init__(

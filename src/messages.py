@@ -119,8 +119,8 @@ def line_remove(line, user, bldr, database):
 				bldr.append(f"I couldn't find a subscription for you to u/{users[0]} in r/{subs[0]} to remove")
 
 			else:
-				log.info(f"Removed subscription for u/{user.name} to u/{users[0]} in r/{subs[0]}")
-				bldr.append(f"I removed your subscription to u/{users[0]} in r/{subs[0]}")
+				log.info(f"Removed subscription for u/{user.name} to u/{subscription.subscribed_to.name} in r/{subscription.subreddit.name}")
+				bldr.append(f"I removed your subscription to u/{subscription.subscribed_to.name} in r/{subscription.subreddit.name}")
 				database.delete_subscription(subscription)
 
 	bldr.append("  \n")
@@ -135,7 +135,7 @@ def line_delete(line, user, bldr, database, reddit):
 	else:
 		db_comment = database.get_comment_by_thread(ids[0])
 		if db_comment is not None:
-			if db_comment.user == user.name:
+			if db_comment.subscriber.name == user.name:
 				comment = reddit.get_comment(db_comment.comment_id)
 				if not reddit.delete_comment(comment):
 					log.debug(f"Unable to delete comment: {db_comment.comment_id}")
@@ -145,7 +145,7 @@ def line_delete(line, user, bldr, database, reddit):
 					log.debug(f"Deleted comment: {db_comment.comment_id}")
 					bldr.append("Comment deleted.")
 			else:
-				log.debug(f"Bot wasn't replying to owner: {db_comment.user} : {user.name}")
+				log.debug(f"Bot wasn't replying to owner: {db_comment.subscriber.name} : {user.name}")
 				bldr.append("It looks like the bot wasn't replying to you.")
 		else:
 			log.debug(f"Comment doesn't exist: {ids[0]}")

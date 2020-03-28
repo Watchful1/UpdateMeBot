@@ -6,6 +6,7 @@ import messages
 import utils
 import reddit_test
 from classes.subscription import Subscription
+from classes.comment import DbComment
 
 
 def assert_message(message, included):
@@ -197,3 +198,131 @@ def test_add_link_default_subscribe(database, reddit):
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
 	assert_subscription(subscriptions[0], username, subscribed_to, subreddit_name, True)
+
+
+def test_remove_subscription(database, reddit):
+	username = "Watchful1"
+	subscribed_to = "AuthorName"
+	subreddit_name = "SubredditName"
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user(subscribed_to),
+			database.get_or_add_subreddit(subreddit_name),
+			False
+		)
+	)
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"Remove! u/{subscribed_to} r/{subreddit_name}",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(
+		message.get_first_child().body,
+		[subscribed_to, subreddit_name, "removed your subscription"])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 0
+
+
+def test_remove_all_subscription(database, reddit):
+	username = "Watchful1"
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user("Author1"),
+			database.get_or_add_subreddit("Subreddit1"),
+			False
+		)
+	)
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user("Author2"),
+			database.get_or_add_subreddit("Subreddit2"),
+			False
+		)
+	)
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"RemoveAll",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(
+		message.get_first_child().body,
+		["Author1", "Author2", "Subreddit1", "Subreddit2", "Removed your subscription"])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 0
+
+
+def test_delete_comment(database, reddit):
+	username = "Watchful1"
+	subscribed_to = "AuthorName"
+	subreddit_name = "SubredditName"
+	reddit_comment = reddit_test.RedditObject(
+		author=username,
+		link_id=utils.random_id()
+	)
+	reddit.add_comment(reddit_comment)
+	database.save_comment(
+		DbComment(
+			thread_id=reddit_comment.link_id,
+			comment_id=reddit_comment.id,
+			subscriber=database.get_or_add_user(username),
+			subscribed_to=database.get_or_add_user(subscribed_to),
+			subreddit=database.get_or_add_subreddit(subreddit_name),
+			recurring=True
+		)
+	)
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"delete {reddit_comment.link_id}",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(message.get_first_child().body, ["Comment deleted"])
+
+
+def test_delete_comment_not_author(database, reddit):
+	username = "Watchful1"
+	subscribed_to = "AuthorName"
+	subreddit_name = "SubredditName"
+	reddit_comment = reddit_test.RedditObject(
+		author=username,
+		link_id=utils.random_id()
+	)
+	reddit.add_comment(reddit_comment)
+	database.save_comment(
+		DbComment(
+			thread_id=reddit_comment.link_id,
+			comment_id=reddit_comment.id,
+			subscriber=database.get_or_add_user(username),
+			subscribed_to=database.get_or_add_user(subscribed_to),
+			subreddit=database.get_or_add_subreddit(subreddit_name),
+			recurring=True
+		)
+	)
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"delete {reddit_comment.link_id}",
+		author="Watchful2"
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(message.get_first_child().body, ["looks like the bot wasn't replying"])
+
+
+def test_delete_comment_doesnt_exist(database, reddit):
+	message = reddit_test.RedditObject(
+		body=f"delete {utils.random_id()}",
+		author="Watchful1"
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(message.get_first_child().body, ["comment doesn't exist or was already"])
