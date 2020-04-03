@@ -116,3 +116,7 @@ class Reddit:
 				log.warning(traceback.format_exc())
 				return False
 		return True
+
+	def get_subreddit_submissions(self, subreddit_name):
+		log.debug(f"Getting subreddit submissions: {subreddit_name}")
+		return self.reddit.subreddit(subreddit_name).new(limit=1000)

@@ -15,6 +15,7 @@ log = discord_logging.init_logging(
 
 import static
 import reddit_class
+import messages
 
 
 database = None

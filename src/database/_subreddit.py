@@ -1,4 +1,6 @@
 import discord_logging
+from datetime import datetime
+from datetime import timedelta
 
 from classes.subreddit import Subreddit
 
@@ -31,3 +33,21 @@ class _DatabaseSubreddit:
 			.first()
 
 		return subreddit
+
+	def get_active_subreddits(self):
+		log.debug(f"Fetching active subreddits")
+		subreddits = self.session.query(Subreddit)\
+			.filter(Subreddit.enabled is True)\
+			.order_by(Subreddit.post_per_hour)\
+			.all()
+
+		return subreddits
+
+	def get_unprofiled_subreddits(self):
+		log.debug(f"Fetching subreddits to profile")
+		subreddits = self.session.query(Subreddit)\
+			.filter(Subreddit.enabled is True)\
+			.filter(Subreddit.last_profiled < datetime.utcnow() - timedelta(days=14))\
+			.all()
+
+		return subreddits

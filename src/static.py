@@ -7,3 +7,4 @@ BACKUP_FOLDER_NAME = "backup"
 TRACKING_INFO_URL = ""
 
 INFO_POST = "https://www.reddit.com/r/UpdateMeBot/comments/4wirnm/updatemebot_info/"
+

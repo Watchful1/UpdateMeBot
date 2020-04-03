@@ -1,4 +1,5 @@
 import discord_logging
+from datetime import timezone
 
 import static
 import utils
@@ -16,6 +17,8 @@ class User:
 class Subreddit:
 	def __init__(self, name):
 		self.display_name = name
+		self.posts = []
+		self.is_banned = False
 
 
 class RedditObject:
@@ -41,9 +44,9 @@ class RedditObject:
 			self.id = id
 		self.fullname = f"{prefix}_{self.id}"
 		if created is None:
-			self.created_utc = utils.datetime_now().timestamp()
+			self.created_utc = utils.datetime_now().replace(tzinfo=timezone.utc).timestamp()
 		else:
-			self.created_utc = created.timestamp()
+			self.created_utc = created.replace(tzinfo=timezone.utc).timestamp()
 		self.permalink = permalink
 		self.link_id = link_id
 		self.subreddit = subreddit
@@ -92,9 +95,9 @@ class Reddit:
 		self.all_comments = {}
 		self.all_submissions = {}
 		self.users = {}
-		self.banned_subreddits = set()
 		self.locked_threads = set()
 		self.pushshift_lag = 0
+		self.subreddits = {}
 
 	def add_comment(self, comment, self_comment=False):
 		self.all_comments[comment.id] = comment
@@ -109,7 +112,8 @@ class Reddit:
 		return ReturnType.SUCCESS
 
 	def reply_comment(self, comment, body):
-		if comment.subreddit is not None and comment.subreddit in self.banned_subreddits:
+		if comment.subreddit is not None and comment.subreddit in self.subreddits and \
+				self.subreddits[comment.subreddit].is_banned:
 			return None, ReturnType.FORBIDDEN
 		elif comment.link_id is not None and utils.id_from_fullname(comment.link_id) in self.locked_threads:
 			return None, ReturnType.THREAD_LOCKED
@@ -166,8 +170,16 @@ class Reddit:
 
 		return True
 
-	def ban_subreddit(self, subreddit):
-		self.banned_subreddits.add(subreddit)
+	def add_subreddit(self, subreddit):
+		self.subreddits[subreddit.display_name] = subreddit
+
+	def ban_subreddit(self, subreddit_name):
+		if subreddit_name not in self.subreddits:
+			self.subreddits[subreddit_name] = Subreddit(subreddit_name)
+		self.subreddits[subreddit_name].is_banned = True
 
 	def lock_thread(self, thread_id):
 		self.locked_threads.add(thread_id)
+
+	def get_subreddit_submissions(self, subreddit_name):
+		return self.subreddits[subreddit_name].posts

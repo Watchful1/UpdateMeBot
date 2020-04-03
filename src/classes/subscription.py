@@ -1,9 +1,7 @@
-import utils
 import discord_logging
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-import static
 from database import Base
 
 
