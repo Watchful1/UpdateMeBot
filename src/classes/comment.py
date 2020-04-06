@@ -8,7 +8,7 @@ class DbComment(Base):
 
 	id = Column(Integer, primary_key=True)
 	thread_id = Column(String(12), nullable=False)
-	comment_id = Column(String(12), nullable=False)
+	comment_id = Column(String(12), nullable=False, unique=True)
 	subscriber_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 	subscribed_to_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 	subreddit_id = Column(Integer, ForeignKey('subreddits.id'), nullable=False)

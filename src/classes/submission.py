@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, UniqueConstraint
 from database import Base
 from datetime import datetime
 from sqlalchemy.orm import relationship
@@ -9,11 +9,10 @@ import utils
 class Submission(Base):
 	__tablename__ = 'submissions'
 
-	distinct
-
 	id = Column(Integer, primary_key=True)
-	submission_id = Column(String(12), nullable=False)
+	submission_id = Column(String(12), nullable=False, unique=True)
 	time_scanned = Column(DateTime(), nullable=False)
+	time_created = Column(DateTime(), nullable=False)
 	author_name = Column(String(80), nullable=False)
 	subreddit_id = Column(Integer, ForeignKey('subreddits.id'), nullable=False)
 
@@ -21,17 +20,13 @@ class Submission(Base):
 
 	def __init__(
 		self,
-		name,
-		enabled=False,
-		default_recurring=False,
-		no_comment=False,
-		blocked=False
+		submission_id,
+		time_created,
+		author_name,
+		subreddit
 	):
-		self.name = name
-		self.enabled = enabled
-		self.default_recurring = default_recurring
-		self.last_profiled = datetime(2010, 1, 1)
-		self.last_scanned = utils.datetime_now()
-
-		self.no_comment = no_comment
-		self.blocked = blocked
+		self.submission_id = submission_id
+		self.time_created = time_created
+		self.time_scanned = utils.datetime_now()
+		self.author_name = author_name
+		self.subreddit = subreddit
