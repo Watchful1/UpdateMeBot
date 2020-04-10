@@ -15,3 +15,13 @@ message sending
 
 
 does replying to a message mark it as read
+
+
+
+site ideas:
+graph of subscribers over time
+	per story if there are multiple stories
+graph of posts with score, number of comments and number of messages sent/pending
+
+edit fields for
+	subscription prompts

@@ -15,11 +15,20 @@ from ._subreddit import _DatabaseSubreddit
 from ._comment import _DatabaseComments
 from ._keystore import _DatabaseKeystore
 from ._submission import _DatabaseSubmission
+from ._message import _DatabaseMessage
 
 log = discord_logging.get_logger()
 
 
-class Database(_DatabaseSubscriptions, _DatabaseUsers, _DatabaseSubreddit, _DatabaseComments, _DatabaseKeystore, _DatabaseSubmission):
+class Database(
+	_DatabaseSubscriptions,
+	_DatabaseUsers,
+	_DatabaseSubreddit,
+	_DatabaseComments,
+	_DatabaseKeystore,
+	_DatabaseSubmission,
+	_DatabaseMessage
+):
 	def __init__(self, debug=False, publish=False):
 		log.info(f"Initializing database class: debug={debug} publish={publish}")
 		self.debug = debug
@@ -32,6 +41,7 @@ class Database(_DatabaseSubscriptions, _DatabaseUsers, _DatabaseSubreddit, _Data
 		_DatabaseComments.__init__(self)
 		_DatabaseKeystore.__init__(self)
 		_DatabaseSubmission.__init__(self)
+		_DatabaseMessage.__init__(self)
 
 	def init(self, debug, publish):
 		if debug:

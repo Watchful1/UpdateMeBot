@@ -8,6 +8,7 @@ log = discord_logging.get_logger()
 
 import utils
 from classes.submission import Submission
+from classes.message import Message
 
 
 def subreddit_posts_per_hour(reddit, subreddit_name):
@@ -77,23 +78,29 @@ def scan_subreddit_group(database, reddit, subreddits):
 			continue
 
 		subreddit = subreddits[submission.subreddit.display_name]
-		# check post time against subreddit
-		author = database.get_user(submission.author.name)
-		if author is not None:
-			subscriptions = database.get_subscriptions_for_author_subreddit(author, subreddit)
-
-			if len(subscriptions):
-				log.info(f"Queuing {len(subscriptions)} for u/{author.name} in r/{subreddit.name}")
-				# create message object and add them
+		submission_datetime = datetime.utcfromtimestamp(submission.created_utc)
+		if submission_datetime < subreddit.last_scanned:
+			log.warning(f"Submission before last scanned: {submission.url}")
 
 		db_submission = Submission(
 			submission_id=submission.id,
-			time_created=datetime.utcfromtimestamp(submission.created_utc),
+			time_created=submission_datetime,
 			author_name=submission.author.name,
 			subreddit=subreddit
 		)
 		database.add_submission(db_submission)
 
+		author = database.get_user(submission.author.name)
+		if author is not None:
+			subscriptions = database.get_subscriptions_for_author_subreddit(author, subreddit)
+
+			if len(subscriptions):
+				log.info(f"Queuing {len(subscriptions)} for u/{author.name} in r/{subreddit.name} : {submission.id}")
+				for subscription in subscriptions:
+					database.add_message(Message(subscription, db_submission))
+		subreddit.last_scanned = submission_datetime
+
+	database.commit()
 	return True
 
 
