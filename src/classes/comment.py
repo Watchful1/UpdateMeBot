@@ -10,13 +10,13 @@ class DbComment(Base):
 	thread_id = Column(String(12), nullable=False)
 	comment_id = Column(String(12), nullable=False, unique=True)
 	subscriber_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-	subscribed_to_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+	author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 	subreddit_id = Column(Integer, ForeignKey('subreddits.id'), nullable=False)
 	recurring = Column(Boolean, nullable=False)
 	current_count = Column(Integer, nullable=False)
 
 	subscriber = relationship("User", foreign_keys=[subscriber_id])
-	subscribed_to = relationship("User", foreign_keys=[subscribed_to_id])
+	author = relationship("User", foreign_keys=[author_id])
 	subreddit = relationship("Subreddit")
 
 	def __init__(
@@ -24,7 +24,7 @@ class DbComment(Base):
 		thread_id,
 		comment_id,
 		subscriber,
-		subscribed_to,
+		author,
 		subreddit,
 		recurring,
 		current_count=1
@@ -32,7 +32,7 @@ class DbComment(Base):
 		self.thread_id = thread_id
 		self.comment_id = comment_id
 		self.subscriber = subscriber
-		self.subscribed_to = subscribed_to
+		self.author = author
 		self.subreddit = subreddit
 		self.recurring = recurring
 		self.current_count = current_count

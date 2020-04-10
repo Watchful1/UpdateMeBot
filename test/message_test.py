@@ -14,9 +14,9 @@ def assert_message(message, included):
 		assert include in message
 
 
-def assert_subscription(subscription, subscriber, subscribed_to, subreddit, recurring):
+def assert_subscription(subscription, subscriber, author, subreddit, recurring):
 	assert subscription.subscriber.name == subscriber
-	assert subscription.subscribed_to.name == subscribed_to
+	assert subscription.author.name == author
 	assert subscription.subreddit.name == subreddit
 	assert subscription.recurring is recurring
 
@@ -41,102 +41,102 @@ def init_db(database, users=None, subreddits=None, default_subreddits=None):
 
 def test_add_update(database, reddit):
 	username = "Watchful1"
-	subscribed_to = "AuthorName"
+	author = "AuthorName"
 	subreddit_name = "SubredditName"
-	init_db(database, [subscribed_to], [subreddit_name])
+	init_db(database, [author], [subreddit_name])
 	message = reddit_test.RedditObject(
-		body=f"UpdateMe! u/{subscribed_to} r/{subreddit_name}",
+		body=f"UpdateMe! u/{author} r/{subreddit_name}",
 		author=username
 	)
 
 	messages.process_message(message, reddit, database)
-	assert_message(message.get_first_child().body, [subscribed_to, subreddit_name, "next time"])
+	assert_message(message.get_first_child().body, [author, subreddit_name, "next time"])
 
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
-	assert_subscription(subscriptions[0], username, subscribed_to, subreddit_name, False)
+	assert_subscription(subscriptions[0], username, author, subreddit_name, False)
 
 
 def test_add_subscribe(database, reddit):
 	username = "Watchful1"
-	subscribed_to = "AuthorName"
+	author = "AuthorName"
 	subreddit_name = "SubredditName"
-	init_db(database, [subscribed_to], [subreddit_name])
+	init_db(database, [author], [subreddit_name])
 	message = reddit_test.RedditObject(
-		body=f"SubscribeMe! u/{subscribed_to} r/{subreddit_name}",
+		body=f"SubscribeMe! u/{author} r/{subreddit_name}",
 		author=username
 	)
 
 	messages.process_message(message, reddit, database)
-	assert_message(message.get_first_child().body, [subscribed_to, subreddit_name, "each time"])
+	assert_message(message.get_first_child().body, [author, subreddit_name, "each time"])
 
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
-	assert_subscription(subscriptions[0], username, subscribed_to, subreddit_name, True)
+	assert_subscription(subscriptions[0], username, author, subreddit_name, True)
 
 
 def test_update_subscribe(database, reddit):
 	username = "Watchful1"
-	subscribed_to = "AuthorName"
+	author = "AuthorName"
 	subreddit_name = "SubredditName"
 	database.add_subscription(
 		Subscription(
 			database.get_or_add_user(username),
-			database.get_or_add_user(subscribed_to),
+			database.get_or_add_user(author),
 			database.get_or_add_subreddit(subreddit_name),
 			False
 		)
 	)
 	database.commit()
 	message = reddit_test.RedditObject(
-		body=f"SubscribeMe! u/{subscribed_to} r/{subreddit_name}",
+		body=f"SubscribeMe! u/{author} r/{subreddit_name}",
 		author=username
 	)
 
 	messages.process_message(message, reddit, database)
 	assert_message(
 		message.get_first_child().body,
-		[subscribed_to, subreddit_name, "updated your subscription", "each"])
+		[author, subreddit_name, "updated your subscription", "each"])
 
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
-	assert_subscription(subscriptions[0], username, subscribed_to, subreddit_name, True)
+	assert_subscription(subscriptions[0], username, author, subreddit_name, True)
 
 
 def test_already_subscribed(database, reddit):
 	username = "Watchful1"
-	subscribed_to = "AuthorName"
+	author = "AuthorName"
 	subreddit_name = "SubredditName"
 	database.add_subscription(
 		Subscription(
 			database.get_or_add_user(username),
-			database.get_or_add_user(subscribed_to),
+			database.get_or_add_user(author),
 			database.get_or_add_subreddit(subreddit_name),
 			True
 		)
 	)
 	database.commit()
 	message = reddit_test.RedditObject(
-		body=f"SubscribeMe! u/{subscribed_to} r/{subreddit_name}",
+		body=f"SubscribeMe! u/{author} r/{subreddit_name}",
 		author=username
 	)
 
 	messages.process_message(message, reddit, database)
 	assert_message(
 		message.get_first_child().body,
-		[subscribed_to, subreddit_name, "already asked me", "each"])
+		[author, subreddit_name, "already asked me", "each"])
 
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
-	assert_subscription(subscriptions[0], username, subscribed_to, subreddit_name, True)
+	assert_subscription(subscriptions[0], username, author, subreddit_name, True)
 
 
 def test_subreddit_not_enabled(database, reddit):
 	username = "Watchful1"
-	subscribed_to = "AuthorName"
+	author = "AuthorName"
 	subreddit_name = "SubredditName"
 	message = reddit_test.RedditObject(
-		body=f"UpdateMe! u/{subscribed_to} r/{subreddit_name}",
+		body=f"UpdateMe! u/{author} r/{subreddit_name}",
 		author=username
 	)
 
@@ -145,19 +145,19 @@ def test_subreddit_not_enabled(database, reddit):
 
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
-	assert_subscription(subscriptions[0], username, subscribed_to.lower(), subreddit_name.lower(), False)
+	assert_subscription(subscriptions[0], username, author.lower(), subreddit_name.lower(), False)
 
 
 def test_add_link(database, reddit):
 	username = "Watchful1"
-	subscribed_to = "AuthorName"
+	author = "AuthorName"
 	subreddit_name = "SubredditName"
-	init_db(database, [subscribed_to], [subreddit_name])
+	init_db(database, [author], [subreddit_name])
 	post_id = utils.random_id()
 	reddit.add_submission(
 		reddit_test.RedditObject(
 			id=post_id,
-			author=subscribed_to,
+			author=author,
 			subreddit=reddit_test.Subreddit(subreddit_name)
 		)
 	)
@@ -167,23 +167,23 @@ def test_add_link(database, reddit):
 	)
 
 	messages.process_message(message, reddit, database)
-	assert_message(message.get_first_child().body, [subscribed_to, subreddit_name, "next time"])
+	assert_message(message.get_first_child().body, [author, subreddit_name, "next time"])
 
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
-	assert_subscription(subscriptions[0], username, subscribed_to, subreddit_name, False)
+	assert_subscription(subscriptions[0], username, author, subreddit_name, False)
 
 
 def test_add_link_default_subscribe(database, reddit):
 	username = "Watchful1"
-	subscribed_to = "AuthorName"
+	author = "AuthorName"
 	subreddit_name = "SubredditName"
-	init_db(database, [subscribed_to], None, [subreddit_name])
+	init_db(database, [author], None, [subreddit_name])
 	post_id = utils.random_id()
 	reddit.add_submission(
 		reddit_test.RedditObject(
 			id=post_id,
-			author=subscribed_to,
+			author=author,
 			subreddit=reddit_test.Subreddit(subreddit_name)
 		)
 	)
@@ -193,35 +193,35 @@ def test_add_link_default_subscribe(database, reddit):
 	)
 
 	messages.process_message(message, reddit, database)
-	assert_message(message.get_first_child().body, [subscribed_to, subreddit_name, "each time"])
+	assert_message(message.get_first_child().body, [author, subreddit_name, "each time"])
 
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
-	assert_subscription(subscriptions[0], username, subscribed_to, subreddit_name, True)
+	assert_subscription(subscriptions[0], username, author, subreddit_name, True)
 
 
 def test_remove_subscription(database, reddit):
 	username = "Watchful1"
-	subscribed_to = "AuthorName"
+	author = "AuthorName"
 	subreddit_name = "SubredditName"
 	database.add_subscription(
 		Subscription(
 			database.get_or_add_user(username),
-			database.get_or_add_user(subscribed_to),
+			database.get_or_add_user(author),
 			database.get_or_add_subreddit(subreddit_name),
 			False
 		)
 	)
 	database.commit()
 	message = reddit_test.RedditObject(
-		body=f"Remove! u/{subscribed_to} r/{subreddit_name}",
+		body=f"Remove! u/{author} r/{subreddit_name}",
 		author=username
 	)
 
 	messages.process_message(message, reddit, database)
 	assert_message(
 		message.get_first_child().body,
-		[subscribed_to, subreddit_name, "removed your subscription"])
+		[author, subreddit_name, "removed your subscription"])
 
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 0
@@ -262,7 +262,7 @@ def test_remove_all_subscription(database, reddit):
 
 def test_delete_comment(database, reddit):
 	username = "Watchful1"
-	subscribed_to = "AuthorName"
+	author = "AuthorName"
 	subreddit_name = "SubredditName"
 	reddit_comment = reddit_test.RedditObject(
 		author=username,
@@ -274,7 +274,7 @@ def test_delete_comment(database, reddit):
 			thread_id=reddit_comment.link_id,
 			comment_id=reddit_comment.id,
 			subscriber=database.get_or_add_user(username),
-			subscribed_to=database.get_or_add_user(subscribed_to),
+			author=database.get_or_add_user(author),
 			subreddit=database.get_or_add_subreddit(subreddit_name),
 			recurring=True
 		)
@@ -291,7 +291,7 @@ def test_delete_comment(database, reddit):
 
 def test_delete_comment_not_author(database, reddit):
 	username = "Watchful1"
-	subscribed_to = "AuthorName"
+	author = "AuthorName"
 	subreddit_name = "SubredditName"
 	reddit_comment = reddit_test.RedditObject(
 		author=username,
@@ -303,7 +303,7 @@ def test_delete_comment_not_author(database, reddit):
 			thread_id=reddit_comment.link_id,
 			comment_id=reddit_comment.id,
 			subscriber=database.get_or_add_user(username),
-			subscribed_to=database.get_or_add_user(subscribed_to),
+			author=database.get_or_add_user(author),
 			subreddit=database.get_or_add_subreddit(subreddit_name),
 			recurring=True
 		)

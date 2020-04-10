@@ -62,7 +62,7 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 		else:
 			subscription = Subscription(
 				subscriber=user,
-				subscribed_to=author,
+				author=author,
 				subreddit=subreddit,
 				recurring=recurring
 			)
@@ -92,7 +92,7 @@ def line_remove(line, user, bldr, database):
 		else:
 			for subscription in subscriptions:
 				bldr.append(
-					f"Removed your subscription to u/{subscription.subscribed_to.name} in "
+					f"Removed your subscription to u/{subscription.author.name} in "
 					f"r/{subscription.subreddit.name}")
 
 			count_removed = database.delete_user_subscriptions(user)
@@ -119,8 +119,8 @@ def line_remove(line, user, bldr, database):
 				bldr.append(f"I couldn't find a subscription for you to u/{users[0]} in r/{subs[0]} to remove")
 
 			else:
-				log.info(f"Removed subscription for u/{user.name} to u/{subscription.subscribed_to.name} in r/{subscription.subreddit.name}")
-				bldr.append(f"I removed your subscription to u/{subscription.subscribed_to.name} in r/{subscription.subreddit.name}")
+				log.info(f"Removed subscription for u/{user.name} to u/{subscription.author.name} in r/{subscription.subreddit.name}")
+				bldr.append(f"I removed your subscription to u/{subscription.author.name} in r/{subscription.subreddit.name}")
 				database.delete_subscription(subscription)
 
 	bldr.append("  \n")
@@ -169,7 +169,7 @@ def line_list(user, bldr, database):
 			else:
 				bldr.append("Next")
 			bldr.append(" time u/")
-			bldr.append(subscription.subscribed_to.name)
+			bldr.append(subscription.author.name)
 			bldr.append(" posts in r/")
 			bldr.append(subscription.subreddit.name)
 			bldr.append("  \n")

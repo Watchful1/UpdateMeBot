@@ -15,28 +15,28 @@ class _DatabaseSubscriptions:
 		log.debug("Saving new subscription")
 		self.session.add(subscription)
 
-	def get_subscription_by_fields(self, subscriber, subscribed_to, subreddit):
-		log.debug(f"Fetching subscription by fields: {subscriber.name} : {subscribed_to.name} : {subreddit.name}")
+	def get_subscription_by_fields(self, subscriber, author, subreddit):
+		log.debug(f"Fetching subscription by fields: {subscriber.name} : {author.name} : {subreddit.name}")
 
 		subscription = self.session.query(Subscription)\
 			.options(joinedload(Subscription.subscriber))\
-			.options(joinedload(Subscription.subscribed_to))\
+			.options(joinedload(Subscription.author))\
 			.options(joinedload(Subscription.subreddit))\
 			.filter(Subscription.subscriber == subscriber)\
-			.filter(Subscription.subscribed_to == subscribed_to)\
+			.filter(Subscription.author == author)\
 			.filter(Subscription.subreddit == subreddit)\
 			.first()
 
 		return subscription
 
-	def get_subscriptions_for_author_subreddit(self, subscribed_to, subreddit):
-		log.debug(f"Fetching subscriptions by author and subreddit: {subscribed_to.name} : {subreddit.name}")
+	def get_subscriptions_for_author_subreddit(self, author, subreddit):
+		log.debug(f"Fetching subscriptions by author and subreddit: {author.name} : {subreddit.name}")
 
 		subscriptions = self.session.query(Subscription)\
 			.options(joinedload(Subscription.subscriber))\
-			.options(joinedload(Subscription.subscribed_to))\
+			.options(joinedload(Subscription.author))\
 			.options(joinedload(Subscription.subreddit))\
-			.filter(Subscription.subscribed_to == subscribed_to)\
+			.filter(Subscription.author == author)\
 			.filter(Subscription.subreddit == subreddit)\
 			.all()
 
@@ -54,12 +54,12 @@ class _DatabaseSubscriptions:
 
 		subscriptions = self.session.query(Subscription)\
 			.options(joinedload(Subscription.subscriber))\
-			.options(joinedload(Subscription.subscribed_to))\
+			.options(joinedload(Subscription.author))\
 			.options(joinedload(Subscription.subreddit))\
 			.filter(Subscription.subscriber == user)\
 			.all()
 
-		return sorted(subscriptions, key=lambda subscription: (subscription.subreddit.name, subscription.subscribed_to.name))
+		return sorted(subscriptions, key=lambda subscription: (subscription.subreddit.name, subscription.author.name))
 
 	def delete_user_subscriptions(self, user):
 		log.debug(f"Deleting all subscriptions for u/{user.name}")
