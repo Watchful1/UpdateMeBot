@@ -124,7 +124,7 @@ def scan_subreddits(database, reddit):
 			current_group[subreddit.name] = subreddit
 			current_group_size += subreddit.post_per_hour
 
-	if not scan_subreddit_group(database, reddit, current_group):
+	if current_group and not scan_subreddit_group(database, reddit, current_group):
 		single_subreddits.extend(current_group.values())
 
 	for subreddit in single_subreddits:

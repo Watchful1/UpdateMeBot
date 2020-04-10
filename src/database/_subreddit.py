@@ -37,7 +37,7 @@ class _DatabaseSubreddit:
 	def get_active_subreddits(self):
 		log.debug(f"Fetching active subreddits")
 		subreddits = self.session.query(Subreddit)\
-			.filter(Subreddit.enabled is True)\
+			.filter(Subreddit.enabled == True)\
 			.order_by(Subreddit.post_per_hour)\
 			.all()
 
@@ -46,7 +46,7 @@ class _DatabaseSubreddit:
 	def get_unprofiled_subreddits(self):
 		log.debug(f"Fetching subreddits to profile")
 		subreddits = self.session.query(Subreddit)\
-			.filter(Subreddit.enabled is True)\
+			.filter(Subreddit.enabled == True)\
 			.filter(Subreddit.last_profiled < datetime.utcnow() - timedelta(days=14))\
 			.all()
 

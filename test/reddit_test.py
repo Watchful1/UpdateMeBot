@@ -47,7 +47,12 @@ class RedditObject:
 			self.created_utc = utils.datetime_now().replace(tzinfo=timezone.utc).timestamp()
 		else:
 			self.created_utc = created.replace(tzinfo=timezone.utc).timestamp()
-		self.permalink = permalink
+		if permalink is None and subreddit is not None:
+			permalink = f"/r/{subreddit.display_name}/comments/{self.id}"
+
+		if permalink is not None:
+			self.permalink = permalink
+			self.url = "http://www.reddit.com"+permalink
 		self.link_id = link_id
 		self.subreddit = subreddit
 
@@ -181,5 +186,9 @@ class Reddit:
 	def lock_thread(self, thread_id):
 		self.locked_threads.add(thread_id)
 
-	def get_subreddit_submissions(self, subreddit_name):
-		return self.subreddits[subreddit_name].posts
+	def get_subreddit_submissions(self, subreddit_names):
+		posts = []
+		for subreddit_name in subreddit_names.split("+"):
+			posts.extend(self.subreddits[subreddit_name].posts)
+
+		return reversed(sorted(posts, key=lambda post: post.created_utc))
