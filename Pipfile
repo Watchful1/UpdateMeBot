@@ -8,8 +8,8 @@ pytest = "*"
 
 [packages]
 discord-logging = {git = "https://github.com/Watchful1/DiscordLogging.git"}
-praw = "*"
 sqlalchemy = "*"
+praw = "*"
 
 [requires]
 python_version = "3.7"

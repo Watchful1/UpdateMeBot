@@ -3,6 +3,7 @@ from database import Base
 from sqlalchemy.orm import relationship
 
 import utils
+import static
 
 
 class Message(Base):
@@ -22,3 +23,46 @@ class Message(Base):
 	):
 		self.subscription = subscription
 		self.submission = submission
+
+	def render_message(self):
+		bldr = utils.str_bldr()
+		bldr.append("UpdateMeBot here!")
+		bldr.append("\n\n")
+
+		bldr.append("u/")
+		bldr.append(self.subscription.author.name)
+		bldr.append(" has posted a new thread in r/")
+		bldr.append(self.subscription.subreddit.name)
+		bldr.append("\n\n")
+
+		bldr.append("You can find it here: ")
+		bldr.append(self.submission.url)
+		bldr.append("\n\n")
+
+		bldr.append("*****")
+		bldr.append("\n\n")
+
+		if self.subscription.recurring:
+			bldr.append("[Click here](")
+			bldr.append(utils.build_message_link(
+				static.ACCOUNT_NAME,
+				"Remove",
+				f"Remove u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
+			))
+			bldr.append(") to remove your subscription.")
+		else:
+			bldr.append("[Click here](")
+			bldr.append(utils.build_message_link(
+				static.ACCOUNT_NAME,
+				"Update",
+				f"UpdateMe u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
+			))
+			bldr.append(") if you want to be messaged the next time too  \n")
+	
+			bldr.append("Or [Click here](")
+			bldr.append(utils.build_message_link(
+				static.ACCOUNT_NAME,
+				"Subscribe",
+				f"SubscribeMe u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
+			))
+			bldr.append(") if you want to be messaged every time")

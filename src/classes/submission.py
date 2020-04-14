@@ -13,6 +13,7 @@ class Submission(Base):
 	time_scanned = Column(DateTime(), nullable=False)
 	time_created = Column(DateTime(), nullable=False)
 	author_name = Column(String(80), nullable=False)
+	url = Column(String(200), nullable=False)
 	subreddit_id = Column(Integer, ForeignKey('subreddits.id'), nullable=False)
 
 	subreddit = relationship("Subreddit")
@@ -22,10 +23,12 @@ class Submission(Base):
 		submission_id,
 		time_created,
 		author_name,
-		subreddit
+		subreddit,
+		permalink
 	):
 		self.submission_id = submission_id
 		self.time_created = time_created
 		self.time_scanned = utils.datetime_now()
 		self.author_name = author_name
 		self.subreddit = subreddit
+		self.url = "https://www.reddit.com" + permalink

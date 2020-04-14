@@ -1,16 +1,22 @@
 messages
-	subscribe
-	remove
-	delete
-	list
-	mute?
-	prompt?
+	-subscribe
+	-remove
+	-delete
+	-list
+		limit size
 	add sub
 	subreddit pm
 comments
 subreddit checking
 	profile subreddit
+	scan subreddits
 message sending
+adding subreddits
+backups
+update comments
+prompts
+track banned subreddits
+
 
 
 
@@ -18,10 +24,10 @@ does replying to a message mark it as read
 
 
 
+
 site ideas:
 graph of subscribers over time
 	per story if there are multiple stories
 graph of posts with score, number of comments and number of messages sent/pending
-
 edit fields for
 	subscription prompts

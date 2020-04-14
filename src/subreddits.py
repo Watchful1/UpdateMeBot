@@ -86,7 +86,8 @@ def scan_subreddit_group(database, reddit, subreddits):
 			submission_id=submission.id,
 			time_created=submission_datetime,
 			author_name=submission.author.name,
-			subreddit=subreddit
+			subreddit=subreddit,
+			permalink=submission.permalink
 		)
 		database.add_submission(db_submission)
 

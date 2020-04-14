@@ -19,9 +19,10 @@ class _DatabaseSubscriptions:
 		log.debug(f"Fetching subscription by fields: {subscriber.name} : {author.name} : {subreddit.name}")
 
 		subscription = self.session.query(Subscription)\
-			.options(joinedload(Subscription.subscriber))\
-			.options(joinedload(Subscription.author))\
-			.options(joinedload(Subscription.subreddit))\
+			.options(
+				joinedload(Subscription.subscriber)
+				.joinedload(Subscription.author)
+				.joinedload(Subscription.subreddit))\
 			.filter(Subscription.subscriber == subscriber)\
 			.filter(Subscription.author == author)\
 			.filter(Subscription.subreddit == subreddit)\
@@ -33,9 +34,10 @@ class _DatabaseSubscriptions:
 		log.debug(f"Fetching subscriptions by author and subreddit: {author.name} : {subreddit.name}")
 
 		subscriptions = self.session.query(Subscription)\
-			.options(joinedload(Subscription.subscriber))\
-			.options(joinedload(Subscription.author))\
-			.options(joinedload(Subscription.subreddit))\
+			.options(
+				joinedload(Subscription.subscriber)
+				.joinedload(Subscription.author)
+				.joinedload(Subscription.subreddit))\
 			.filter(Subscription.author == author)\
 			.filter(Subscription.subreddit == subreddit)\
 			.all()
@@ -53,9 +55,10 @@ class _DatabaseSubscriptions:
 		log.debug(f"Fetching user subscriptions u/{user.name}")
 
 		subscriptions = self.session.query(Subscription)\
-			.options(joinedload(Subscription.subscriber))\
-			.options(joinedload(Subscription.author))\
-			.options(joinedload(Subscription.subreddit))\
+			.options(
+				joinedload(Subscription.subscriber)
+				.joinedload(Subscription.author)
+				.joinedload(Subscription.subreddit))\
 			.filter(Subscription.subscriber == user)\
 			.all()
 
