@@ -16,7 +16,7 @@ class Submission(Base):
 	url = Column(String(200), nullable=False)
 	subreddit_id = Column(Integer, ForeignKey('subreddits.id'), nullable=False)
 
-	subreddit = relationship("Subreddit")
+	subreddit = relationship("Subreddit", lazy="joined")
 
 	def __init__(
 		self,

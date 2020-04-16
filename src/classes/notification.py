@@ -6,15 +6,15 @@ import utils
 import static
 
 
-class Message(Base):
-	__tablename__ = 'messages'
+class Notification(Base):
+	__tablename__ = 'notifications'
 
 	id = Column(Integer, primary_key=True)
 	subscription_id = Column(Integer, ForeignKey('subscriptions.id'), nullable=False)
 	submission_id = Column(Integer, ForeignKey('submissions.id'), nullable=False)
 
-	subscription = relationship("Subscription", foreign_keys=[subscription_id])
-	submission = relationship("Submission", foreign_keys=[submission_id])
+	subscription = relationship("Subscription", foreign_keys=[subscription_id], lazy="joined")
+	submission = relationship("Submission", foreign_keys=[submission_id], lazy="joined")
 
 	def __init__(
 		self,
@@ -24,7 +24,7 @@ class Message(Base):
 		self.subscription = subscription
 		self.submission = submission
 
-	def render_message(self):
+	def render_notification(self):
 		bldr = utils.str_bldr()
 		bldr.append("UpdateMeBot here!")
 		bldr.append("\n\n")
@@ -66,3 +66,5 @@ class Message(Base):
 				f"SubscribeMe u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
 			))
 			bldr.append(") if you want to be messaged every time")
+
+		return bldr

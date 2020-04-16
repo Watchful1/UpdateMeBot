@@ -1,5 +1,4 @@
 import discord_logging
-from sqlalchemy.orm import joinedload
 
 from classes.submission import Submission
 
@@ -13,7 +12,6 @@ class _DatabaseSubmission:
 	def get_submission_by_id(self, submission_id):
 		log.debug(f"Fetching submission by id: {submission_id}")
 		submission = self.session.query(Submission)\
-			.options(joinedload(Submission.subreddit))\
 			.filter_by(submission_id=submission_id)\
 			.first()
 

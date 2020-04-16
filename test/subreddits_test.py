@@ -75,12 +75,12 @@ def test_scan_single_subreddit(database, reddit):
 	)
 	subreddits.scan_subreddits(database, reddit)
 
-	messages = database.get_pending_messages()
-	assert len(messages) == 4
-	assert messages[0].subscription.subscriber.name == "User2"
-	assert messages[1].subscription.subscriber.name == "User3"
-	assert messages[2].subscription.subscriber.name == "User1"
-	assert messages[3].subscription.subscriber.name == "User2"
+	notifications = database.get_pending_notifications()
+	assert len(notifications) == 4
+	assert notifications[0].subscription.subscriber.name == "User2"
+	assert notifications[1].subscription.subscriber.name == "User3"
+	assert notifications[2].subscription.subscriber.name == "User1"
+	assert notifications[3].subscription.subscriber.name == "User2"
 
 
 def test_scan_single_subreddit_multiple_times(database, reddit):
@@ -100,15 +100,15 @@ def test_scan_single_subreddit_multiple_times(database, reddit):
 		["User2", "User3"]
 	)
 	subreddits.scan_subreddits(database, reddit)
-	database.clear_all_messages()
+	database.clear_all_notifications()
 
 	add_new_post_to_sub(reddit.subreddits["Subreddit1"], timedelta(minutes=2), "Author1")
 	subreddits.scan_subreddits(database, reddit)
 
-	messages = database.get_pending_messages()
-	assert len(messages) == 2
-	assert messages[0].subscription.subscriber.name == "User1"
-	assert messages[1].subscription.subscriber.name == "User2"
+	notifications = database.get_pending_notifications()
+	assert len(notifications) == 2
+	assert notifications[0].subscription.subscriber.name == "User1"
+	assert notifications[1].subscription.subscriber.name == "User2"
 
 
 def test_scan_multiple_subreddits(database, reddit):
@@ -130,8 +130,8 @@ def test_scan_multiple_subreddits(database, reddit):
 	bulk_sub_to(database, "Subreddit2", "Author3", ["User1"])
 	subreddits.scan_subreddits(database, reddit)
 
-	messages = database.get_pending_messages()
-	assert len(messages) == 2
+	notifications = database.get_pending_notifications()
+	assert len(notifications) == 2
 
 
 def test_scan_multiple_subreddit_groups(database, reddit):
@@ -155,8 +155,8 @@ def test_scan_multiple_subreddit_groups(database, reddit):
 	bulk_sub_to(database, "Subreddit2", "Author3", ["User1"])
 	subreddits.scan_subreddits(database, reddit)
 
-	messages = database.get_pending_messages()
-	assert len(messages) == 2
+	notifications = database.get_pending_notifications()
+	assert len(notifications) == 2
 
 
 def test_scan_multiple_subreddits_split(database, reddit):
@@ -179,5 +179,5 @@ def test_scan_multiple_subreddits_split(database, reddit):
 	bulk_sub_to(database, "Subreddit2", "Author3", ["User1"])
 	subreddits.scan_subreddits(database, reddit)
 
-	messages = database.get_pending_messages()
-	assert len(messages) == 2
+	notifications = database.get_pending_notifications()
+	assert len(notifications) == 2

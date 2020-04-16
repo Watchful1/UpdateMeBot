@@ -31,13 +31,18 @@ class RedditObject:
 		permalink=None,
 		link_id=None,
 		prefix="t4",
-		subreddit=None
+		subreddit=None,
+		dest=None
 	):
 		self.body = body
 		if isinstance(author, User):
 			self.author = author
 		else:
 			self.author = User(author)
+		if isinstance(dest, User):
+			self.dest = dest
+		else:
+			self.dest = User(dest)
 		if id is None:
 			self.id = utils.random_id()
 		else:
@@ -133,7 +138,7 @@ class Reddit:
 		message.mark_read()
 
 	def send_message(self, username, subject, body):
-		new_message = RedditObject(body, static.ACCOUNT_NAME)
+		new_message = RedditObject(body, static.ACCOUNT_NAME, dest=username)
 		self.sent_messages.append(new_message)
 		return ReturnType.SUCCESS
 

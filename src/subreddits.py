@@ -8,7 +8,7 @@ log = discord_logging.get_logger()
 
 import utils
 from classes.submission import Submission
-from classes.message import Message
+from classes.notification import Notification
 
 
 def subreddit_posts_per_hour(reddit, subreddit_name):
@@ -98,7 +98,7 @@ def scan_subreddit_group(database, reddit, subreddits):
 			if len(subscriptions):
 				log.info(f"Queuing {len(subscriptions)} for u/{author.name} in r/{subreddit.name} : {submission.id}")
 				for subscription in subscriptions:
-					database.add_message(Message(subscription, db_submission))
+					database.add_notification(Notification(subscription, db_submission))
 		subreddit.last_scanned = submission_datetime
 
 	database.commit()
