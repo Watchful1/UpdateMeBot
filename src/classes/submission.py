@@ -14,8 +14,10 @@ class Submission(Base):
 	time_created = Column(DateTime(), nullable=False)
 	author_name = Column(String(80), nullable=False)
 	url = Column(String(200), nullable=False)
+	comment_id = Column(String(12), ForeignKey('comments.id'))
 	subreddit_id = Column(Integer, ForeignKey('subreddits.id'), nullable=False)
 
+	comment = relationship("Comment", lazy="joined")
 	subreddit = relationship("Subreddit", lazy="joined")
 
 	def __init__(

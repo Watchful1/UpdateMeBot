@@ -35,29 +35,31 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 		author = database.get_or_add_user(author_name, case_is_user_supplied)
 		subreddit = database.get_or_add_subreddit(subreddit_name, case_is_user_supplied)
 
-		if line.startswith("updateme"):
+		if line.startswith(static.TRIGGER_UPDATE_LOWER):
 			recurring = False
-		elif line.startswith("subscribeme"):
+		elif line.startswith(static.TRIGGER_SUBSCRIBE_LOWER):
 			recurring = True
 		else:
 			recurring = subreddit.default_recurring
 
 		subscription = database.get_subscription_by_fields(user, author, subreddit)
 		if subscription is not None:
-			if subscription.recurring != recurring:
+			if subscription.recurring == recurring:
 				log.info(
-					f"Recurring changed from {subscription.recurring} to {recurring}, u/{author.name}, "
+					f"u/{user.name} already {'subscribed' if recurring else 'updated'} to u/{author.name} in "
 					f"r/{subreddit.name}")
+				bldr.append(
+					f"You had already asked me to message you {'each' if recurring else 'next'} time u/{author.name} "
+					f"posts in r/{subreddit.name}")
+
+			else:
+				log.info(
+					f"u/{user.name} changed from {'update to subscription' if recurring else 'subscription to update'}"
+					f" for u/{author.name} in r/{subreddit.name}")
 				bldr.append(
 					f"I have updated your subscription type and will now message you {'each' if recurring else 'next'} "
 					f"time u/{author.name} posts in r/{subreddit.name}")
 				subscription.recurring = recurring
-
-			else:
-				log.info(f"Already subscribed, u/{author.name}, r/{subreddit.name}")
-				bldr.append(
-					f"You had already asked me to message you {'each' if recurring else 'next'} time u/{author.name} "
-					f"posts in r/{subreddit.name}")
 
 		else:
 			subscription = Subscription(

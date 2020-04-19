@@ -2,12 +2,16 @@ import discord_logging
 import praw
 import prawcore
 import traceback
+import requests
+from datetime import timedelta
+from datetime import datetime
 
 
 log = discord_logging.get_logger()
 
 
 import static
+import utils
 from classes.queue import Queue
 from classes.enums import ReturnType
 
@@ -120,3 +124,77 @@ class Reddit:
 	def get_subreddit_submissions(self, subreddit_name):
 		log.debug(f"Getting subreddit submissions: {subreddit_name}")
 		return self.reddit.subreddit(subreddit_name).new(limit=1000)
+
+	def quarantine_opt_in(self, subreddit_name):
+		log.debug(f"Opting in to subreddit: {subreddit_name}")
+		if not self.no_post:
+			try:
+				self.reddit.subreddit(subreddit_name).quaran.opt_in()
+			except Exception:
+				log.warning(f"Error opting in to subreddit: {subreddit_name}")
+				log.warning(traceback.format_exc())
+				return False
+		return True
+
+	def get_keyword_comments(self, keyword, last_seen):
+		if not len(self.processed_comments.list):
+			last_seen = last_seen + timedelta(seconds=1)
+
+		log.debug(f"Fetching comments for keyword: {keyword} : {last_seen.strftime('%Y-%m-%d %H:%M:%S')}")
+		url = f"https://api.pushshift.io/reddit/comment/search?q={keyword}&limit=100&sort=desc"
+		lag_url = "https://api.pushshift.io/reddit/comment/search?limit=1&sort=desc"
+		try:
+			response = requests.get(url, headers={'User-Agent': static.USER_AGENT}, timeout=10)
+			if response.status_code != 200:
+				self.consecutive_timeouts += 1
+				if self.consecutive_timeouts >= pow(self.timeout_warn_threshold, 2) * 5:
+					log.warning(f"{self.consecutive_timeouts} consecutive timeouts for search term: {keyword}")
+					self.timeout_warn_threshold += 1
+				return []
+			comments = response.json()['data']
+
+			if self.pushshift_lag_checked is None or \
+					utils.datetime_now() - timedelta(minutes=10) > self.pushshift_lag_checked:
+				log.debug("Updating pushshift comment lag")
+				json = requests.get(lag_url, headers={'User-Agent': static.USER_AGENT}, timeout=10)
+				if json.status_code == 200:
+					comment_created = datetime.utcfromtimestamp(json.json()['data'][0]['created_utc'])
+					self.pushshift_lag = round((utils.datetime_now() - comment_created).seconds / 60, 0)
+					self.pushshift_lag_checked = utils.datetime_now()
+
+			if self.timeout_warn_threshold > 1:
+				log.warning(f"Recovered from timeouts after {self.consecutive_timeouts} attempts")
+
+			self.consecutive_timeouts = 0
+			self.timeout_warn_threshold = 1
+
+		except requests.exceptions.ReadTimeout:
+			self.consecutive_timeouts += 1
+			if self.consecutive_timeouts >= pow(self.timeout_warn_threshold, 2) * 5:
+				log.warning(f"{self.consecutive_timeouts} consecutive timeouts for search term: {keyword}")
+				self.timeout_warn_threshold += 1
+			return []
+
+		except Exception as err:
+			log.warning(f"Could not parse data for search term: {keyword}")
+			log.warning(traceback.format_exc())
+			return []
+
+		if not len(comments):
+			log.warning(f"No comments found for search term: {keyword}")
+			return []
+
+		result_comments = []
+		for comment in comments:
+			date_time = datetime.utcfromtimestamp(comment['created_utc'])
+			if last_seen > date_time:
+				break
+
+			if not self.processed_comments.contains(comment['id']):
+				result_comments.append(comment)
+
+		log.debug(f"Found comments: {len(result_comments)}")
+		return result_comments
+
+	def mark_keyword_comment_processed(self, comment_id):
+		self.processed_comments.put(comment_id)

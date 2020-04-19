@@ -10,13 +10,20 @@ comments
 subreddit checking
 	profile subreddit
 	scan subreddits
-message sending
+-notification sending
 adding subreddits
 backups
 update comments
 prompts
 track banned subreddits
+flair filtering
+stats
 
+
+
+if author is subscribed, include how many messages were sent in their message
+series tags
+subscribe to all posts in sub
 
 
 

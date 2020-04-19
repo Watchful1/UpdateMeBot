@@ -25,6 +25,16 @@ class _DatabaseSubscriptions:
 
 		return subscription
 
+	def get_count_subscriptions_for_author_subreddit(self, author, subreddit):
+		log.debug(f"Fetching subscriptions by author and subreddit: {author.name} : {subreddit.name}")
+
+		count_subscriptions = self.session.query(Subscription)\
+			.filter(Subscription.author == author)\
+			.filter(Subscription.subreddit == subreddit)\
+			.count()
+
+		return count_subscriptions
+
 	def get_subscriptions_for_author_subreddit(self, author, subreddit):
 		log.debug(f"Fetching subscriptions by author and subreddit: {author.name} : {subreddit.name}")
 
