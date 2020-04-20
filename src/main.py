@@ -16,6 +16,11 @@ log = discord_logging.init_logging(
 import static
 import reddit_class
 import messages
+import comments
+import subreddits
+import notifications
+import utils
+from database import Database
 
 
 database = None
@@ -24,6 +29,7 @@ database = None
 def signal_handler(signal, frame):
 	log.info("Handling interrupt")
 	database.close()
+	discord_logging.flush_discord()
 	sys.exit(0)
 
 
@@ -53,10 +59,10 @@ if __name__ == "__main__":
 	static.ACCOUNT_NAME = args.user
 	reddit_message = reddit_class.Reddit(args.user, "message", args.no_post)
 	reddit_search = reddit_class.Reddit(args.user, "search", args.no_post)
-	#database = Database(debug=args.debug_db)
-	# if args.reset_comment:
-	# 	log.info("Resetting comment processed timestamp")
-	# 	database.save_keystore("comment_timestamp", utils.get_datetime_string(utils.datetime_now()))
+	database = Database(debug=args.debug_db)
+	if args.reset_comment:
+		log.info("Resetting comment processed timestamp")
+		database.save_keystore("comment_timestamp", utils.get_datetime_string(utils.datetime_now()))
 
 	last_backup = None
 	last_comments = None
@@ -82,9 +88,16 @@ if __name__ == "__main__":
 			errors += 1
 
 		try:
-			actions += notifications.send_reminders(reddit_class, database)
+			actions += notifications.send_queued_notifications(reddit_class, database)
 		except Exception as err:
 			log.warning(f"Error sending notifications: {err}")
+			log.warning(traceback.format_exc())
+			errors += 1
+
+		try:
+			subreddits.scan_subreddits(reddit_search, database)
+		except Exception as err:
+			log.warning(f"Error scanning subreddits: {err}")
 			log.warning(traceback.format_exc())
 			errors += 1
 
@@ -97,7 +110,7 @@ if __name__ == "__main__":
 				log.warning(traceback.format_exc())
 				errors += 1
 
-		if not args.no_backup and utils.time_offset(last_backup, hours=24):
+		if not args.no_backup and utils.time_offset(last_backup, hours=4):
 			try:
 				database.backup()
 				last_backup = utils.datetime_now()
@@ -106,7 +119,7 @@ if __name__ == "__main__":
 				log.warning(traceback.format_exc())
 				errors += 1
 
-		log.debug("Run complete after: %d", int(time.perf_counter() - startTime))
+		log.debug(f"Run complete after: {int(time.perf_counter() - startTime)}")
 
 		discord_logging.flush_discord()
 

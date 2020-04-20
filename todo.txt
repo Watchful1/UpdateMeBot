@@ -10,14 +10,15 @@ comments
 	-scan comments
 	update comment numbers
 subreddit checking
-	profile subreddit
-	scan subreddits
+	-profile subreddit
+	-scan subreddits
+	log scanned post ids
+	track some stats for subreddits/groups/time
 -notification sending
 adding subreddits
 backups
 update comments
 prompts
-track banned subreddits
 flair filtering
 stats
 

@@ -105,7 +105,7 @@ def scan_subreddit_group(database, reddit, subreddits):
 	return True
 
 
-def scan_subreddits(database, reddit):
+def scan_subreddits(reddit, database):
 	current_group = {}
 	current_group_size = 0
 	single_subreddits = []
