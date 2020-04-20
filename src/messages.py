@@ -187,7 +187,8 @@ def process_message(message, reddit, database, count_string=""):
 	bldr = []
 	append_list = False
 	for line in body.splitlines():
-		if line.startswith("updateme") or line.startswith("subscribeme") or line.startswith("http"):
+		if line.startswith(static.TRIGGER_UPDATE_LOWER) or line.startswith(static.TRIGGER_SUBSCRIBE_LOWER) \
+				or line.startswith("http"):
 			line_update_subscribe(line, user, bldr, database, reddit)
 		elif line.startswith("remove"):
 			line_remove(line, user, bldr, database)

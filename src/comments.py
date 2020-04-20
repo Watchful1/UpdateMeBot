@@ -45,6 +45,7 @@ def process_comment(comment, reddit, database, count_string=""):
 		log.debug("Command not in comment")
 		return
 
+	comment_result = None
 	thread_id = utils.id_from_fullname(comment['link_id'])
 	subscriber = database.get_or_add_user(comment['author'])
 	subreddit = database.get_or_add_subreddit(comment['subreddit'])
@@ -52,12 +53,16 @@ def process_comment(comment, reddit, database, count_string=""):
 	if db_submission is not None:
 		author_name = db_submission.author_name
 	else:
+		comment_result = ReturnType.SUBMISSION_NOT_PROCESSED
 		reddit_submission = reddit.get_submission(thread_id)
-		author_name = reddit_submission.author.name
+		try:
+			author_name = reddit_submission.author.name
+		except Exception:
+			log.warning(f"Unable to fetch parent submission for comment: {thread_id}")
+			return
 
 	author = database.get_or_add_user(author_name)
 	subscription = database.get_subscription_by_fields(subscriber, author, subreddit)
-	comment_result = None
 	if subscription is not None:
 		if subscription.recurring == recurring:
 			log.info(
@@ -113,7 +118,7 @@ def process_comment(comment, reddit, database, count_string=""):
 			recurring=recurring
 		)
 
-		bldr = utils.get_footer(db_comment.render_comment(thread_id, pushshift_minutes=reddit.pushshift_lag))
+		bldr = utils.get_footer(db_comment.render_comment(pushshift_minutes=reddit.pushshift_lag))
 
 		result_id, comment_result = reddit.reply_comment(reddit_comment, ''.join(bldr))
 
@@ -145,7 +150,7 @@ def process_comment(comment, reddit, database, count_string=""):
 
 				if comment_result != ReturnType.QUARANTINED:
 					db_comment.comment_id = result_id
-					database.save_comment(db_comment)
+					database.add_comment(db_comment)
 				commented = True
 
 	if not commented:

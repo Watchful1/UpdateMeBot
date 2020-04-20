@@ -8,6 +8,7 @@ import subreddits
 import reddit_test
 import utils
 from reddit_test import RedditObject
+from reddit_test import Subreddit
 from classes.subscription import Subscription
 
 
@@ -16,7 +17,7 @@ def add_new_post_to_sub(subreddit, delta, author=None):
 
 
 def create_sub_with_posts(database, reddit, subreddit_name, posts, last_scanned=None, posts_per_hour=1):
-	reddit_subreddit = reddit_test.Subreddit(subreddit_name)
+	reddit_subreddit = Subreddit(subreddit_name)
 	for post in posts:
 		add_new_post_to_sub(reddit_subreddit, post[1], post[0])
 	reddit.add_subreddit(reddit_subreddit)

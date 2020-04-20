@@ -5,6 +5,7 @@ log = discord_logging.get_logger(init=True)
 import messages
 import utils
 import reddit_test
+from classes.submission import Submission
 from classes.subscription import Subscription
 from classes.comment import DbComment
 
@@ -158,7 +159,7 @@ def test_add_link(database, reddit):
 		reddit_test.RedditObject(
 			id=post_id,
 			author=author,
-			subreddit=reddit_test.Subreddit(subreddit_name)
+			subreddit=subreddit_name
 		)
 	)
 	message = reddit_test.RedditObject(
@@ -184,7 +185,7 @@ def test_add_link_default_subscribe(database, reddit):
 		reddit_test.RedditObject(
 			id=post_id,
 			author=author,
-			subreddit=reddit_test.Subreddit(subreddit_name)
+			subreddit=subreddit_name
 		)
 	)
 	message = reddit_test.RedditObject(
@@ -269,10 +270,18 @@ def test_delete_comment(database, reddit):
 		link_id=utils.random_id()
 	)
 	reddit.add_comment(reddit_comment)
-	database.save_comment(
+	db_submission = Submission(
+		submission_id=reddit_comment.link_id,
+		time_created=utils.datetime_now(),
+		author_name=author,
+		subreddit=database.get_or_add_subreddit(subreddit_name, enable_subreddit_if_new=True),
+		permalink=f"none"
+	)
+	database.add_submission(db_submission)
+	database.add_comment(
 		DbComment(
-			thread_id=reddit_comment.link_id,
 			comment_id=reddit_comment.id,
+			submission=db_submission,
 			subscriber=database.get_or_add_user(username),
 			author=database.get_or_add_user(author),
 			subreddit=database.get_or_add_subreddit(subreddit_name),
@@ -298,10 +307,18 @@ def test_delete_comment_not_author(database, reddit):
 		link_id=utils.random_id()
 	)
 	reddit.add_comment(reddit_comment)
-	database.save_comment(
+	db_submission = Submission(
+		submission_id=reddit_comment.link_id,
+		time_created=utils.datetime_now(),
+		author_name=author,
+		subreddit=database.get_or_add_subreddit(subreddit_name, enable_subreddit_if_new=True),
+		permalink=f"none"
+	)
+	database.add_submission(db_submission)
+	database.add_comment(
 		DbComment(
-			thread_id=reddit_comment.link_id,
 			comment_id=reddit_comment.id,
+			submission=db_submission,
 			subscriber=database.get_or_add_user(username),
 			author=database.get_or_add_user(author),
 			subreddit=database.get_or_add_subreddit(subreddit_name),

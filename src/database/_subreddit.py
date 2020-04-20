@@ -11,14 +11,14 @@ class _DatabaseSubreddit:
 	def __init__(self):
 		self.session = self.session  # for pycharm linting
 
-	def get_or_add_subreddit(self, subreddit_name, case_is_user_supplied=False):
+	def get_or_add_subreddit(self, subreddit_name, case_is_user_supplied=False, enable_subreddit_if_new=False):
 		log.debug(f"Fetching subreddit by name: {subreddit_name}")
 		subreddit = self.session.query(Subreddit)\
 			.filter_by(name=subreddit_name)\
 			.first()
 		if subreddit is None:
 			log.debug(f"Creating subreddit: {subreddit_name}")
-			subreddit = Subreddit(subreddit_name)
+			subreddit = Subreddit(subreddit_name, enabled=enable_subreddit_if_new)
 			self.session.add(subreddit)
 		else:
 			if subreddit.name != subreddit_name and not case_is_user_supplied and subreddit_name != subreddit_name.lower():

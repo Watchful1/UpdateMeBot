@@ -43,6 +43,12 @@ class RedditObject:
 			self.dest = dest
 		else:
 			self.dest = User(dest)
+		if subreddit is None:
+			self.subreddit = None
+		elif isinstance(subreddit, Subreddit):
+			self.subreddit = subreddit
+		else:
+			self.subreddit = Subreddit(subreddit)
 		if id is None:
 			self.id = utils.random_id()
 		else:
@@ -52,14 +58,13 @@ class RedditObject:
 			self.created_utc = utils.datetime_now().replace(tzinfo=timezone.utc).timestamp()
 		else:
 			self.created_utc = created.replace(tzinfo=timezone.utc).timestamp()
-		if permalink is None and subreddit is not None:
-			permalink = f"/r/{subreddit.display_name}/comments/{self.id}"
+		if permalink is None and self.subreddit is not None:
+			permalink = f"/r/{self.subreddit.display_name}/comments/{self.id}"
 
 		if permalink is not None:
 			self.permalink = permalink
 			self.url = "http://www.reddit.com"+permalink
 		self.link_id = link_id
-		self.subreddit = subreddit
 
 		self.parent = None
 		self.children = []
@@ -72,7 +77,7 @@ class RedditObject:
 			'body': self.body,
 			'permalink': self.permalink,
 			'created_utc': self.created_utc,
-			'subreddit': self.subreddit
+			'subreddit': self.subreddit.display_name
 		}
 
 	def get_first_child(self):

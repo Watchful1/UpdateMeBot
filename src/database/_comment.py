@@ -3,6 +3,7 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
 
 from classes.comment import DbComment
+from classes.submission import Submission
 
 log = discord_logging.get_logger()
 
@@ -11,14 +12,17 @@ class _DatabaseComments:
 	def __init__(self):
 		self.session = self.session  # for pycharm linting
 
-	def save_comment(self, db_comment):
+	def add_comment(self, db_comment):
 		log.debug("Saving new comment")
 		self.session.add(db_comment)
 
-	def get_comment_by_thread(self, thread_id):
-		log.debug(f"Fetching comment for thread: {thread_id}")
+	def get_comment_by_thread(self, submission_id):
+		log.debug(f"Fetching comment for thread: {submission_id}")
 
-		return self.session.query(DbComment).filter_by(thread_id=thread_id).first()
+		return self.session.query(DbComment)\
+			.join(Submission)\
+			.filter(Submission.submission_id == submission_id)\
+			.first()
 
 	def delete_comment(self, db_comment):
 		log.debug(f"Deleting comment by id: {db_comment.id}")

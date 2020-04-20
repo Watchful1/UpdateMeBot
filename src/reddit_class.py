@@ -121,6 +121,21 @@ class Reddit:
 				return False
 		return True
 
+	def reply_comment(self, comment, body):
+		log.debug(f"Replying to message: {comment.id}")
+		if self.no_post:
+			log.info(body)
+			return "xxxxxx", ReturnType.SUCCESS
+		else:
+			output, result = self.run_function(comment.reply, [body])
+			if output is not None:
+				return output.id, result
+			else:
+				if result == ReturnType.SUCCESS:
+					return None, ReturnType.NOTHING_RETURNED
+				else:
+					return None, result
+
 	def get_subreddit_submissions(self, subreddit_name):
 		log.debug(f"Getting subreddit submissions: {subreddit_name}")
 		return self.reddit.subreddit(subreddit_name).new(limit=1000)

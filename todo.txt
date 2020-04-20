@@ -7,6 +7,8 @@ messages
 	add sub
 	subreddit pm
 comments
+	-scan comments
+	update comment numbers
 subreddit checking
 	profile subreddit
 	scan subreddits
