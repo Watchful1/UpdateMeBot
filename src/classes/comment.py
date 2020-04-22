@@ -78,7 +78,7 @@ class DbComment(Base):
 		if count_subscriptions > 1:
 			bldr.append("join ")
 			bldr.append(str(count_subscriptions))
-			bldr.append(" other and")
+			bldr.append(" others and")
 		else:
 			bldr.append("also")
 		bldr.append(" be messaged. ")

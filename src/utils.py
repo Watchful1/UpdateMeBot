@@ -55,6 +55,15 @@ def replace_np(link):
 	return re.sub(r"(www|old|new)\.reddit\.com", "np.reddit.com", link)
 
 
+def requests_available(requests_pending):
+	if requests_pending == 0:
+		return 0
+	elif requests_pending < 200:
+		return 30
+	else:
+		return min(1000, int(requests_pending / 5))
+
+
 def time_offset(date_time, hours=0, minutes=0, seconds=0):
 	if date_time is None:
 		return True

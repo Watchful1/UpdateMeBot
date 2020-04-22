@@ -1,9 +1,12 @@
 import discord_logging
-from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
+from sqlalchemy import and_
 
 from classes.comment import DbComment
 from classes.submission import Submission
+from classes.subscription import Subscription
+from classes.subreddit import Subreddit
+from classes.user import User
 
 log = discord_logging.get_logger()
 
@@ -28,40 +31,36 @@ class _DatabaseComments:
 		log.debug(f"Deleting comment by id: {db_comment.id}")
 		self.session.delete(db_comment)
 
-	# def get_pending_incorrect_comments(self):
-	# 	log.debug("Fetching count of incorrect comments")
-	#
-	# 	Reminder1 = aliased(Reminder)
-	# 	Reminder2 = aliased(Reminder)
-	# 	subquery = self.session.query(Reminder1.id, func.count('*').label("new_count"))\
-	# 		.join(Reminder2, Reminder1.source == Reminder2.message)\
-	# 		.group_by(Reminder1.id)\
-	# 		.subquery()
-	# 	count = self.session.query(DbComment)\
-	# 		.join(subquery, DbComment.reminder_id == subquery.c.id)\
-	# 		.filter(subquery.c.new_count != DbComment.current_count)\
-	# 		.count()
-	# 	log.debug(f"Incorrect comments: {count}")
-	# 	return count
-	#
-	# def get_incorrect_comments(self, count):
-	# 	log.debug(f"Fetching incorrect comments")
-	#
-	# 	Reminder1 = aliased(Reminder)
-	# 	Reminder2 = aliased(Reminder)
-	#
-	# 	subquery = self.session.query(Reminder1, func.count('*').label("new_count"))\
-	# 		.join(Reminder2, Reminder1.source == Reminder2.message)\
-	# 		.group_by(Reminder1.id)\
-	# 		.subquery()
-	#
-	# 	Reminder3 = aliased(Reminder, subquery)
-	#
-	# 	results = self.session.query(DbComment, Reminder3, subquery.c.new_count)\
-	# 		.join(subquery, DbComment.reminder_id == subquery.c.id)\
-	# 		.filter(subquery.c.new_count != DbComment.current_count)\
-	# 		.limit(count)\
-	# 		.all()
-	#
-	# 	log.debug(f"Found incorrect comments: {len(results)}")
-	# 	return results
+	def get_pending_incorrect_comments(self):
+		log.debug("Fetching count of incorrect comments")
+
+		subquery = self.session.query(Subscription.author_id, Subscription.subreddit_id, func.count('*').label("new_count"))\
+			.group_by(Subscription.author_id, Subscription.subreddit_id)\
+			.subquery()
+
+		count = self.session.query(DbComment, subquery.c.new_count) \
+			.join(DbComment.author) \
+			.join(DbComment.subreddit) \
+			.join(subquery, and_(User.id == subquery.c.author_id, Subreddit.id == subquery.c.subreddit_id)) \
+			.filter(subquery.c.new_count != DbComment.current_count) \
+			.count()
+		log.debug(f"Incorrect comments: {count}")
+		return count
+
+	def get_incorrect_comments(self, count):
+		log.debug(f"Fetching incorrect comments")
+
+		subquery = self.session.query(Subscription.author_id, Subscription.subreddit_id, func.count('*').label("new_count"))\
+			.group_by(Subscription.author_id, Subscription.subreddit_id)\
+			.subquery()
+
+		results = self.session.query(DbComment, subquery.c.new_count)\
+			.join(DbComment.author)\
+			.join(DbComment.subreddit)\
+			.join(subquery, and_(User.id == subquery.c.author_id, Subreddit.id == subquery.c.subreddit_id))\
+			.filter(subquery.c.new_count != DbComment.current_count)\
+			.limit(count)\
+			.all()
+
+		log.debug(f"Found incorrect comments: {len(results)}")
+		return results

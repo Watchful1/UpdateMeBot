@@ -109,16 +109,21 @@ def process_comment(comment, reddit, database, count_string=""):
 		comment_result = ReturnType.FORBIDDEN
 	if comment_result is None:
 		reddit_comment = reddit.get_comment(comment['id'])
+		count_subscriptions = database.get_count_subscriptions_for_author_subreddit(author, subreddit)
 		db_comment = DbComment(
 			comment_id=None,
 			submission=db_submission,
 			subscriber=subscriber,
 			author=author,
 			subreddit=subreddit,
-			recurring=recurring
+			recurring=recurring,
+			current_count=count_subscriptions
 		)
 
-		bldr = utils.get_footer(db_comment.render_comment(pushshift_minutes=reddit.pushshift_lag))
+		bldr = utils.get_footer(db_comment.render_comment(
+			count_subscriptions=count_subscriptions,
+			pushshift_minutes=reddit.pushshift_lag
+		))
 
 		result_id, comment_result = reddit.reply_comment(reddit_comment, ''.join(bldr))
 
@@ -194,3 +199,23 @@ def process_comments(reddit, database):
 		database_set_seen(database, datetime.strptime(comment['created_utc'], "%Y-%m-%d %H:%M:%S"))
 
 	return len(comments)
+
+
+def update_comments(reddit, database):
+	count_incorrect = database.get_pending_incorrect_comments()
+
+	if count_incorrect > 0:
+		incorrect_items = database.get_incorrect_comments(utils.requests_available(count_incorrect))
+		i = 0
+		for db_comment, new_count in incorrect_items:
+			i += 1
+			log.info(
+				f"{i}/{len(incorrect_items)}/{count_incorrect}: Updating comment : "
+				f"{db_comment.comment_id} : {db_comment.current_count}/{new_count}")
+
+			bldr = utils.get_footer(db_comment.render_comment(count_subscriptions=new_count))
+			reddit.edit_comment(''.join(bldr), comment_id=db_comment.comment_id)
+			db_comment.current_count = new_count
+
+	else:
+		log.debug("No incorrect comments")

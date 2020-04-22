@@ -13,14 +13,7 @@ def send_queued_notifications(reddit, database):
 
 	notifications_sent = 0
 	if count_pending_notifications > 0:
-		if count_pending_notifications == 0:
-			notifications_to_send = 0
-		elif count_pending_notifications < 200:
-			notifications_to_send = 30
-		else:
-			notifications_to_send = min(1000, int(count_pending_notifications / 5))
-
-		notifications = database.get_pending_notifications(notifications_to_send)
+		notifications = database.get_pending_notifications(utils.requests_available(count_pending_notifications))
 		for notification in notifications:
 			notifications_sent += 1
 			log.info(

@@ -16,11 +16,10 @@ subreddit checking
 	track some stats for subreddits/groups/time
 -notification sending
 adding subreddits
-backups
-update comments
 prompts
 flair filtering
 stats
+clear old comments/submissions
 
 
 

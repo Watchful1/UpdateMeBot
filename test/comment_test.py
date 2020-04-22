@@ -10,6 +10,7 @@ from classes.submission import Submission
 from classes.subscription import Subscription
 from classes.subreddit import Subreddit
 from classes.comment import DbComment
+from classes.user import User
 
 
 def test_process_comment_update(database, reddit):
@@ -252,3 +253,85 @@ def test_process_comment_update_subscription(database, reddit):
 	assert "I have updated your subscription type" in reddit.sent_messages[0].body
 	assert "next" in reddit.sent_messages[0].body
 	assert db_subreddit.name in reddit.sent_messages[0].body
+
+
+def bulk_sub_to(database, subreddit_name, author_name, subscriber_names):
+	subreddit = database.get_or_add_subreddit(subreddit_name)
+	author = database.get_or_add_user(author_name)
+	for subscriber_name in subscriber_names:
+		user = database.get_or_add_user(subscriber_name)
+		database.add_subscription(
+			Subscription(
+				subscriber=user,
+				author=author,
+				subreddit=subreddit,
+				recurring=True
+			)
+		)
+	database.commit()
+
+
+def test_update_incorrect_comments(database, reddit):
+	bulk_sub_to(database, "Subreddit1", "Author1", ["User1", "User2", "User3"])
+	bulk_sub_to(database, "Subreddit1", "Author2", ["User2", "User3"])
+	bulk_sub_to(database, "Subreddit2", "Author3", ["User3"])
+	submission1 = Submission(
+		submission_id=utils.random_id(), time_created=utils.datetime_now(), author_name="Author1",
+		subreddit=database.get_or_add_subreddit("Subreddit1"), permalink="")
+	database.add_submission(submission1)
+	submission2 = Submission(
+		submission_id=utils.random_id(), time_created=utils.datetime_now(), author_name="Author2",
+		subreddit=database.get_or_add_subreddit("Subreddit1"), permalink="")
+	database.add_submission(submission2)
+	submission3 = Submission(
+		submission_id=utils.random_id(), time_created=utils.datetime_now(), author_name="Author3",
+		subreddit=database.get_or_add_subreddit("Subreddit2"), permalink="")
+	database.add_submission(submission3)
+	comment1 = DbComment(
+		comment_id=utils.random_id(), submission=submission1, subscriber=database.get_or_add_user("User1"),
+		author=database.get_or_add_user("Author1"), subreddit=database.get_or_add_subreddit("Subreddit1"),
+		recurring=True, current_count=1)
+	database.add_comment(comment1)
+	comment2 = DbComment(
+		comment_id=utils.random_id(), submission=submission2, subscriber=database.get_or_add_user("User2"),
+		author=database.get_or_add_user("Author2"), subreddit=database.get_or_add_subreddit("Subreddit1"),
+		recurring=True, current_count=1)
+	database.add_comment(comment2)
+	comment3 = DbComment(
+		comment_id=utils.random_id(), submission=submission3, subscriber=database.get_or_add_user("User3"),
+		author=database.get_or_add_user("Author3"), subreddit=database.get_or_add_subreddit("Subreddit2"),
+		recurring=True, current_count=1)
+	database.add_comment(comment3)
+	reddit_comment1 = RedditObject(
+		body="blank",
+		author=static.ACCOUNT_NAME,
+		id=comment1.comment_id,
+		link_id="t3_"+submission1.submission_id,
+		permalink=f"/r/test/comments/{submission1.submission_id}/_/{comment1.comment_id}/",
+		subreddit="Subreddit1"
+	)
+	reddit.add_comment(reddit_comment1)
+	reddit_comment2 = RedditObject(
+		body="blank",
+		author=static.ACCOUNT_NAME,
+		id=comment2.comment_id,
+		link_id="t3_"+submission2.submission_id,
+		permalink=f"/r/test/comments/{submission2.submission_id}/_/{comment2.comment_id}/",
+		subreddit="Subreddit1"
+	)
+	reddit.add_comment(reddit_comment2)
+	reddit_comment3 = RedditObject(
+		body="blank",
+		author=static.ACCOUNT_NAME,
+		id=comment3.comment_id,
+		link_id="t3_"+submission3.submission_id,
+		permalink=f"/r/test/comments/{submission3.submission_id}/_/{comment3.comment_id}/",
+		subreddit="Subreddit2"
+	)
+	reddit.add_comment(reddit_comment3)
+
+	comments.update_comments(reddit, database)
+
+	assert "3 others" in reddit_comment1.body
+	assert "2 others" in reddit_comment2.body
+	assert reddit_comment3.body == "blank"
