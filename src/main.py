@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
 		if utils.time_offset(last_comments, minutes=30):
 			try:
-				comments.update_comments(reddit_class, database)
+				actions += comments.update_comments(reddit_class, database)
 				last_comments = utils.datetime_now()
 			except Exception as err:
 				log.warning(f"Error updating comments: {err}")

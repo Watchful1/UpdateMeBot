@@ -8,16 +8,16 @@ messages
 	subreddit pm
 comments
 	-scan comments
-	update comment numbers
+	-update comment numbers
 subreddit checking
 	-profile subreddit
 	-scan subreddits
-	log scanned post ids
-	track some stats for subreddits/groups/time
+	-log scanned post ids
+	-track some stats for subreddits/groups/time
 -notification sending
 adding subreddits
 prompts
-flair filtering
+-flair filtering
 stats
 clear old comments/submissions
 
@@ -26,6 +26,10 @@ clear old comments/submissions
 if author is subscribed, include how many messages were sent in their message
 series tags
 subscribe to all posts in sub
+migration script
+startup mode for subreddit scanning
+active author polls
+	should the subscription number be posted publicly
 
 
 

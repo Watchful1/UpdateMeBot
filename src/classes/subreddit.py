@@ -18,6 +18,7 @@ class Subreddit(Base):
 
 	no_comment = Column(Boolean, nullable=False)
 	is_banned = Column(Boolean, nullable=False)
+	flair_blacklist = Column(String(300))
 
 	def __init__(
 		self,
@@ -33,3 +34,11 @@ class Subreddit(Base):
 
 		self.no_comment = False
 		self.is_banned = False
+
+	def get_flair_blacklist(self):
+		if self.flair_blacklist is None:
+			return None
+		output = set()
+		for flair in self.flair_blacklist.split(','):
+			output.add(flair)
+		return output

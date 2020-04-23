@@ -204,9 +204,9 @@ def process_comments(reddit, database):
 def update_comments(reddit, database):
 	count_incorrect = database.get_pending_incorrect_comments()
 
+	i = 0
 	if count_incorrect > 0:
 		incorrect_items = database.get_incorrect_comments(utils.requests_available(count_incorrect))
-		i = 0
 		for db_comment, new_count in incorrect_items:
 			i += 1
 			log.info(
@@ -219,3 +219,5 @@ def update_comments(reddit, database):
 
 	else:
 		log.debug("No incorrect comments")
+
+	return i
