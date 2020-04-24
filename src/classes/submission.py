@@ -14,6 +14,7 @@ class Submission(Base):
 	time_created = Column(DateTime(), nullable=False)
 	author_name = Column(String(80), nullable=False)
 	url = Column(String(200), nullable=False)
+	messages_sent = Column(Integer, nullable=False)
 	subreddit_id = Column(Integer, ForeignKey('subreddits.id'), nullable=False)
 
 	comment = relationship("DbComment", uselist=False, back_populates="submission", lazy="joined")
@@ -33,3 +34,7 @@ class Submission(Base):
 		self.author_name = author_name
 		self.subreddit = subreddit
 		self.url = "https://www.reddit.com" + permalink
+		self.messages_sent = 0
+
+	def __str__(self):
+		return f"u/{self.author_name} to r/{self.subreddit.name} : u/{self.submission_id}"

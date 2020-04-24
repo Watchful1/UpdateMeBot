@@ -24,20 +24,33 @@ class Notification(Base):
 		self.subscription = subscription
 		self.submission = submission
 
+	def __str__(self):
+		return \
+			f"u/{self.subscription.subscriber.name} to u/{self.subscription.author.name} in " \
+			f"r/{self.subscription.subreddit.name} : u/{self.submission.id}"
+
 	def render_notification(self):
 		bldr = utils.str_bldr()
 		bldr.append("UpdateMeBot here!")
 		bldr.append("\n\n")
 
-		bldr.append("u/")
-		bldr.append(self.subscription.author.name)
-		bldr.append(" has posted a new thread in r/")
-		bldr.append(self.subscription.subreddit.name)
-		bldr.append("\n\n")
+		if self.subscription.author == self.subscription.subscriber:
+			bldr.append("I have finished sending out ")
+			bldr.append(str(self.submission.messages_sent))
+			bldr.append(" notifications for [your post](")
+			bldr.append(self.submission.url)
+			bldr.append(").")
 
-		bldr.append("You can find it here: ")
-		bldr.append(self.submission.url)
-		bldr.append("\n\n")
+		else:
+			bldr.append("u/")
+			bldr.append(self.subscription.author.name)
+			bldr.append(" has posted a new thread in r/")
+			bldr.append(self.subscription.subreddit.name)
+			bldr.append("\n\n")
+
+			bldr.append("You can find it here: ")
+			bldr.append(self.submission.url)
+			bldr.append("\n\n")
 
 		bldr.append("*****")
 		bldr.append("\n\n")

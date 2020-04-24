@@ -23,6 +23,7 @@ def send_queued_notifications(reddit, database):
 
 			bldr = utils.get_footer(notification.render_notification())
 			result = reddit.send_message(notification.subscription.subscriber.name, "UpdateMeBot Here!", ''.join(bldr))
+			notification.submission.messages_sent += 1
 			if result in (ReturnType.INVALID_USER, ReturnType.USER_DOESNT_EXIST):
 				log.info(f"User doesn't exist: u/{notification.subscription.subscriber.name}")
 

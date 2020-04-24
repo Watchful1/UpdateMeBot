@@ -1,0 +1,3 @@
+Minor changes
+If you are subscribed to yourself, the bot will send the message to you last to indicate it's done sending out the
+notifications for your post. It will also include how many messages were sent out.

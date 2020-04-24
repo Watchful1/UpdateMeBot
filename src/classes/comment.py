@@ -41,6 +41,9 @@ class DbComment(Base):
 		self.recurring = recurring
 		self.current_count = current_count
 
+	def __str__(self):
+		return f"{self.comment_id} : u/{self.subscriber.name}"
+
 	def render_comment(self, count_subscriptions=1, pushshift_minutes=0):
 		bldr = utils.str_bldr()
 		if pushshift_minutes > 15:

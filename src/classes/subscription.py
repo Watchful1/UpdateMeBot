@@ -35,3 +35,6 @@ class Subscription(Base):
 		self.author = author
 		self.subreddit = subreddit
 		self.recurring = recurring
+
+	def __str__(self):
+		return f"u/{self.subscriber.name} to u/{self.author.name} in r/{self.subreddit.name} : {self.recurring}"

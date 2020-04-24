@@ -35,6 +35,9 @@ class Subreddit(Base):
 		self.no_comment = False
 		self.is_banned = False
 
+	def __str__(self):
+		return f"r/{self.name}"
+
 	def get_flair_blacklist(self):
 		if self.flair_blacklist is None:
 			return None

@@ -86,15 +86,22 @@ def test_send_messages(database, reddit):
 	queue_message(database, "Subscriber3", "Author2", "Subreddit1", submission_id2)
 	queue_message(database, "Subscriber2", "Author1", "Subreddit2", submission_id3)
 	queue_message(database, "Subscriber3", "Author1", "Subreddit2", submission_id3)
+	queue_message(database, "Subscriber4", "Author1", "Subreddit2", submission_id3)
+	queue_message(database, "Author1", "Author1", "Subreddit2", submission_id3)
 
-	assert database.get_count_pending_notifications() == 6
+	assert database.get_count_pending_notifications() == 8
 	notifications.send_queued_notifications(reddit, database)
 	assert database.get_count_pending_notifications() == 0
 
-	assert len(reddit.sent_messages) == 6
+	assert len(reddit.sent_messages) == 8
 	assert_message(reddit.sent_messages[0], "Subscriber1", ["u/Author1", "r/Subreddit1", submission_id1])
 	assert_message(reddit.sent_messages[1], "Subscriber2", ["u/Author1", "r/Subreddit1", submission_id1])
 	assert_message(reddit.sent_messages[2], "Subscriber1", ["u/Author2", "r/Subreddit1", submission_id2])
 	assert_message(reddit.sent_messages[3], "Subscriber3", ["u/Author2", "r/Subreddit1", submission_id2])
 	assert_message(reddit.sent_messages[4], "Subscriber2", ["u/Author1", "r/Subreddit2", submission_id3])
 	assert_message(reddit.sent_messages[5], "Subscriber3", ["u/Author1", "r/Subreddit2", submission_id3])
+	assert_message(reddit.sent_messages[6], "Subscriber4", ["u/Author1", "r/Subreddit2", submission_id3])
+	assert_message(
+		reddit.sent_messages[7], "Author1",
+		["r/Subreddit2", submission_id3, "finished sending out 3 notifications"]
+	)

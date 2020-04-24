@@ -43,7 +43,11 @@ class _DatabaseSubscriptions:
 			.filter(Subscription.subreddit == subreddit)\
 			.all()
 
-		return subscriptions
+		return sorted(
+			subscriptions,
+			key=lambda subscription:
+				(subscription.subscriber.name == subscription.author.name, subscription.subscriber.id)
+		)
 
 	def get_user_subscriptions_by_name(self, user_name):
 		user = self.session.query(User).filter_by(name=user_name).first()

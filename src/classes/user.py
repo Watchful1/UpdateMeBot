@@ -19,3 +19,6 @@ class User(Base):
 		self.name = name
 		self.prompt = prompt
 		self.blocked = blocked
+
+	def __str__(self):
+		return f"u/{self.name}"
