@@ -14,10 +14,10 @@ subreddit checking
 	-scan subreddits
 	-log scanned post ids
 	-track some stats for subreddits/groups/time
+	-flair filtering
 -notification sending
 adding subreddits
 prompts
--flair filtering
 stats
 clear old comments/submissions
 

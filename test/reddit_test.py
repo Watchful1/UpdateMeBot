@@ -32,7 +32,8 @@ class RedditObject:
 		link_id=None,
 		prefix="t4",
 		subreddit=None,
-		dest=None
+		dest=None,
+		flair=None
 	):
 		self.body = body
 		if isinstance(author, User):
@@ -65,6 +66,7 @@ class RedditObject:
 			self.permalink = permalink
 			self.url = "http://www.reddit.com"+permalink
 		self.link_id = link_id
+		self.link_flair_text = flair
 
 		self.parent = None
 		self.children = []

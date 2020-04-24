@@ -12,8 +12,10 @@ from reddit_test import Subreddit
 from classes.subscription import Subscription
 
 
-def add_new_post_to_sub(subreddit, delta, author=None):
-	subreddit.posts.append(RedditObject(created=utils.datetime_now() - delta, subreddit=subreddit, author=author))
+def add_new_post_to_sub(subreddit, delta, author=None, flair=None):
+	subreddit.posts.append(
+		RedditObject(created=utils.datetime_now() - delta, subreddit=subreddit, author=author, flair=flair)
+	)
 
 
 def create_sub_with_posts(database, reddit, subreddit_name, posts, last_scanned=None, posts_per_hour=1):
@@ -74,7 +76,7 @@ def test_scan_single_subreddit(database, reddit):
 		database, "Subreddit1", "Author2",
 		["User2", "User3"]
 	)
-	subreddits.scan_subreddits(database, reddit)
+	subreddits.scan_subreddits(reddit, database)
 
 	notifications = database.get_pending_notifications()
 	assert len(notifications) == 4
@@ -100,11 +102,11 @@ def test_scan_single_subreddit_multiple_times(database, reddit):
 		database, "Subreddit1", "Author2",
 		["User2", "User3"]
 	)
-	subreddits.scan_subreddits(database, reddit)
+	subreddits.scan_subreddits(reddit, database)
 	database.clear_all_notifications()
 
 	add_new_post_to_sub(reddit.subreddits["Subreddit1"], timedelta(minutes=2), "Author1")
-	subreddits.scan_subreddits(database, reddit)
+	subreddits.scan_subreddits(reddit, database)
 
 	notifications = database.get_pending_notifications()
 	assert len(notifications) == 2
@@ -129,7 +131,7 @@ def test_scan_multiple_subreddits(database, reddit):
 	)
 	bulk_sub_to(database, "Subreddit1", "Author1", ["User1"])
 	bulk_sub_to(database, "Subreddit2", "Author3", ["User1"])
-	subreddits.scan_subreddits(database, reddit)
+	subreddits.scan_subreddits(reddit, database)
 
 	notifications = database.get_pending_notifications()
 	assert len(notifications) == 2
@@ -154,7 +156,7 @@ def test_scan_multiple_subreddit_groups(database, reddit):
 	)
 	bulk_sub_to(database, "Subreddit1", "Author1", ["User1"])
 	bulk_sub_to(database, "Subreddit2", "Author3", ["User1"])
-	subreddits.scan_subreddits(database, reddit)
+	subreddits.scan_subreddits(reddit, database)
 
 	notifications = database.get_pending_notifications()
 	assert len(notifications) == 2
@@ -178,7 +180,29 @@ def test_scan_multiple_subreddits_split(database, reddit):
 	)
 	bulk_sub_to(database, "Subreddit1", "Author1", ["User1"])
 	bulk_sub_to(database, "Subreddit2", "Author3", ["User1"])
-	subreddits.scan_subreddits(database, reddit)
+	subreddits.scan_subreddits(reddit, database)
 
 	notifications = database.get_pending_notifications()
 	assert len(notifications) == 2
+
+
+def test_scan_subreddit_flair_blacklist(database, reddit):
+	reddit_subreddit = Subreddit("Subreddit1")
+	add_new_post_to_sub(reddit_subreddit, timedelta(minutes=5), "Author1", flair="meta")
+	add_new_post_to_sub(reddit_subreddit, timedelta(minutes=6), "Author2")
+	reddit.add_subreddit(reddit_subreddit)
+	db_subreddit = database.get_or_add_subreddit("Subreddit1")
+	db_subreddit.last_scanned = utils.datetime_now() - timedelta(minutes=30)
+	db_subreddit.enabled = True
+	db_subreddit.flair_blacklist = "psa,meta"
+	db_subreddit.post_per_hour = 2
+	database.commit()
+
+	bulk_sub_to(database, "Subreddit1", "Author1", ["User1", "User2"])
+	bulk_sub_to(database, "Subreddit1", "Author2", ["User2", "User3"])
+	subreddits.scan_subreddits(reddit, database)
+
+	notifications = database.get_pending_notifications()
+	assert len(notifications) == 2
+	assert notifications[0].submission.author_name == "Author2"
+	assert notifications[1].submission.author_name == "Author2"
