@@ -6,7 +6,7 @@ messages
 		limit size
 	add sub
 	subreddit pm
-comments
+-comments
 	-scan comments
 	-update comment numbers
 subreddit checking
@@ -15,15 +15,15 @@ subreddit checking
 	-log scanned post ids
 	-track some stats for subreddits/groups/time
 	-flair filtering
+	prompts
+	add sub message
 -notification sending
-adding subreddits
-prompts
+	-if author is subscribed, include how many messages were sent in their message
 stats
 clear old comments/submissions
 
 
 
-if author is subscribed, include how many messages were sent in their message
 series tags
 subscribe to all posts in sub
 migration script

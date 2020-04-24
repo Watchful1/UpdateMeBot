@@ -1,8 +1,17 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum, Table, ForeignKey
+from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
 
 import utils
+from classes.enums import SubredditPromptType
+
+
+prompt_association_table = Table(
+	'prompt_association', Base.metadata,
+	Column('subreddit_id', Integer, ForeignKey('subreddits.id')),
+	Column('user_id', Integer, ForeignKey('users.id'))
+)
 
 
 class Subreddit(Base):
@@ -19,6 +28,9 @@ class Subreddit(Base):
 	no_comment = Column(Boolean, nullable=False)
 	is_banned = Column(Boolean, nullable=False)
 	flair_blacklist = Column(String(300))
+	prompt_type = Column(Enum(SubredditPromptType), nullable=False)
+
+	prompt_users = relationship("User", secondary=prompt_association_table, lazy="joined")
 
 	def __init__(
 		self,
@@ -34,6 +46,7 @@ class Subreddit(Base):
 
 		self.no_comment = False
 		self.is_banned = False
+		self.prompt_type = SubredditPromptType.NONE
 
 	def __str__(self):
 		return f"r/{self.name}"

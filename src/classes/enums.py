@@ -14,3 +14,9 @@ class ReturnType(Enum):
 	NOTHING_RETURNED = 10
 	SUBREDDIT_NOT_ENABLED = 11
 	SUBMISSION_NOT_PROCESSED = 12
+
+
+class SubredditPromptType(Enum):
+	NONE = 1
+	ALLOWED = 2
+	ALL = 3
