@@ -27,14 +27,18 @@ clear old comments/submissions
 series tags
 subscribe to all posts in sub
 migration script
+	set all subreddits with prompts, plus nosleep, to pm only
+	default prompts from prompts table
 startup mode for subreddit scanning
+blacklist certain subs
 active author polls
 	should the subscription number be posted publicly
 
 
 
 does replying to a message mark it as read
-
+r/hfy should prompt be stickied
+r/nosleep can I post prompt
 
 
 

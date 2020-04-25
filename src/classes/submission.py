@@ -3,6 +3,7 @@ from database import Base
 from sqlalchemy.orm import relationship
 
 import utils
+import static
 
 
 class Submission(Base):
@@ -38,3 +39,16 @@ class Submission(Base):
 
 	def __str__(self):
 		return f"u/{self.author_name} to r/{self.subreddit.name} : u/{self.submission_id}"
+
+	def render_prompt(self):
+		bldr = utils.str_bldr()
+		bldr.append("[Click here](")
+		bldr.append(utils.build_message_link(
+			static.ACCOUNT_NAME,
+			"Subscribe",
+			f"SubscribeMe u/{self.author_name} r/{self.subreddit.name}"
+		))
+		bldr.append(") to subscribe to u/")
+		bldr.append(self.author_name)
+		bldr.append(" and receive a message every time they post.")
+		return bldr

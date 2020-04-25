@@ -141,6 +141,11 @@ class Reddit:
 			self.add_comment(new_comment, True)
 			return new_comment.id, ReturnType.SUCCESS
 
+	def reply_submission(self, submission, body):
+		new_comment = submission.reply(body)
+		self.add_comment(new_comment, True)
+		return new_comment.id, ReturnType.SUCCESS
+
 	def mark_read(self, message):
 		message.mark_read()
 

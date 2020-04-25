@@ -10,6 +10,8 @@ log = discord_logging.get_logger()
 import utils
 from classes.submission import Submission
 from classes.notification import Notification
+from classes.comment import DbComment
+from classes.enums import SubredditPromptType, ReturnType
 
 
 def subreddit_posts_per_hour(reddit, subreddit_name):
@@ -108,6 +110,15 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 					log.info(f"Queuing {len(subscriptions)} for u/{author.name} in r/{subreddit.name} : {submission.id}")
 					for subscription in subscriptions:
 						database.add_notification(Notification(subscription, db_submission))
+
+			if subreddit.prompt_type == SubredditPromptType.ALL or \
+					(
+						subreddit.prompt_type == SubredditPromptType.ALLOWED and
+						author is not None and author in subreddit.prompt_users
+					):
+				bldr = utils.get_footer(db_submission.render_prompt())
+				result_id, comment_result = reddit.reply_submission(submission, ''.join(bldr))
+				# save prompt comment here
 
 		subreddit.last_scanned = submission_datetime
 

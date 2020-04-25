@@ -10,6 +10,7 @@ import utils
 from reddit_test import RedditObject
 from reddit_test import Subreddit
 from classes.subscription import Subscription
+from classes.enums import SubredditPromptType
 
 
 def add_new_post_to_sub(subreddit, delta, author=None, flair=None):
@@ -206,3 +207,48 @@ def test_scan_subreddit_flair_blacklist(database, reddit):
 	assert len(notifications) == 2
 	assert notifications[0].submission.author_name == "Author2"
 	assert notifications[1].submission.author_name == "Author2"
+
+
+def test_scan_subreddit_post_prompt_all(database, reddit):
+	create_sub_with_posts(
+		database, reddit, "Subreddit1",
+		[
+			("Author1", timedelta(minutes=5)),
+			("Author2", timedelta(minutes=7))
+		]
+	)
+	db_subreddit = database.get_or_add_subreddit("Subreddit1")
+	db_subreddit.prompt_type = SubredditPromptType.ALL
+	database.commit()
+	subreddits.scan_subreddits(reddit, database)
+
+	assert len(reddit.subreddits["Subreddit1"].posts[0].children) == 1
+	assert len(reddit.subreddits["Subreddit1"].posts[1].children) == 1
+	assert "and receive a message every" in reddit.subreddits["Subreddit1"].posts[0].children[0].body
+	assert "Subreddit1" in reddit.subreddits["Subreddit1"].posts[0].children[0].body
+	assert "u/Author1" in reddit.subreddits["Subreddit1"].posts[0].children[0].body
+	assert "and receive a message every" in reddit.subreddits["Subreddit1"].posts[1].children[0].body
+	assert "Subreddit1" in reddit.subreddits["Subreddit1"].posts[1].children[0].body
+	assert "u/Author2" in reddit.subreddits["Subreddit1"].posts[1].children[0].body
+
+
+def test_scan_subreddit_post_prompt_specific_author(database, reddit):
+	create_sub_with_posts(
+		database, reddit, "Subreddit1",
+		[
+			("Author1", timedelta(minutes=5)),
+			("Author2", timedelta(minutes=7))
+		]
+	)
+	author1 = database.get_or_add_user("Author1")
+	db_subreddit = database.get_or_add_subreddit("Subreddit1")
+	db_subreddit.prompt_type = SubredditPromptType.ALLOWED
+	db_subreddit.prompt_users.append(author1)
+	database.commit()
+	subreddits.scan_subreddits(reddit, database)
+
+	assert len(reddit.subreddits["Subreddit1"].posts[0].children) == 1
+	assert len(reddit.subreddits["Subreddit1"].posts[1].children) == 0
+	assert "and receive a message every" in reddit.subreddits["Subreddit1"].posts[0].children[0].body
+	assert "Subreddit1" in reddit.subreddits["Subreddit1"].posts[0].children[0].body
+	assert "u/Author1" in reddit.subreddits["Subreddit1"].posts[0].children[0].body

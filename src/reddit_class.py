@@ -122,12 +122,27 @@ class Reddit:
 		return True
 
 	def reply_comment(self, comment, body):
-		log.debug(f"Replying to message: {comment.id}")
+		log.debug(f"Replying to comment: {comment.id}")
 		if self.no_post:
 			log.info(body)
 			return "xxxxxx", ReturnType.SUCCESS
 		else:
 			output, result = self.run_function(comment.reply, [body])
+			if output is not None:
+				return output.id, result
+			else:
+				if result == ReturnType.SUCCESS:
+					return None, ReturnType.NOTHING_RETURNED
+				else:
+					return None, result
+
+	def reply_submission(self, submission, body):
+		log.debug(f"Replying to submission: {submission.id}")
+		if self.no_post:
+			log.info(body)
+			return "xxxxxx", ReturnType.SUCCESS
+		else:
+			output, result = self.run_function(submission.reply, [body])
 			if output is not None:
 				return output.id, result
 			else:
