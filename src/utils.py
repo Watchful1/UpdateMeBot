@@ -26,7 +26,7 @@ def check_update_disabled_subreddit(database, subreddit):
 		bldr.append(" posts per hour: ")
 		bldr.append(
 			build_message_link(
-				static.ACCOUNT_NAME, 'Add sub', f'addsubreddit r/{subreddit.name} subscribe'
+				static.ACCOUNT_NAME, 'Add sub', f'AddSubreddit r/{subreddit.name} subscribe'
 			)
 		)
 		log.warning(''.join(bldr))

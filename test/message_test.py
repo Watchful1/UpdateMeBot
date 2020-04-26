@@ -5,6 +5,7 @@ log = discord_logging.get_logger(init=True)
 import messages
 import utils
 import reddit_test
+import static
 from classes.submission import Submission
 from classes.subscription import Subscription
 from classes.comment import DbComment
@@ -387,3 +388,21 @@ def test_list(database, reddit):
 	assert "Next" in response
 	assert "Author3" not in response
 	assert "Subreddit3" not in response
+
+
+def test_add_sub(database, reddit):
+	database.get_or_add_subreddit("Subreddit1")
+	database.commit()
+	message = reddit_test.RedditObject(
+		body="AddSubreddit r/Subreddit1 subscribe",
+		author=static.OWNER
+	)
+	messages.process_message(message, reddit, database)
+
+	response = message.get_first_child().body
+	assert "Activated r/Subreddit1" in response
+	assert "as subscribe" in response
+
+	subreddit = database.get_or_add_subreddit("Subreddit1")
+	assert subreddit.is_enabled is True
+	assert subreddit.default_recurring is True
