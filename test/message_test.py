@@ -99,7 +99,7 @@ def test_update_subscribe(database, reddit):
 		message.get_first_child().body,
 		[author, subreddit_name, "updated your subscription", "each"])
 
-	subscriptions = database.get_user_subscriptions_by_name(username)
+	subscriptions = database.get_user_subscriptions_by_name(username, only_enabled=False)
 	assert len(subscriptions) == 1
 	assert_subscription(subscriptions[0], username, author, subreddit_name, True)
 
@@ -127,7 +127,7 @@ def test_already_subscribed(database, reddit):
 		message.get_first_child().body,
 		[author, subreddit_name, "already asked me", "each"])
 
-	subscriptions = database.get_user_subscriptions_by_name(username)
+	subscriptions = database.get_user_subscriptions_by_name(username, only_enabled=False)
 	assert len(subscriptions) == 1
 	assert_subscription(subscriptions[0], username, author, subreddit_name, True)
 
@@ -144,7 +144,7 @@ def test_subreddit_not_enabled(database, reddit):
 	messages.process_message(message, reddit, database)
 	assert_message(message.get_first_child().body, ["is not being tracked"])
 
-	subscriptions = database.get_user_subscriptions_by_name(username)
+	subscriptions = database.get_user_subscriptions_by_name(username, only_enabled=False)
 	assert len(subscriptions) == 1
 	assert_subscription(subscriptions[0], username, author.lower(), subreddit_name.lower(), False)
 
@@ -234,7 +234,7 @@ def test_remove_all_subscription(database, reddit):
 		Subscription(
 			database.get_or_add_user(username),
 			database.get_or_add_user("Author1"),
-			database.get_or_add_subreddit("Subreddit1"),
+			database.get_or_add_subreddit("Subreddit1", enable_subreddit_if_new=True),
 			False
 		)
 	)
@@ -242,7 +242,7 @@ def test_remove_all_subscription(database, reddit):
 		Subscription(
 			database.get_or_add_user(username),
 			database.get_or_add_user("Author2"),
-			database.get_or_add_subreddit("Subreddit2"),
+			database.get_or_add_subreddit("Subreddit2", enable_subreddit_if_new=True),
 			False
 		)
 	)
@@ -257,7 +257,7 @@ def test_remove_all_subscription(database, reddit):
 		message.get_first_child().body,
 		["Author1", "Author2", "Subreddit1", "Subreddit2", "Removed your subscription"])
 
-	subscriptions = database.get_user_subscriptions_by_name(username)
+	subscriptions = database.get_user_subscriptions_by_name(username, only_enabled=False)
 	assert len(subscriptions) == 0
 
 
@@ -351,7 +351,7 @@ def test_list(database, reddit):
 		Subscription(
 			database.get_or_add_user(username),
 			database.get_or_add_user("Author1"),
-			database.get_or_add_subreddit("Subreddit1"),
+			database.get_or_add_subreddit("Subreddit1", enable_subreddit_if_new=True),
 			True
 		)
 	)
@@ -359,7 +359,7 @@ def test_list(database, reddit):
 		Subscription(
 			database.get_or_add_user(username),
 			database.get_or_add_user("Author2"),
-			database.get_or_add_subreddit("Subreddit2"),
+			database.get_or_add_subreddit("Subreddit2", enable_subreddit_if_new=True),
 			False
 		)
 	)
@@ -367,7 +367,7 @@ def test_list(database, reddit):
 		Subscription(
 			database.get_or_add_user("Watchful2"),
 			database.get_or_add_user("Author3"),
-			database.get_or_add_subreddit("Subreddit3"),
+			database.get_or_add_subreddit("Subreddit3", enable_subreddit_if_new=True),
 			False
 		)
 	)

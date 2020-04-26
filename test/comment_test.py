@@ -118,7 +118,7 @@ def test_process_comment_subreddit_not_enabled(database, reddit):
 
 	assert len(comment.children) == 0
 
-	subscriptions = database.get_user_subscriptions_by_name(subscriber_name)
+	subscriptions = database.get_user_subscriptions_by_name(subscriber_name, only_enabled=False)
 	assert len(subscriptions) == 1
 	assert subscriptions[0].subscriber.name == subscriber_name
 	assert subscriptions[0].author.name == author_name

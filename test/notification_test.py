@@ -51,7 +51,7 @@ def test_send_message(database, reddit):
 	assert database.get_count_pending_notifications() == 1
 	notifications.send_queued_notifications(reddit, database)
 	assert database.get_count_pending_notifications() == 0
-	assert len(database.get_user_subscriptions_by_name("Subscriber1")) == 1
+	assert len(database.get_user_subscriptions_by_name("Subscriber1", only_enabled=False)) == 1
 
 	assert len(reddit.sent_messages) == 1
 	assert_message(

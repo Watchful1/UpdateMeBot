@@ -61,21 +61,26 @@ class _DatabaseSubscriptions:
 				(subscription.subscriber.name == subscription.author.name, subscription.subscriber.id)
 		)
 
-	def get_user_subscriptions_by_name(self, user_name):
+	def get_user_subscriptions_by_name(self, user_name, only_enabled=True):
 		user = self.session.query(User).filter_by(name=user_name).first()
 		if user is None:
 			return []
 		else:
-			return self.get_user_subscriptions(user)
+			return self.get_user_subscriptions(user, only_enabled)
 
-	def get_user_subscriptions(self, user):
+	def get_user_subscriptions(self, user, only_enabled=True):
 		log.debug(f"Fetching user subscriptions u/{user.name}")
 
-		subscriptions = self.session.query(Subscription)\
-			.join(Subreddit)\
-			.filter(Subreddit.is_enabled == True)\
-			.filter(Subscription.subscriber == user)\
-			.all()
+		if only_enabled:
+			subscriptions = self.session.query(Subscription)\
+				.join(Subreddit)\
+				.filter(Subreddit.is_enabled == True)\
+				.filter(Subscription.subscriber == user)\
+				.all()
+		else:
+			subscriptions = self.session.query(Subscription)\
+				.filter(Subscription.subscriber == user)\
+				.all()
 
 		return sorted(subscriptions, key=lambda subscription: (subscription.subreddit.name, subscription.author.name))
 
