@@ -5,6 +5,7 @@ messages
 	-list
 		limit size
 	add sub
+	blacklist sub
 	subreddit pm
 -comments
 	-scan comments
@@ -19,10 +20,9 @@ subreddit checking
 	add sub message
 -notification sending
 	-if author is subscribed, include how many messages were sent in their message
-stats
-	save stat per user/sub/day
+-stats
+	-save stat per user/sub/day
 clear old comments/submissions
-more details when subreddit is not enabled
 
 
 series tags
@@ -48,6 +48,7 @@ startup mode for subreddit scanning
 blacklist certain subs
 active author polls
 	should the subscription number be posted publicly
+new in footer
 
 
 

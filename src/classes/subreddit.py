@@ -19,14 +19,17 @@ class Subreddit(Base):
 
 	id = Column(Integer, primary_key=True)
 	name = Column(String(80, collation="NOCASE"), unique=True)
-	enabled = Column(Boolean, nullable=False)
+	is_enabled = Column(Boolean, nullable=False)
 	default_recurring = Column(Boolean, nullable=False)
 	last_profiled = Column(DateTime(), nullable=False)
 	post_per_hour = Column(Integer)
-	last_scanned = Column(DateTime(), nullable=False)
+	last_scanned = Column(DateTime())
+	is_new = Column(Boolean, nullable=False)
+	notice_threshold = Column(Integer, nullable=False)
 
 	no_comment = Column(Boolean, nullable=False)
 	is_banned = Column(Boolean, nullable=False)
+	is_blacklisted = Column(Boolean, nullable=False)
 	flair_blacklist = Column(String(300))
 	prompt_type = Column(Enum(SubredditPromptType), nullable=False)
 
@@ -39,13 +42,15 @@ class Subreddit(Base):
 		default_recurring=False
 	):
 		self.name = name
-		self.enabled = enabled
+		self.is_enabled = enabled
 		self.default_recurring = default_recurring
 		self.last_profiled = datetime(2010, 1, 1)
-		self.last_scanned = utils.datetime_now()
+		self.is_new = True
+		self.notice_threshold = 5
 
 		self.no_comment = False
 		self.is_banned = False
+		self.is_blacklisted = False
 		self.prompt_type = SubredditPromptType.NONE
 
 	def __str__(self):

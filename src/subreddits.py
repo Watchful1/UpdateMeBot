@@ -59,13 +59,32 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	for subreddit_name in subreddits:
 		subreddit_names.append(subreddit_name)
 
-	submissions = []
+	submissions_subreddits = []
 	count_existing = 0
 	count_found = 0
 	for submission in reddit.get_subreddit_submissions('+'.join(subreddit_names)):
 		if database.get_submission_by_id(submission.id) is None:
-			submissions.append(submission)
-			count_found += 1
+			if submission.subreddit.display_name not in subreddits:
+				log.warning(f"Subreddit not in dict during scan: {submission.subreddit.display_name}")
+				continue
+
+			subreddit = subreddits[submission.subreddit.display_name]
+			submission_datetime = datetime.utcfromtimestamp(submission.created_utc)
+			skip = False
+			if submission_datetime < subreddit.last_scanned:
+				if subreddit.is_new:
+					skip = True
+				else:
+					log.warning(
+						f"Submission before last scanned: {utils.get_datetime_string(submission_datetime)} < "
+						f"{utils.get_datetime_string(subreddit.last_scanned)} : {submission.url}")
+
+			if not skip:
+				if subreddit.is_new:
+					log.warning(f"Found first submission in new subreddit r/{subreddit.name}")
+					subreddit.is_new = False
+				submissions_subreddits.append((submission, subreddit, submission_datetime))
+				count_found += 1
 		else:
 			count_existing += 1
 
@@ -75,16 +94,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 			log.info("Found more than 500 posts in group, splitting")
 			return False
 
-	for submission in reversed(submissions):
-		if submission.subreddit.display_name not in subreddits:
-			log.warning(f"Subreddit not in dict during scan: {submission.subreddit.display_name}")
-			continue
-
-		subreddit = subreddits[submission.subreddit.display_name]
-		submission_datetime = datetime.utcfromtimestamp(submission.created_utc)
-		if submission_datetime < subreddit.last_scanned:
-			log.warning(f"Submission before last scanned: {submission.url}")
-
+	for submission, subreddit, submission_datetime in reversed(submissions_subreddits):
 		submission_ids_scanned.append(submission.id)
 		db_submission = Submission(
 			submission_id=submission.id,

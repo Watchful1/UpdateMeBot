@@ -11,6 +11,5 @@ TRIGGER_SUBSCRIBE = "SubscribeMe"
 TRIGGER_SUBSCRIBE_LOWER = TRIGGER_SUBSCRIBE.lower()
 TRIGGER_COMBINED = "|".join([TRIGGER_UPDATE_LOWER, TRIGGER_SUBSCRIBE_LOWER])
 
-TRACKING_INFO_URL = ""
+TRACKING_INFO_URL = "https://www.reddit.com/r/UpdateMeBot/comments/g86jrs/subreddit_tracking_info/"
 INFO_POST = "https://www.reddit.com/r/UpdateMeBot/comments/4wirnm/updatemebot_info/"
-

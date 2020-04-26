@@ -10,8 +10,9 @@ def save_stats_for_day(database, day):
 	counts = defaultdict(lambda: defaultdict(int))
 	count_subscriptions = 0
 	for subscription in database.get_all_subscriptions():
-		counts[subscription.subreddit][subscription.author] += 1
-		count_subscriptions += 1
+		if subscription.subreddit.is_enabled:
+			counts[subscription.subreddit][subscription.author] += 1
+			count_subscriptions += 1
 
 	count_authors = 0
 	for subreddit in counts:

@@ -90,12 +90,13 @@ def process_comment(comment, reddit, database, count_string=""):
 		)
 		database.add_subscription(subscription)
 
-		if not subreddit.enabled:
+		if not subreddit.is_enabled:
 			log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}, subreddit not enabled")
 			message_result = \
 				f"Subreddit r/{subreddit.name} is not being tracked by the bot. More details [here]" \
 				f"({static.TRACKING_INFO_URL})"
 			comment_result = ReturnType.SUBREDDIT_NOT_ENABLED
+			utils.check_update_disabled_subreddit(database, subreddit)
 		else:
 			log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}")
 			message_result = \

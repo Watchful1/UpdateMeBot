@@ -12,6 +12,27 @@ log = discord_logging.get_logger()
 import static
 
 
+def check_update_disabled_subreddit(database, subreddit):
+	log.debug(f"Checking if disabled subreddit has passed threshold r/{subreddit.name}")
+	count_subscriptions = database.get_count_subscriptions_for_subreddit(subreddit)
+	if count_subscriptions >= subreddit.notice_threshold:
+		bldr = str_bldr()
+		bldr.append("r/")
+		bldr.append(subreddit.name)
+		bldr.append(" has passed the notice threshold with ")
+		bldr.append(str(count_subscriptions))
+		bldr.append(" requests. It has ")
+		bldr.append(str(subreddit.post_per_hour))
+		bldr.append(" posts per hour: ")
+		bldr.append(
+			build_message_link(
+				static.ACCOUNT_NAME, 'Add sub', f'addsubreddit r/{subreddit.name} subscribe'
+			)
+		)
+		log.warning(''.join(bldr))
+		subreddit.notice_threshold = subreddit.notice_threshold * 2
+
+
 def random_id():
 	values = list(map(chr, range(97, 123)))
 	for num in range(1, 10):

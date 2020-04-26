@@ -13,8 +13,8 @@ import utils
 
 
 def line_update_subscribe(line, user, bldr, database, reddit):
-	authors = re.findall(r'(?: /?u/)([\w-]*)', line)
-	subreddits = re.findall(r'(?: /?r/)(\w*)', line)
+	authors = re.findall(r'(?: /?u/)([\w-]+)', line)
+	subreddits = re.findall(r'(?: /?r/)(\w+)', line)
 
 	author_name = None
 	subreddit_name = None
@@ -25,7 +25,7 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 		subreddit_name = subreddits[0]
 
 	else:
-		links = re.findall(r'(?:reddit.com/r/\w*/comments/)(\w*)', line)
+		links = re.findall(r'(?:reddit.com/r/\w+/comments/)(\w+)', line)
 		if len(links):
 			submission = reddit.get_submission(links[0])
 			author_name = submission.author.name
@@ -70,11 +70,12 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 			)
 			database.add_subscription(subscription)
 
-			if not subreddit.enabled:
+			if not subreddit.is_enabled:
 				log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}, subreddit not enabled")
 				bldr.append(
 					f"Subreddit r/{subreddit.name} is not being tracked by the bot. More details [here]"
 					f"({static.TRACKING_INFO_URL})")
+				utils.check_update_disabled_subreddit(database, subreddit)
 			else:
 				log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}")
 				bldr.append(
@@ -102,8 +103,8 @@ def line_remove(line, user, bldr, database):
 				log.warning(f"Error removing subscriptions for u/{user.name} : {len(subscriptions)} : {count_removed}")
 
 	else:
-		users = re.findall(r'(?:/?u/)([\w-]*)', line)
-		subs = re.findall(r'(?:/?r/)(\w*)', line)
+		users = re.findall(r'(?:/?u/)([\w-]+)', line)
+		subs = re.findall(r'(?:/?r/)(\w+)', line)
 
 		if not len(users) or not len(subs):
 			log.info("Couldn't find anything in removal message")
@@ -179,6 +180,27 @@ def line_list(user, bldr, database):
 	bldr.append("  \n")
 
 
+def line_add_sub(line, bldr, database):
+	subs = re.findall(r'(?:/?r/)(\w+)', line)
+	if len(subs):
+		subreddit = database.get_or_add_subreddit(subs[0])
+		count_subscriptions = database.get_count_subscriptions_for_subreddit(subreddit)
+		if "subscribe" in line:
+			recurring = True
+		else:
+			recurring = False
+		log.warning(
+			f"Activating r/{subreddit.name} with {count_subscriptions} subscriptions as "
+			f"{'subscription' if recurring else 'update'}")
+		subreddit.is_enabled = True
+		subreddit.last_scanned = utils.datetime_now()
+		subreddit.default_recurring = recurring
+		bldr.append(f"Activated r/{subreddit.name} with {count_subscriptions} subscriptions as ")
+		bldr.append('subscription' if recurring else 'update')
+
+	bldr.append("  \n")
+
+
 def process_message(message, reddit, database, count_string=""):
 	log.info(f"{count_string}: Message u/{message.author.name} : {message.id}")
 	user = database.get_or_add_user(message.author.name)
@@ -196,6 +218,9 @@ def process_message(message, reddit, database, count_string=""):
 			line_delete(line, user, bldr, database, reddit)
 		elif line.startswith("mysubscriptions") or line.startswith("myupdates"):
 			append_list = True
+		elif user.name == static.OWNER:
+			if line.startswith("addsubreddit"):
+				line_add_sub(line, bldr, database)
 
 	if append_list:
 		line_list(user, bldr, database)

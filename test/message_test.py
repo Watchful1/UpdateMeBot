@@ -30,12 +30,12 @@ def init_db(database, users=None, subreddits=None, default_subreddits=None):
 	if subreddits is not None:
 		for subreddit_name in subreddits:
 			subreddit = database.get_or_add_subreddit(subreddit_name)
-			subreddit.enabled = True
+			subreddit.is_enabled = True
 
 	if default_subreddits is not None:
 		for subreddit_name in default_subreddits:
 			subreddit = database.get_or_add_subreddit(subreddit_name)
-			subreddit.enabled = True
+			subreddit.is_enabled = True
 			subreddit.default_recurring = True
 	database.commit()
 

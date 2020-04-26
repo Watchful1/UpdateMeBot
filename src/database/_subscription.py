@@ -1,7 +1,9 @@
 import discord_logging
 from sqlalchemy.sql import func
 
+import utils
 from classes.subscription import Subscription
+from classes.subreddit import Subreddit
 from classes.user import User
 
 log = discord_logging.get_logger()
@@ -27,10 +29,19 @@ class _DatabaseSubscriptions:
 		return subscription
 
 	def get_count_subscriptions_for_author_subreddit(self, author, subreddit):
-		log.debug(f"Fetching subscriptions by author and subreddit: {author.name} : {subreddit.name}")
+		log.debug(f"Fetching count subscriptions for author and subreddit: {author.name} : {subreddit.name}")
 
 		count_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.author == author)\
+			.filter(Subscription.subreddit == subreddit)\
+			.count()
+
+		return count_subscriptions
+
+	def get_count_subscriptions_for_subreddit(self, subreddit):
+		log.debug(f"Fetching count subscriptions for subreddit: {subreddit.name}")
+
+		count_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.subreddit == subreddit)\
 			.count()
 
@@ -61,6 +72,8 @@ class _DatabaseSubscriptions:
 		log.debug(f"Fetching user subscriptions u/{user.name}")
 
 		subscriptions = self.session.query(Subscription)\
+			.join(Subreddit)\
+			.filter(Subreddit.is_enabled == True)\
 			.filter(Subscription.subscriber == user)\
 			.all()
 

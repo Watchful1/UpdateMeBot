@@ -10,6 +10,7 @@ from classes.subscription import Subscription
 
 def bulk_sub_to(database, subreddit_name, author_name, subscriber_names):
 	subreddit = database.get_or_add_subreddit(subreddit_name)
+	subreddit.is_enabled = True
 	author = database.get_or_add_user(author_name)
 	for subscriber_name in subscriber_names:
 		user = database.get_or_add_user(subscriber_name)
