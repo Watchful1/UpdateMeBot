@@ -4,20 +4,19 @@ messages
 	-delete
 	-list
 		limit size
-	add sub
-	blacklist sub
-	subreddit pm
+	-add sub
 -comments
 	-scan comments
 	-update comment numbers
-subreddit checking
+	-subreddit pm
+-subreddit checking
 	-profile subreddit
 	-scan subreddits
 	-log scanned post ids
 	-track some stats for subreddits/groups/time
 	-flair filtering
 	-prompts
-	add sub message
+	-add sub log warning
 -notification sending
 	-if author is subscribed, include how many messages were sent in their message
 -stats

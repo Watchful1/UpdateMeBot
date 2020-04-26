@@ -106,7 +106,7 @@ def process_comment(comment, reddit, database, count_string=""):
 	commented = False
 	if db_submission is not None and db_submission.comment is not None:
 		comment_result = ReturnType.THREAD_REPLIED
-	elif subreddit.is_banned:
+	elif subreddit.is_banned or subreddit.no_comment:
 		comment_result = ReturnType.FORBIDDEN
 	if comment_result is None:
 		reddit_comment = reddit.get_comment(comment['id'])

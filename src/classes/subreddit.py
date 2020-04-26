@@ -29,7 +29,6 @@ class Subreddit(Base):
 
 	no_comment = Column(Boolean, nullable=False)
 	is_banned = Column(Boolean, nullable=False)
-	is_blacklisted = Column(Boolean, nullable=False)
 	flair_blacklist = Column(String(300))
 	prompt_type = Column(Enum(SubredditPromptType), nullable=False)
 
@@ -50,7 +49,6 @@ class Subreddit(Base):
 
 		self.no_comment = False
 		self.is_banned = False
-		self.is_blacklisted = False
 		self.prompt_type = SubredditPromptType.NONE
 
 	def __str__(self):
