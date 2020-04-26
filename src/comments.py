@@ -11,18 +11,18 @@ from classes.comment import DbComment
 from classes.enums import ReturnType
 
 
-def database_set_seen(database, comment_seen):
-	database.save_keystore("comment_timestamp", comment_seen.strftime("%Y-%m-%d %H:%M:%S"))
-
-
-def database_get_seen(database):
-	result = database.get_keystore("comment_timestamp")
-	if result is None:
-		log.warning("Comment time not in database, returning now")
-		now = utils.datetime_now()
-		database_set_seen(database, now)
-		return now
-	return datetime.strptime(result, "%Y-%m-%d %H:%M:%S")
+# def database_set_seen(database, comment_seen):
+# 	database.save_keystore("comment_timestamp", comment_seen.strftime("%Y-%m-%d %H:%M:%S"))
+#
+#
+# def database_get_seen(database):
+# 	result = database.get_keystore("comment_timestamp")
+# 	if result is None:
+# 		log.warning("Comment time not in database, returning now")
+# 		now = utils.datetime_now()
+# 		database_set_seen(database, now)
+# 		return now
+# 	return datetime.strptime(result, "%Y-%m-%d %H:%M:%S")
 
 
 def process_comment(comment, reddit, database, count_string=""):
@@ -183,7 +183,7 @@ def process_comment(comment, reddit, database, count_string=""):
 
 
 def process_comments(reddit, database):
-	comments = reddit.get_keyword_comments(static.TRIGGER_COMBINED, database_get_seen(database))
+	comments = reddit.get_keyword_comments(static.TRIGGER_COMBINED, database.get_or_init_datetime("comment_timestamp"))
 	if len(comments):
 		log.debug(f"Processing {len(comments)} comments")
 	i = 0
@@ -196,7 +196,7 @@ def process_comments(reddit, database):
 			log.warning(traceback.format_exc())
 
 		reddit.mark_keyword_comment_processed(comment['id'])
-		database_set_seen(database, datetime.strptime(comment['created_utc'], "%Y-%m-%d %H:%M:%S"))
+		database.save_keystore("comment_timestamp", datetime.utcfromtimestamp(comment['created_utc']))
 
 	return len(comments)
 

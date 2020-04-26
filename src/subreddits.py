@@ -116,6 +116,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 						subreddit.prompt_type == SubredditPromptType.ALLOWED and
 						author is not None and author in subreddit.prompt_users
 					):
+				log.info(f"Posting prompt for u/{submission.author.name} in r/{subreddit.name} : {submission.id}")
 				bldr = utils.get_footer(db_submission.render_prompt())
 				result_id, comment_result = reddit.reply_submission(submission, ''.join(bldr))
 				# save prompt comment here

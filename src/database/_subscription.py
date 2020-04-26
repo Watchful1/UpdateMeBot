@@ -1,4 +1,5 @@
 import discord_logging
+from sqlalchemy.sql import func
 
 from classes.subscription import Subscription
 from classes.user import User
@@ -75,3 +76,10 @@ class _DatabaseSubscriptions:
 	def delete_subscription(self, subscription):
 		log.debug(f"Deleting subscription by id: {subscription.id}")
 		self.session.delete(subscription)
+
+	def get_all_subscriptions(self):
+		log.debug("Fetching all author subreddit subscriptions")
+		subscriptions = self.session.query(Subscription)\
+			.all()
+
+		return subscriptions

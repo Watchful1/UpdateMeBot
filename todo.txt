@@ -15,20 +15,35 @@ subreddit checking
 	-log scanned post ids
 	-track some stats for subreddits/groups/time
 	-flair filtering
-	prompts
+	-prompts
 	add sub message
 -notification sending
 	-if author is subscribed, include how many messages were sent in their message
 stats
+	save stat per user/sub/day
 clear old comments/submissions
-
+more details when subreddit is not enabled
 
 
 series tags
+	subreddit scan parsing
+	subreddit subscription checking
+	comment subscriptions
+	message subscriptions
+		link subscription
+		subscribing to all overrides series subscription
+		subscribing to series is ignored if subscribed to all
+	subscription removals
+	prompts
+	stats
+		all subs
+		combined subs
+		series subs
 subscribe to all posts in sub
 migration script
 	set all subreddits with prompts, plus nosleep, to pm only
 	default prompts from prompts table
+	test stats
 startup mode for subreddit scanning
 blacklist certain subs
 active author polls

@@ -36,6 +36,23 @@ def datetime_now():
 	return datetime.utcnow().replace(microsecond=0)
 
 
+def date_now():
+	return datetime.utcnow().date()
+
+
+def get_datetime_string(date_time, format_string="%Y-%m-%d %H:%M:%S"):
+	if date_time is None:
+		return ""
+	return date_time.strftime(format_string)
+
+
+def parse_datetime_string(date_time_string, format_string="%Y-%m-%d %H:%M:%S"):
+	if date_time_string is None or date_time_string == "None" or date_time_string == "":
+		return None
+	date_time = datetime.strptime(date_time_string, format_string)
+	return date_time
+
+
 def html_encode(message):
 	return urllib.parse.quote(message, safe='')
 

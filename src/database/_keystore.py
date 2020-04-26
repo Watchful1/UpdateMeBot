@@ -1,5 +1,6 @@
 import discord_logging
 
+import utils
 from classes.key_value import KeyValue
 
 log = discord_logging.get_logger()
@@ -23,3 +24,26 @@ class _DatabaseKeystore:
 
 		log.debug(f"Value: {key_value.value}")
 		return key_value.value
+
+	def save_datetime(self, key, date_time):
+		self.save_keystore(key, utils.get_datetime_string(date_time))
+
+	def get_datetime(self, key, is_date=False):
+		result = self.get_keystore(key)
+		if result is None:
+			return None
+		else:
+			result_date = utils.parse_datetime_string(result)
+			if is_date:
+				return result_date.date()
+			else:
+				return result_date
+
+	def get_or_init_datetime(self, key):
+		result = self.get_datetime(key)
+		if result is None:
+			log.warning(f"Initializing key {key} to now")
+			now = utils.datetime_now()
+			self.save_datetime(key, now)
+			return now
+		return result

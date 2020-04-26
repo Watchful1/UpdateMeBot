@@ -20,6 +20,7 @@ import comments
 import subreddits
 import notifications
 import utils
+import stats
 from database import Database
 
 
@@ -55,14 +56,14 @@ if __name__ == "__main__":
 	if args.debug:
 		discord_logging.set_level(logging.DEBUG)
 
-	#discord_logging.init_discord_logging(args.user, logging.WARNING, 1)
+	# discord_logging.init_discord_logging(args.user, logging.WARNING, 1)
 	static.ACCOUNT_NAME = args.user
 	reddit_message = reddit_class.Reddit(args.user, "message", args.no_post)
 	reddit_search = reddit_class.Reddit(args.user, "search", args.no_post)
 	database = Database(debug=args.debug_db)
 	if args.reset_comment:
 		log.info("Resetting comment processed timestamp")
-		database.save_keystore("comment_timestamp", utils.get_datetime_string(utils.datetime_now()))
+		database.save_datetime("comment_timestamp", utils.datetime_now())
 
 	last_backup = None
 	last_comments = None
@@ -74,21 +75,21 @@ if __name__ == "__main__":
 		errors = 0
 
 		try:
-			actions += messages.process_messages(reddit_class, database)
+			actions += messages.process_messages(reddit_message, database)
 		except Exception as err:
 			log.warning(f"Error processing messages: {err}")
 			log.warning(traceback.format_exc())
 			errors += 1
 
 		try:
-			actions += comments.process_comments(reddit_class, database)
+			actions += comments.process_comments(reddit_message, database)
 		except Exception as err:
 			log.warning(f"Error processing comments: {err}")
 			log.warning(traceback.format_exc())
 			errors += 1
 
 		try:
-			actions += notifications.send_queued_notifications(reddit_class, database)
+			actions += notifications.send_queued_notifications(reddit_message, database)
 		except Exception as err:
 			log.warning(f"Error sending notifications: {err}")
 			log.warning(traceback.format_exc())
@@ -103,12 +104,21 @@ if __name__ == "__main__":
 
 		if utils.time_offset(last_comments, minutes=30):
 			try:
-				actions += comments.update_comments(reddit_class, database)
+				actions += comments.update_comments(reddit_message, database)
 				last_comments = utils.datetime_now()
 			except Exception as err:
 				log.warning(f"Error updating comments: {err}")
 				log.warning(traceback.format_exc())
 				errors += 1
+
+		latest_stats = database.get_datetime("stats_day", is_date=True)
+		current_day = utils.date_now()
+		if latest_stats is None:
+			database.save_datetime("stats_day", current_day)
+		elif latest_stats != current_day:
+			log.info(f"Saving stats for day {current_day.strftime('%Y-%m-%d')}")
+			stats.save_stats_for_day(database, latest_stats)
+			database.save_datetime("stats_day", current_day)
 
 		if not args.no_backup and utils.time_offset(last_backup, hours=4):
 			try:
@@ -130,4 +140,3 @@ if __name__ == "__main__":
 		log.debug(f"Sleeping {sleep_time}")
 
 		time.sleep(sleep_time)
-

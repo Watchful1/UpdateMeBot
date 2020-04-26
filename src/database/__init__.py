@@ -16,6 +16,7 @@ from ._comment import _DatabaseComments
 from ._keystore import _DatabaseKeystore
 from ._submission import _DatabaseSubmission
 from ._notification import _DatabaseNotification
+from ._stat import _DatabaseStats
 
 log = discord_logging.get_logger()
 
@@ -27,7 +28,8 @@ class Database(
 	_DatabaseComments,
 	_DatabaseKeystore,
 	_DatabaseSubmission,
-	_DatabaseNotification
+	_DatabaseNotification,
+	_DatabaseStats
 ):
 	def __init__(self, debug=False, publish=False):
 		log.info(f"Initializing database class: debug={debug} publish={publish}")
@@ -42,6 +44,7 @@ class Database(
 		_DatabaseKeystore.__init__(self)
 		_DatabaseSubmission.__init__(self)
 		_DatabaseNotification.__init__(self)
+		_DatabaseStats.__init__(self)
 
 	def init(self, debug, publish):
 		if debug:

@@ -1,8 +1,6 @@
 import discord_logging
 
-
 log = discord_logging.get_logger()
-
 
 from classes.enums import ReturnType
 import utils
