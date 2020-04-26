@@ -230,12 +230,32 @@ def process_message(message, reddit, database, count_string=""):
 		bldr.append("I couldn't find anything in your message.")
 
 	bldr.extend(utils.get_footer())
-	result = reddit.reply_message(message, ''.join(bldr))
-	if result != ReturnType.SUCCESS:
-		if result == ReturnType.INVALID_USER:
-			log.info("User banned before reply could be sent")
-		else:
-			raise ValueError(f"Error sending message: {result.name}")
+	full_message = ''.join(bldr)
+	replies = []
+	if len(full_message) > 9500:
+		partial_message = []
+		partial_length = 0
+		for line in full_message.split("\n"):
+			partial_message.append(line)
+			partial_message.append("\n")
+			partial_length += len(line) + 1
+			if partial_length > 9500:
+				replies.append(''.join(partial_message))
+				partial_message = []
+				partial_length = 0
+
+		if len(partial_message):
+			replies.append(''.join(partial_message))
+	else:
+		replies.append(full_message)
+
+	for reply in replies:
+		result = reddit.reply_message(message, reply)
+		if result != ReturnType.SUCCESS:
+			if result == ReturnType.INVALID_USER:
+				log.info("User banned before reply could be sent")
+			else:
+				raise ValueError(f"Error sending message: {result.name}")
 
 	database.commit()
 
