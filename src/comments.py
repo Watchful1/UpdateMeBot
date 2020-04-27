@@ -35,12 +35,17 @@ def process_comment(comment, reddit, database, count_string=""):
 
 	log.info(f"{count_string}: Processing comment {comment['id']} from u/{comment['author']}")
 	body = comment['body'].lower().strip()
+	use_tag = True
 	if static.TRIGGER_SUBSCRIBE_LOWER in body:
 		log.debug("Subscription comment")
 		recurring = True
 	elif static.TRIGGER_UPDATE_LOWER in body:
 		log.debug("Update comment")
 		recurring = False
+	elif static.TRIGGER_SUBSCRIBE_ALL_LOWER in body:
+		log.debug("Subscribe all comment")
+		recurring = True
+		use_tag = False
 	else:
 		log.debug("Command not in comment")
 		return
@@ -50,8 +55,11 @@ def process_comment(comment, reddit, database, count_string=""):
 	subscriber = database.get_or_add_user(comment['author'])
 	subreddit = database.get_or_add_subreddit(comment['subreddit'])
 	db_submission = database.get_submission_by_id(thread_id)
+	tag = None
 	if db_submission is not None:
 		author_name = db_submission.author_name
+		if use_tag:
+			tag = db_submission.tag
 	else:
 		comment_result = ReturnType.SUBMISSION_NOT_PROCESSED
 		reddit_submission = reddit.get_submission(thread_id)
@@ -62,55 +70,20 @@ def process_comment(comment, reddit, database, count_string=""):
 			return
 
 	author = database.get_or_add_user(author_name)
-	subscription = database.get_subscription_by_fields(subscriber, author, subreddit)
-	if subscription is not None:
-		if subscription.recurring == recurring:
-			log.info(
-				f"u/{subscriber.name} already {'subscribed' if recurring else 'updated'} to u/{author.name} in "
-				f"r/{subreddit.name}")
-			message_result = \
-				f"You had already asked me to message you {'each' if recurring else 'next'} time u/{author.name} " \
-				f"posts in r/{subreddit.name}"
-
-		else:
-			log.info(
-				f"u/{subscriber.name} changed from {'update to subscription' if recurring else 'subscription to update'}"
-				f" for u/{author.name} in r/{subreddit.name}")
-			message_result = \
-				f"I have updated your subscription type and will now message you {'each' if recurring else 'next'} " \
-				f"time u/{author.name} posts in r/{subreddit.name}"
-			subscription.recurring = recurring
-
-	else:
-		subscription = Subscription(
-			subscriber=subscriber,
-			author=author,
-			subreddit=subreddit,
-			recurring=recurring
-		)
-		database.add_subscription(subscription)
-
-		if not subreddit.is_enabled:
-			log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}, subreddit not enabled")
-			message_result = \
-				f"Subreddit r/{subreddit.name} is not being tracked by the bot. More details [here]" \
-				f"({static.TRACKING_INFO_URL})"
-			comment_result = ReturnType.SUBREDDIT_NOT_ENABLED
-			utils.check_update_disabled_subreddit(database, subreddit)
-		else:
-			log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}")
-			message_result = \
-				f"I will message you {'each' if recurring else 'next'} time u/{author.name} posts in " \
-				f"r/{subreddit.name}"
+	result_message, subscription = Subscription.create_update_subscription(
+		database, subscriber, author, subreddit, recurring, tag
+	)
 
 	commented = False
 	if db_submission is not None and db_submission.comment is not None:
 		comment_result = ReturnType.THREAD_REPLIED
 	elif subreddit.is_banned or subreddit.no_comment:
 		comment_result = ReturnType.FORBIDDEN
+	elif not subreddit.is_enabled:
+		comment_result = ReturnType.SUBREDDIT_NOT_ENABLED
 	if comment_result is None:
 		reddit_comment = reddit.get_comment(comment['id'])
-		count_subscriptions = database.get_count_subscriptions_for_author_subreddit(author, subreddit)
+		count_subscriptions = database.get_count_subscriptions_for_author_subreddit(author, subreddit, tag)
 		db_comment = DbComment(
 			comment_id=None,
 			submission=db_submission,
@@ -118,7 +91,8 @@ def process_comment(comment, reddit, database, count_string=""):
 			author=author,
 			subreddit=subreddit,
 			recurring=recurring,
-			current_count=count_subscriptions
+			current_count=count_subscriptions,
+			tag=tag
 		)
 
 		bldr = utils.get_footer(db_comment.render_comment(
@@ -175,7 +149,7 @@ def process_comment(comment, reddit, database, count_string=""):
 			bldr.append(" delay fetching comments.")
 			bldr.append("\n\n")
 
-		bldr.append(message_result)
+		bldr.append(result_message)
 		bldr = utils.get_footer(bldr)
 
 		result = reddit.send_message(author.name, "UpdateMeBot Confirmation", ''.join(bldr))

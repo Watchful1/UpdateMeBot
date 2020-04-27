@@ -39,12 +39,22 @@ class Notification(Base):
 			bldr.append(str(self.submission.messages_sent))
 			bldr.append(" notifications for [your post](")
 			bldr.append(self.submission.url)
-			bldr.append(").")
+			bldr.append(")")
+			if self.submission.tag is not None:
+				bldr.append(" with tag <")
+				bldr.append(self.submission.tag)
+				bldr.append(">")
+			bldr.append(".")
 
 		else:
 			bldr.append("u/")
 			bldr.append(self.subscription.author.name)
-			bldr.append(" has posted a new thread in r/")
+			bldr.append(" has posted a new thread")
+			if self.submission.tag is not None:
+				bldr.append(" with the tag <")
+				bldr.append(self.submission.tag)
+				bldr.append(">")
+			bldr.append(" in r/")
 			bldr.append(self.subscription.subreddit.name)
 			bldr.append("\n\n")
 
@@ -57,27 +67,57 @@ class Notification(Base):
 
 		if self.subscription.recurring:
 			bldr.append("[Click here](")
-			bldr.append(utils.build_message_link(
-				static.ACCOUNT_NAME,
-				"Remove",
-				f"Remove u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
-			))
-			bldr.append(") to remove your subscription.")
+			if self.subscription.tag is not None:
+				bldr.append(utils.build_message_link(
+					static.ACCOUNT_NAME,
+					"Remove",
+					f"Remove u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
+					f"{' <'+self.submission.tag+'>'}"
+				))
+				bldr.append(") to remove your subscription for the tag <")
+				bldr.append(self.submission.tag)
+				bldr.append(">.")
+			else:
+				bldr.append(utils.build_message_link(
+					static.ACCOUNT_NAME,
+					"Remove",
+					f"Remove u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
+				))
+				bldr.append(") to remove your subscription.")
 		else:
-			bldr.append("[Click here](")
-			bldr.append(utils.build_message_link(
-				static.ACCOUNT_NAME,
-				"Update",
-				f"UpdateMe u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
-			))
-			bldr.append(") if you want to be messaged the next time too  \n")
-	
-			bldr.append("Or [Click here](")
-			bldr.append(utils.build_message_link(
-				static.ACCOUNT_NAME,
-				"Subscribe",
-				f"SubscribeMe u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
-			))
-			bldr.append(") if you want to be messaged every time")
+			if self.subscription.tag is not None:
+				bldr.append("[Click here](")
+				bldr.append(utils.build_message_link(
+					static.ACCOUNT_NAME,
+					"Update",
+					f"UpdateMe u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
+					f"{' <'+self.submission.tag+'>'}"
+				))
+				bldr.append(") if you want to be messaged the next time too  \n")
+
+				bldr.append("Or [Click here](")
+				bldr.append(utils.build_message_link(
+					static.ACCOUNT_NAME,
+					"Subscribe",
+					f"SubscribeMe u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
+					f"{' <'+self.submission.tag+'>'}"
+				))
+				bldr.append(") if you want to be messaged every time")
+			else:
+				bldr.append("[Click here](")
+				bldr.append(utils.build_message_link(
+					static.ACCOUNT_NAME,
+					"Update",
+					f"UpdateMe u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
+				))
+				bldr.append(") if you want to be messaged the next time too  \n")
+
+				bldr.append("Or [Click here](")
+				bldr.append(utils.build_message_link(
+					static.ACCOUNT_NAME,
+					"Subscribe",
+					f"SubscribeMe u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
+				))
+				bldr.append(") if you want to be messaged every time")
 
 		return bldr

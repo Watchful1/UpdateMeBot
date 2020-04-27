@@ -17,6 +17,7 @@ class DbComment(Base):
 	subreddit_id = Column(Integer, ForeignKey('subreddits.id'), nullable=False)
 	recurring = Column(Boolean, nullable=False)
 	current_count = Column(Integer, nullable=False)
+	tag = Column(String(200, collation="NOCASE"))
 
 	submission = relationship("Submission", lazy="joined")
 	subscriber = relationship("User", foreign_keys=[subscriber_id], lazy="joined")
@@ -31,7 +32,8 @@ class DbComment(Base):
 		author,
 		subreddit,
 		recurring,
-		current_count=1
+		current_count=1,
+		tag=None
 	):
 		self.comment_id = comment_id
 		self.submission = submission
@@ -40,6 +42,7 @@ class DbComment(Base):
 		self.subreddit = subreddit
 		self.recurring = recurring
 		self.current_count = current_count
+		self.tag = tag
 
 	def __str__(self):
 		return f"{self.comment_id} : u/{self.subscriber.name}"
@@ -64,7 +67,12 @@ class DbComment(Base):
 			bldr.append("next")
 		bldr.append(" time u/")
 		bldr.append(self.author.name)
-		bldr.append(" posts in r/")
+		bldr.append(" posts")
+		if self.tag is not None:
+			bldr.append(" a story tagged <")
+			bldr.append(self.tag)
+			bldr.append(">")
+		bldr.append(" in r/")
 		bldr.append(self.subreddit.name)
 		bldr.append(".")
 

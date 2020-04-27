@@ -33,7 +33,8 @@ class RedditObject:
 		prefix="t4",
 		subreddit=None,
 		dest=None,
-		flair=None
+		flair=None,
+		title=None
 	):
 		self.body = body
 		if isinstance(author, User):
@@ -70,6 +71,7 @@ class RedditObject:
 
 		self.parent = None
 		self.children = []
+		self.title = title
 
 	def get_pushshift_dict(self):
 		return {

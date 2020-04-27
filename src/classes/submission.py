@@ -16,6 +16,7 @@ class Submission(Base):
 	author_name = Column(String(80), nullable=False)
 	url = Column(String(200), nullable=False)
 	messages_sent = Column(Integer, nullable=False)
+	tag = Column(String(200, collation="NOCASE"))
 	subreddit_id = Column(Integer, ForeignKey('subreddits.id'), nullable=False)
 
 	comment = relationship("DbComment", uselist=False, back_populates="submission", lazy="joined")
@@ -27,7 +28,8 @@ class Submission(Base):
 		time_created,
 		author_name,
 		subreddit,
-		permalink
+		permalink,
+		tag=None
 	):
 		self.submission_id = submission_id
 		self.time_created = time_created
@@ -36,9 +38,12 @@ class Submission(Base):
 		self.subreddit = subreddit
 		self.url = "https://www.reddit.com" + permalink
 		self.messages_sent = 0
+		self.tag = tag
 
 	def __str__(self):
-		return f"u/{self.author_name} to r/{self.subreddit.name} : u/{self.submission_id}"
+		return \
+			f"u/{self.author_name} to r/{self.subreddit.name} : " \
+			f"u/{self.submission_id}{(' <'+self.tag+'>' if self.tag is not None else '')}"
 
 	def render_prompt(self):
 		bldr = utils.str_bldr()

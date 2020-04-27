@@ -17,23 +17,37 @@ class _DatabaseSubscriptions:
 		log.debug("Saving new subscription")
 		self.session.add(subscription)
 
-	def get_subscription_by_fields(self, subscriber, author, subreddit):
-		log.debug(f"Fetching subscription by fields: {subscriber.name} : {author.name} : {subreddit.name}")
+	def get_subscription_by_fields(self, subscriber, author, subreddit, tag=None):
+		log.debug(f"Fetching subscription by fields: {subscriber.name} : {author.name} : {subreddit.name}: {tag}")
 
 		subscription = self.session.query(Subscription)\
 			.filter(Subscription.subscriber == subscriber)\
 			.filter(Subscription.author == author)\
 			.filter(Subscription.subreddit == subreddit)\
+			.filter(Subscription.tag == tag)\
 			.first()
 
 		return subscription
 
-	def get_count_subscriptions_for_author_subreddit(self, author, subreddit):
-		log.debug(f"Fetching count subscriptions for author and subreddit: {author.name} : {subreddit.name}")
+	def get_tagged_subscriptions_by_fields(self, subscriber, author, subreddit):
+		log.debug(f"Fetching tagged subscription by fields: {subscriber.name} : {author.name} : {subreddit.name}")
+
+		subscriptions = self.session.query(Subscription)\
+			.filter(Subscription.subscriber == subscriber)\
+			.filter(Subscription.author == author)\
+			.filter(Subscription.subreddit == subreddit)\
+			.filter(Subscription.tag != None)\
+			.all()
+
+		return subscriptions
+
+	def get_count_subscriptions_for_author_subreddit(self, author, subreddit, tag=None):
+		log.debug(f"Fetching count subscriptions for author and subreddit: {author.name} : {subreddit.name}: {tag}")
 
 		count_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.author == author)\
 			.filter(Subscription.subreddit == subreddit)\
+			.filter(Subscription.tag == tag)\
 			.count()
 
 		return count_subscriptions
@@ -47,12 +61,13 @@ class _DatabaseSubscriptions:
 
 		return count_subscriptions
 
-	def get_subscriptions_for_author_subreddit(self, author, subreddit):
-		log.debug(f"Fetching subscriptions by author and subreddit: {author.name} : {subreddit.name}")
+	def get_subscriptions_for_author_subreddit(self, author, subreddit, tag=None):
+		log.debug(f"Fetching subscriptions by author and subreddit: {author.name} : {subreddit.name} : {tag}")
 
 		subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.author == author)\
 			.filter(Subscription.subreddit == subreddit)\
+			.filter((Subscription.tag == None) | (Subscription.tag == tag))\
 			.all()
 
 		return sorted(

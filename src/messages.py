@@ -42,45 +42,10 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 		else:
 			recurring = subreddit.default_recurring
 
-		subscription = database.get_subscription_by_fields(user, author, subreddit)
-		if subscription is not None:
-			if subscription.recurring == recurring:
-				log.info(
-					f"u/{user.name} already {'subscribed' if recurring else 'updated'} to u/{author.name} in "
-					f"r/{subreddit.name}")
-				bldr.append(
-					f"You had already asked me to message you {'each' if recurring else 'next'} time u/{author.name} "
-					f"posts in r/{subreddit.name}")
-
-			else:
-				log.info(
-					f"u/{user.name} changed from {'update to subscription' if recurring else 'subscription to update'}"
-					f" for u/{author.name} in r/{subreddit.name}")
-				bldr.append(
-					f"I have updated your subscription type and will now message you {'each' if recurring else 'next'} "
-					f"time u/{author.name} posts in r/{subreddit.name}")
-				subscription.recurring = recurring
-
-		else:
-			subscription = Subscription(
-				subscriber=user,
-				author=author,
-				subreddit=subreddit,
-				recurring=recurring
-			)
-			database.add_subscription(subscription)
-
-			if not subreddit.is_enabled:
-				log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}, subreddit not enabled")
-				bldr.append(
-					f"Subreddit r/{subreddit.name} is not being tracked by the bot. More details [here]"
-					f"({static.TRACKING_INFO_URL})")
-				utils.check_update_disabled_subreddit(database, subreddit)
-			else:
-				log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}")
-				bldr.append(
-					f"I will message you {'each' if recurring else 'next'} time u/{author.name} posts in "
-					f"r/{subreddit.name}")
+		result_message, subscription = Subscription.create_update_subscription(
+			database, user, author, subreddit, recurring, None
+		)
+		bldr.append(result_message)
 
 	bldr.append("  \n")
 

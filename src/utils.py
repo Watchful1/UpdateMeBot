@@ -12,6 +12,22 @@ log = discord_logging.get_logger()
 import static
 
 
+def extract_tag_from_title(title):
+	if title is None:
+		return None
+	match = re.search(r"(?:\[)(.+?)(?:\])", title)
+	if match:
+		tag = match[1]
+	else:
+		match = re.search(r"^(.+?)(?:[-:])", title)
+		if match:
+			tag = match[1]
+		else:
+			return None
+
+	return re.sub(r"[^\w\d ]", "", tag.strip())
+
+
 def check_update_disabled_subreddit(database, subreddit):
 	log.debug(f"Checking if disabled subreddit has passed threshold r/{subreddit.name}")
 	count_subscriptions = database.get_count_subscriptions_for_subreddit(subreddit)

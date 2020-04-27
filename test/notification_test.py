@@ -11,17 +11,20 @@ from classes.submission import Submission
 from classes.notification import Notification
 
 
-def queue_message(database, subscriber_name, author_name, subreddit_name, submission_id, recurring=True):
+def queue_message(database, subscriber_name, author_name, subreddit_name, submission_id, recurring=True, tag=None):
 	subscriber = database.get_or_add_user(subscriber_name)
 	author = database.get_or_add_user(author_name)
-	subreddit = database.get_or_add_subreddit(subreddit_name)
-	subscription = database.get_subscription_by_fields(subscriber, author, subreddit)
+	subreddit = database.get_or_add_subreddit(subreddit_name, enable_subreddit_if_new=True)
+	if tag is not None:
+		subreddit.tag_enabled = True
+	subscription = database.get_subscription_by_fields(subscriber, author, subreddit, tag)
 	if subscription is None:
 		subscription = Subscription(
 			subscriber=subscriber,
 			author=author,
 			subreddit=subreddit,
-			recurring=recurring
+			recurring=recurring,
+			tag=tag
 		)
 		database.add_subscription(subscription)
 	submission = database.get_submission_by_id(submission_id)
@@ -31,7 +34,8 @@ def queue_message(database, subscriber_name, author_name, subreddit_name, submis
 			time_created=utils.datetime_now(),
 			author_name=author_name,
 			subreddit=subreddit,
-			permalink=f"/r/{subreddit_name}/comments/{submission_id}/"
+			permalink=f"/r/{subreddit_name}/comments/{submission_id}/",
+			tag=tag
 		)
 		database.add_submission(submission)
 	database.add_notification(Notification(subscription, submission))
@@ -104,4 +108,17 @@ def test_send_messages(database, reddit):
 	assert_message(
 		reddit.sent_messages[7], "Author1",
 		["r/Subreddit2", submission_id3, "finished sending out 3 notifications"]
+	)
+
+
+def test_send_message_tag(database, reddit):
+	submission_id = utils.random_id()
+	queue_message(database, "Subscriber1", "Author1", "Subreddit1", submission_id, recurring=True, tag="Story1")
+
+	notifications.send_queued_notifications(reddit, database)
+
+	assert len(reddit.sent_messages) == 1
+	assert_message(
+		reddit.sent_messages[0], "Subscriber1",
+		["u/Author1", "r/Subreddit1", "with the tag <Story1>", "remove your subscription for the tag", submission_id]
 	)

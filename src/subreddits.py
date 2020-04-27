@@ -2,8 +2,7 @@ import discord_logging
 import math
 import traceback
 import time
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 log = discord_logging.get_logger()
 
@@ -72,7 +71,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 			submission_datetime = datetime.utcfromtimestamp(submission.created_utc)
 			skip = False
 			if submission_datetime < subreddit.last_scanned:
-				if subreddit.is_new:
+				if subreddit.is_new or submission_datetime + timedelta(hours=24) < subreddit.last_scanned:
 					skip = True
 				else:
 					log.warning(
@@ -96,12 +95,16 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 
 	for submission, subreddit, submission_datetime in reversed(submissions_subreddits):
 		submission_ids_scanned.append(submission.id)
+		tag = None
+		if subreddit.tag_enabled:
+			tag = utils.extract_tag_from_title(submission.title)
 		db_submission = Submission(
 			submission_id=submission.id,
 			time_created=submission_datetime,
 			author_name=submission.author.name,
 			subreddit=subreddit,
-			permalink=submission.permalink
+			permalink=submission.permalink,
+			tag=tag
 		)
 		database.add_submission(db_submission)
 
@@ -114,7 +117,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 		if not blacklist_matched:
 			author = database.get_user(submission.author.name)
 			if author is not None:
-				subscriptions = database.get_subscriptions_for_author_subreddit(author, subreddit)
+				subscriptions = database.get_subscriptions_for_author_subreddit(author, subreddit, db_submission.tag)
 
 				if len(subscriptions):
 					log.info(f"Queuing {len(subscriptions)} for u/{author.name} in r/{subreddit.name} : {submission.id}")

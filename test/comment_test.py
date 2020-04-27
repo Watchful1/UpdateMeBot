@@ -97,6 +97,96 @@ def test_process_comment_subscribe(database, reddit):
 	assert subscriptions[0].recurring is True
 
 
+def test_process_comment_subscribe_tag(database, reddit):
+	subscriber_name = "Subscriber1"
+	author_name = "Author1"
+	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
+	comment_id = utils.random_id()
+	submission_id = utils.random_id()
+	comment = RedditObject(
+		body=f"{static.TRIGGER_SUBSCRIBE}!",
+		author=subscriber_name,
+		id=comment_id,
+		link_id="t3_"+submission_id,
+		permalink=f"/r/test/comments/{submission_id}/_/{comment_id}/",
+		subreddit=db_subreddit.name
+	)
+	db_submission = Submission(
+		submission_id=submission_id,
+		time_created=utils.datetime_now(),
+		author_name=author_name,
+		subreddit=db_subreddit,
+		permalink=f"/r/{db_subreddit.name}/comments/{submission_id}/",
+		tag="Story1"
+	)
+	database.add_submission(db_submission)
+	database.commit()
+
+	reddit.add_comment(comment)
+
+	comments.process_comment(comment.get_pushshift_dict(), reddit, database)
+	result = comment.get_first_child().body
+
+	assert "I will message you each time" in result
+	assert "a story tagged <Story1>" in result
+	assert author_name in result
+	assert db_subreddit.name in result
+	assert "Click this link" in result
+
+	subscriptions = database.get_user_subscriptions_by_name(subscriber_name)
+	assert len(subscriptions) == 1
+	assert subscriptions[0].subscriber.name == subscriber_name
+	assert subscriptions[0].author.name == author_name
+	assert subscriptions[0].subreddit.name == db_subreddit.name
+	assert subscriptions[0].recurring is True
+	assert subscriptions[0].tag == "Story1"
+
+
+def test_process_comment_subscribe_all(database, reddit):
+	subscriber_name = "Subscriber1"
+	author_name = "Author1"
+	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
+	comment_id = utils.random_id()
+	submission_id = utils.random_id()
+	comment = RedditObject(
+		body=f"{static.TRIGGER_SUBSCRIBE_ALL}!",
+		author=subscriber_name,
+		id=comment_id,
+		link_id="t3_"+submission_id,
+		permalink=f"/r/test/comments/{submission_id}/_/{comment_id}/",
+		subreddit=db_subreddit.name
+	)
+	db_submission = Submission(
+		submission_id=submission_id,
+		time_created=utils.datetime_now(),
+		author_name=author_name,
+		subreddit=db_subreddit,
+		permalink=f"/r/{db_subreddit.name}/comments/{submission_id}/",
+		tag="Story1"
+	)
+	database.add_submission(db_submission)
+	database.commit()
+
+	reddit.add_comment(comment)
+
+	comments.process_comment(comment.get_pushshift_dict(), reddit, database)
+	result = comment.get_first_child().body
+
+	assert "I will message you each time" in result
+	assert "a story tagged <Story1>" not in result
+	assert author_name in result
+	assert db_subreddit.name in result
+	assert "Click this link" in result
+
+	subscriptions = database.get_user_subscriptions_by_name(subscriber_name)
+	assert len(subscriptions) == 1
+	assert subscriptions[0].subscriber.name == subscriber_name
+	assert subscriptions[0].author.name == author_name
+	assert subscriptions[0].subreddit.name == db_subreddit.name
+	assert subscriptions[0].recurring is True
+	assert subscriptions[0].tag is None
+
+
 def test_process_comment_subreddit_not_enabled(database, reddit):
 	subscriber_name = "Subscriber1"
 	author_name = "Author1"

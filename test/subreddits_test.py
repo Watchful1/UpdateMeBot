@@ -13,16 +13,19 @@ from classes.subscription import Subscription
 from classes.enums import SubredditPromptType
 
 
-def add_new_post_to_sub(subreddit, delta, author=None, flair=None):
+def add_new_post_to_sub(subreddit, delta, author=None, flair=None, title=None):
 	subreddit.posts.append(
-		RedditObject(created=utils.datetime_now() - delta, subreddit=subreddit, author=author, flair=flair)
+		RedditObject(created=utils.datetime_now() - delta, subreddit=subreddit, author=author, flair=flair, title=title)
 	)
 
 
 def create_sub_with_posts(database, reddit, subreddit_name, posts, last_scanned=None, posts_per_hour=1):
 	reddit_subreddit = Subreddit(subreddit_name)
 	for post in posts:
-		add_new_post_to_sub(reddit_subreddit, post[1], post[0])
+		if len(post) == 2:
+			add_new_post_to_sub(reddit_subreddit, post[1], post[0])
+		else:
+			add_new_post_to_sub(reddit_subreddit, post[1], post[0], title=post[2])
 	reddit.add_subreddit(reddit_subreddit)
 	db_subreddit = database.get_or_add_subreddit(subreddit_name)
 	if last_scanned is None:
@@ -252,3 +255,49 @@ def test_scan_subreddit_post_prompt_specific_author(database, reddit):
 	assert "and receive a message every" in reddit.subreddits["Subreddit1"].posts[0].children[0].body
 	assert "Subreddit1" in reddit.subreddits["Subreddit1"].posts[0].children[0].body
 	assert "u/Author1" in reddit.subreddits["Subreddit1"].posts[0].children[0].body
+
+
+def test_scan_subreddit_tag(database, reddit):
+	create_sub_with_posts(
+		database, reddit, "Subreddit1",
+		[
+			("Author1", timedelta(minutes=5), "[Story1] part 7"),
+			("Author2", timedelta(minutes=7))
+		]
+	)
+	subreddit = database.get_subreddit("Subreddit1")
+	subreddit.tag_enabled = True
+	author = database.get_or_add_user("Author1")
+	database.add_subscription(
+		Subscription(
+			subscriber=database.get_or_add_user("User1"),
+			author=author,
+			subreddit=subreddit,
+			recurring=True,
+			tag="Story1"
+		)
+	)
+	database.add_subscription(
+		Subscription(
+			subscriber=database.get_or_add_user("User2"),
+			author=author,
+			subreddit=subreddit,
+			recurring=True,
+			tag="Story2"
+		)
+	)
+	database.add_subscription(
+		Subscription(
+			subscriber=database.get_or_add_user("User3"),
+			author=author,
+			subreddit=subreddit,
+			recurring=True
+		)
+	)
+	database.commit()
+	subreddits.scan_subreddits(reddit, database)
+
+	notifications = database.get_pending_notifications()
+	assert len(notifications) == 2
+	assert notifications[0].subscription.subscriber.name == "User1"
+	assert notifications[1].subscription.subscriber.name == "User3"

@@ -25,10 +25,11 @@ class Subreddit(Base):
 	post_per_hour = Column(Integer)
 	last_scanned = Column(DateTime())
 	is_new = Column(Boolean, nullable=False)
-	notice_threshold = Column(Integer, nullable=False)
-
+	tag_enabled = Column(Boolean, nullable=False)
 	no_comment = Column(Boolean, nullable=False)
 	is_banned = Column(Boolean, nullable=False)
+
+	notice_threshold = Column(Integer, nullable=False)
 	flair_blacklist = Column(String(300))
 	prompt_type = Column(Enum(SubredditPromptType), nullable=False)
 
@@ -45,6 +46,7 @@ class Subreddit(Base):
 		self.default_recurring = default_recurring
 		self.last_profiled = datetime(2010, 1, 1)
 		self.is_new = True
+		self.tag_enabled = False
 		self.notice_threshold = 5
 
 		self.no_comment = False
