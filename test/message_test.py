@@ -243,7 +243,7 @@ def test_remove_subscription(database, reddit):
 			database.get_or_add_user(username),
 			database.get_or_add_user(author),
 			database.get_or_add_subreddit(subreddit_name),
-			False
+			True
 		)
 	)
 	database.commit()
@@ -271,7 +271,7 @@ def test_remove_tagged_subscription(database, reddit):
 			database.get_or_add_user(username),
 			database.get_or_add_user(author),
 			database.get_or_add_subreddit(subreddit_name),
-			False,
+			True,
 			tag
 		)
 	)
@@ -334,7 +334,7 @@ def test_remove_all_subscription(database, reddit):
 			database.get_or_add_user(username),
 			database.get_or_add_user("Author1"),
 			database.get_or_add_subreddit("Subreddit1", enable_subreddit_if_new=True),
-			False
+			True
 		)
 	)
 	database.add_subscription(
@@ -342,7 +342,7 @@ def test_remove_all_subscription(database, reddit):
 			database.get_or_add_user(username),
 			database.get_or_add_user("Author2"),
 			database.get_or_add_subreddit("Subreddit2", enable_subreddit_if_new=True),
-			False
+			True
 		)
 	)
 	database.commit()
