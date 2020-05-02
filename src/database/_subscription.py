@@ -29,17 +29,17 @@ class _DatabaseSubscriptions:
 
 		return subscription
 
-	def get_tagged_subscriptions_by_fields(self, subscriber, author, subreddit):
-		log.debug(f"Fetching tagged subscription by fields: {subscriber.name} : {author.name} : {subreddit.name}")
+	def get_count_tagged_subscriptions_by_fields(self, subscriber, author, subreddit):
+		log.debug(f"Fetching count of tagged subscription by fields: {subscriber.name} : {author.name} : {subreddit.name}")
 
-		subscriptions = self.session.query(Subscription)\
+		count_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.subscriber == subscriber)\
 			.filter(Subscription.author == author)\
 			.filter(Subscription.subreddit == subreddit)\
 			.filter(Subscription.tag != None)\
-			.all()
+			.count()
 
-		return subscriptions
+		return count_subscriptions
 
 	def get_count_subscriptions_for_author_subreddit(self, author, subreddit, tag=None):
 		log.debug(f"Fetching count subscriptions for author and subreddit: {author.name} : {subreddit.name}: {tag}")
@@ -97,7 +97,10 @@ class _DatabaseSubscriptions:
 				.filter(Subscription.subscriber == user)\
 				.all()
 
-		return sorted(subscriptions, key=lambda subscription: (subscription.subreddit.name, subscription.author.name))
+		return sorted(
+			subscriptions,
+			key=lambda subscription: (subscription.subreddit.name, subscription.author.name, subscription.tag)
+		)
 
 	def delete_user_subscriptions(self, user):
 		log.debug(f"Deleting all subscriptions for u/{user.name}")

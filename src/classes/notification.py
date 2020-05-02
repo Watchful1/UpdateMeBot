@@ -76,14 +76,20 @@ class Notification(Base):
 				))
 				bldr.append(") to remove your subscription for the tag <")
 				bldr.append(self.submission.tag)
-				bldr.append(">.")
-			else:
-				bldr.append(utils.build_message_link(
-					static.ACCOUNT_NAME,
-					"Remove",
-					f"Remove u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
-				))
-				bldr.append(") to remove your subscription.")
+				bldr.append(">.  \nOr ")
+				bldr.append("[Click here](")
+
+			bldr.append(utils.build_message_link(
+				static.ACCOUNT_NAME,
+				"Remove",
+				f"Remove u/{self.subscription.author.name} r/{self.subscription.subreddit.name}"
+			))
+			bldr.append(") to remove your subscription")
+
+			if self.subscription.tag is not None:
+				bldr.append(" to all tagged stories")
+
+			bldr.append(".")
 		else:
 			if self.subscription.tag is not None:
 				bldr.append("[Click here](")

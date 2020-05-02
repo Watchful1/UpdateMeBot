@@ -105,7 +105,7 @@ class Subscription(Base):
 					result_message = f"I will message you {'each' if recurring else 'next'} time u/{author.name} " \
 						f"posts stories tagged <{tag}> in r/{subreddit.name}"
 
-			elif subreddit.tag_enabled and len(database.get_tagged_subscriptions_by_fields(subscriber, author, subreddit)):
+			elif subreddit.tag_enabled and database.get_count_tagged_subscriptions_by_fields(subscriber, author, subreddit):
 				log.info(
 					f"u/{subscriber.name} has tagged subscriptions to u/{author.name} in r/{subreddit.name} when "
 					f"adding all, deleting")

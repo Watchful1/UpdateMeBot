@@ -261,6 +261,72 @@ def test_remove_subscription(database, reddit):
 	assert len(subscriptions) == 0
 
 
+def test_remove_tagged_subscription(database, reddit):
+	username = "Watchful1"
+	author = "AuthorName"
+	subreddit_name = "SubredditName"
+	tag = "this is a tag"
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user(author),
+			database.get_or_add_subreddit(subreddit_name),
+			False,
+			tag
+		)
+	)
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"Remove! u/{author} r/{subreddit_name} <{tag}>",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(
+		message.get_first_child().body,
+		[author, subreddit_name, "removed your subscription", "with tag", tag])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 0
+
+
+def test_remove_all_tagged_subscriptions(database, reddit):
+	username = "Watchful1"
+	author = "AuthorName"
+	subreddit_name = "SubredditName"
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user(author),
+			database.get_or_add_subreddit(subreddit_name),
+			False,
+			"this is a tag"
+		)
+	)
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user(author),
+			database.get_or_add_subreddit(subreddit_name),
+			False,
+			"this is another tag"
+		)
+	)
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"Remove! u/{author} r/{subreddit_name}",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(
+		message.get_first_child().body,
+		[author, subreddit_name, "removed all your tagged subscriptions"])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 0
+
+
 def test_remove_all_subscription(database, reddit):
 	username = "Watchful1"
 	database.add_subscription(
@@ -420,6 +486,54 @@ def test_list(database, reddit):
 	assert "Next" in response
 	assert "Author3" not in response
 	assert "Subreddit3" not in response
+
+
+def test_list_tagged(database, reddit):
+	username = "Watchful1"
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user("Author1"),
+			database.get_or_add_subreddit("Subreddit1", enable_subreddit_if_new=True),
+			True,
+			"this is a tag"
+		)
+	)
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user("Author2"),
+			database.get_or_add_subreddit("Subreddit2", enable_subreddit_if_new=True),
+			False,
+			"this is also a tag"
+		)
+	)
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user("Watchful2"),
+			database.get_or_add_user("Author3"),
+			database.get_or_add_subreddit("Subreddit3", enable_subreddit_if_new=True),
+			False
+		)
+	)
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"MySubscriptions",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	response = message.get_first_child().body
+	assert "Author1" in response
+	assert "Author2" in response
+	assert "Subreddit1" in response
+	assert "Subreddit2" in response
+	assert "Each" in response
+	assert "Next" in response
+	assert "Author3" not in response
+	assert "Subreddit3" not in response
+	assert "<this is a tag>" in response
+	assert "<this is also a tag>" in response
 
 
 def test_add_sub(database, reddit):

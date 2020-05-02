@@ -42,9 +42,9 @@ series tags
 		-link subscription
 		-subscribing to all overrides series subscription
 		-subscribing to series is ignored if subscribed to all
-		add to list command
-	subscription removals
-		removing subscription for author removes all series
+		-add to list command
+		-subscription removals
+			-removing subscription for author removes all series
 	prompts
 		if tag present, prompt should include
 	stats
