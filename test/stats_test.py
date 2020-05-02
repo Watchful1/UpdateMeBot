@@ -8,7 +8,7 @@ import utils
 from classes.subscription import Subscription
 
 
-def bulk_sub_to(database, subreddit_name, author_name, subscriber_names):
+def bulk_sub_to(database, subreddit_name, author_name, subscriber_names, tag=None):
 	subreddit = database.get_or_add_subreddit(subreddit_name)
 	subreddit.is_enabled = True
 	author = database.get_or_add_user(author_name)
@@ -19,7 +19,8 @@ def bulk_sub_to(database, subreddit_name, author_name, subscriber_names):
 				subscriber=user,
 				author=author,
 				subreddit=subreddit,
-				recurring=True
+				recurring=True,
+				tag=tag
 			)
 		)
 	database.commit()
@@ -119,3 +120,63 @@ def test_save_multi_day_stats(database, reddit):
 	assert stats_1_1[4].count_subscriptions == 5
 	assert stats_1_1[5].date == date_now - timedelta(days=5)
 	assert stats_1_1[5].count_subscriptions == 6
+
+
+def test_save_single_day_stats_with_tags(database, reddit):
+	date_now = date(2020, 1, 1)
+	bulk_sub_to(
+		database, "Subreddit1", "Author1",
+		["User1", "User2", "User3", "User4", "User5", "User6"],
+		"this is a tag"
+	)
+	bulk_sub_to(
+		database, "Subreddit1", "Author1",
+		["User5", "User6", "User7"],
+		"this is another tag"
+	)
+	bulk_sub_to(
+		database, "Subreddit1", "Author1",
+		["User8", "User9", "User10"]
+	)
+	bulk_sub_to(
+		database, "Subreddit1", "Author2",
+		["User10", "User11"]
+	)
+	stats.save_stats_for_day(database, date_now)
+
+	stats_1_1 = database.get_recent_stats_for_author_subreddit(
+		database.get_or_add_user("Author1"),
+		database.get_or_add_subreddit("Subreddit1")
+	)
+	assert len(stats_1_1) == 1
+	assert stats_1_1[0].author.name == "Author1"
+	assert stats_1_1[0].subreddit.name == "Subreddit1"
+	assert stats_1_1[0].date == date_now
+	assert stats_1_1[0].count_subscriptions == 3
+
+	stats_1_1_1 = database.get_recent_stats_for_author_subreddit(
+		database.get_or_add_user("Author1"),
+		database.get_or_add_subreddit("Subreddit1"),
+		"this is a tag"
+	)
+	assert stats_1_1_1[0].count_subscriptions == 6
+
+	stats_1_1_2 = database.get_recent_stats_for_author_subreddit(
+		database.get_or_add_user("Author1"),
+		database.get_or_add_subreddit("Subreddit1"),
+		"this is another tag"
+	)
+	assert stats_1_1_2[0].count_subscriptions == 3
+
+	stats_1_1_0 = database.get_recent_stats_for_author_subreddit(
+		database.get_or_add_user("Author1"),
+		database.get_or_add_subreddit("Subreddit1"),
+		"combined_users"
+	)
+	assert stats_1_1_0[0].count_subscriptions == 10
+
+	stats_2_1 = database.get_recent_stats_for_author_subreddit(
+		database.get_or_add_user("Author2"),
+		database.get_or_add_subreddit("Subreddit1")
+	)
+	assert stats_2_1[0].count_subscriptions == 2

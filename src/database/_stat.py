@@ -13,11 +13,12 @@ class _DatabaseStats:
 		log.debug(f"Adding stat: {stat}")
 		self.session.add(stat)
 
-	def get_recent_stats_for_author_subreddit(self, author, subreddit, days=7):
+	def get_recent_stats_for_author_subreddit(self, author, subreddit, tag=None, days=7):
 		log.debug(f"Getting last {days} days of stats for u/{author.name} in r/{subreddit.name}")
 		stats = self.session.query(Stat)\
 			.filter(Stat.author == author)\
 			.filter(Stat.subreddit == subreddit)\
+			.filter(Stat.tag == tag)\
 			.order_by(Stat.date.desc())\
 			.limit(days)\
 			.all()
