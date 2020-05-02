@@ -21,7 +21,6 @@
 	-if author is subscribed, include how many messages were sent in their message
 -stats
 	-save stat per user/sub/day
-clear old comments/submissions
 
 
 series tags
@@ -57,17 +56,18 @@ migration script
 	test stats
 	startup mode for subreddit scanning
 	ingest existing submissions
-active author polls
-	should the subscription number be posted publicly
 new in footer
 
 
-
+clear old comments/submissions
 pushshift why? page
 does replying to a message mark it as read
 r/hfy should prompt be stickied
 r/nosleep can I post prompt
 tags from new series should prompt whether to message everyone
+blacklist certain subs
+active author polls
+	should the subscription number be posted publicly
 
 
 
