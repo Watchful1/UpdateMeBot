@@ -47,6 +47,19 @@ class Submission(Base):
 
 	def render_prompt(self):
 		bldr = utils.str_bldr()
+		if self.tag is not None:
+			bldr.append("[Click here](")
+			bldr.append(utils.build_message_link(
+				static.ACCOUNT_NAME,
+				"Subscribe",
+				f"SubscribeMe u/{self.author_name} r/{self.subreddit.name} <{self.tag}>"
+			))
+			bldr.append(") to subscribe to u/")
+			bldr.append(self.author_name)
+			bldr.append(" and receive a message every time they post a new post tagged <")
+			bldr.append(self.tag)
+			bldr.append(">.  \nOr")
+
 		bldr.append("[Click here](")
 		bldr.append(utils.build_message_link(
 			static.ACCOUNT_NAME,
@@ -55,5 +68,10 @@ class Submission(Base):
 		))
 		bldr.append(") to subscribe to u/")
 		bldr.append(self.author_name)
-		bldr.append(" and receive a message every time they post.")
+		bldr.append(" and receive a message every time they post")
+
+		if self.tag is not None:
+			bldr.append(" any tag")
+
+		bldr.append(".")
 		return bldr

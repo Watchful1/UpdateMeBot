@@ -26,10 +26,9 @@ clear old comments/submissions
 
 series tags
 	-tags can be enclosed in [], or at the start of the title and followed by : or -
-	subreddit scan parsing
+	-subreddit scan parsing
 		-parse post title into tag
 		-subscriptions with tag or no tag should trigger notifications
-		what to do with new series
 	-subreddit settings
 		-tags enabled
 	-notification sending
@@ -38,15 +37,15 @@ series tags
 	-comment subscriptions
 		-pull from parsed submission
 		-subscribeall to ignore tag
-	message subscriptions
+	-message subscriptions
 		-link subscription
 		-subscribing to all overrides series subscription
 		-subscribing to series is ignored if subscribed to all
 		-add to list command
 		-subscription removals
 			-removing subscription for author removes all series
-	prompts
-		if tag present, prompt should include
+	-prompts
+		-if tag present, prompt should include
 	stats
 		all subs
 		combined subs
@@ -68,6 +67,7 @@ pushshift why? page
 does replying to a message mark it as read
 r/hfy should prompt be stickied
 r/nosleep can I post prompt
+tags from new series should prompt whether to message everyone
 
 
 
