@@ -16,14 +16,15 @@ def assert_message(message, included):
 		assert include in message
 
 
-def assert_subscription(subscription, subscriber, author, subreddit, recurring):
+def assert_subscription(subscription, subscriber, author, subreddit, recurring, tag=None):
 	assert subscription.subscriber.name == subscriber
 	assert subscription.author.name == author
 	assert subscription.subreddit.name == subreddit
 	assert subscription.recurring is recurring
+	assert subscription.tag == tag
 
 
-def init_db(database, users=None, subreddits=None, default_subreddits=None):
+def init_db(database, users=None, subreddits=None, default_subreddits=None, enable_tags=False):
 	if users is not None:
 		for user in users:
 			database.get_or_add_user(user)
@@ -32,11 +33,13 @@ def init_db(database, users=None, subreddits=None, default_subreddits=None):
 		for subreddit_name in subreddits:
 			subreddit = database.get_or_add_subreddit(subreddit_name)
 			subreddit.is_enabled = True
+			subreddit.tag_enabled = enable_tags
 
 	if default_subreddits is not None:
 		for subreddit_name in default_subreddits:
 			subreddit = database.get_or_add_subreddit(subreddit_name)
 			subreddit.is_enabled = True
+			subreddit.tag_enabled = enable_tags
 			subreddit.default_recurring = True
 	database.commit()
 
@@ -174,6 +177,35 @@ def test_add_link(database, reddit):
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
 	assert_subscription(subscriptions[0], username, author, subreddit_name, False)
+
+
+def test_add_link_with_tag(database, reddit):
+	username = "Watchful1"
+	author_name = "AuthorName"
+	subreddit_name = "SubredditName"
+	tag = "this is a tag"
+	init_db(database, [author_name], [subreddit_name], enable_tags=True)
+	submission_id = utils.random_id()
+	db_submission = Submission(
+		submission_id=submission_id,
+		time_created=utils.datetime_now(),
+		author_name=author_name,
+		subreddit=database.get_or_add_subreddit(subreddit_name),
+		permalink=f"/r/{subreddit_name}/comments/{submission_id}/",
+		tag=tag
+	)
+	database.add_submission(db_submission)
+	message = reddit_test.RedditObject(
+		body=f"https://www.reddit.com/r/{subreddit_name}/comments/{submission_id}/this_is_a_test_post/",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(message.get_first_child().body, [author_name, subreddit_name, "next time"])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 1
+	assert_subscription(subscriptions[0], username, author_name, subreddit_name, False, tag)
 
 
 def test_add_link_default_subscribe(database, reddit):
@@ -406,3 +438,111 @@ def test_add_sub(database, reddit):
 	subreddit = database.get_or_add_subreddit("Subreddit1")
 	assert subreddit.is_enabled is True
 	assert subreddit.default_recurring is True
+
+
+def test_add_update_tagged(database, reddit):
+	username = "Watchful1"
+	author = "AuthorName"
+	subreddit_name = "SubredditName"
+	tag = "this is a tag"
+	init_db(database, [author], [subreddit_name], enable_tags=True)
+	message = reddit_test.RedditObject(
+		body=f"UpdateMe! u/{author} r/{subreddit_name} <{tag}>",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(message.get_first_child().body, [author, subreddit_name, "next time", tag])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 1
+	assert_subscription(subscriptions[0], username, author, subreddit_name, False, tag)
+
+
+def test_subscribe_existing_tagged(database, reddit):
+	username = "Watchful1"
+	author = "AuthorName"
+	subreddit_name = "SubredditName"
+	init_db(database, [author], [subreddit_name], enable_tags=True)
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user(author),
+			database.get_or_add_subreddit(subreddit_name),
+			True,
+			"another tag"
+		)
+	)
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user(author),
+			database.get_or_add_subreddit(subreddit_name),
+			True,
+			"this is a tag"
+		)
+	)
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"SubscribeMe! u/{author} r/{subreddit_name}",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(message.get_first_child().body, [author, subreddit_name, "each time", "This replaces"])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 1
+	assert_subscription(subscriptions[0], username, author, subreddit_name, True, None)
+
+
+def test_subscribe_tagged_existing_all(database, reddit):
+	username = "Watchful1"
+	author = "AuthorName"
+	subreddit_name = "SubredditName"
+	init_db(database, [author], [subreddit_name], enable_tags=True)
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			database.get_or_add_user(author),
+			database.get_or_add_subreddit(subreddit_name),
+			True
+		)
+	)
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"SubscribeMe! u/{author} r/{subreddit_name} <this is a tag>",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(message.get_first_child().body, [author, subreddit_name, "You're already"])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 1
+
+
+def test_add_link_tagged(database, reddit):
+	username = "Watchful1"
+	author = "AuthorName"
+	subreddit_name = "SubredditName"
+	init_db(database, [author], [subreddit_name])
+	post_id = utils.random_id()
+	reddit.add_submission(
+		reddit_test.RedditObject(
+			id=post_id,
+			author=author,
+			subreddit=subreddit_name
+		)
+	)
+	message = reddit_test.RedditObject(
+		body=f"https://www.reddit.com/r/updateme/comments/{post_id}/this_is_a_test_post/",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(message.get_first_child().body, [author, subreddit_name, "next time"])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 1
+	assert_subscription(subscriptions[0], username, author, subreddit_name, False)

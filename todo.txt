@@ -35,13 +35,13 @@ series tags
 	-notification sending
 		-notification should include tag
 		-unsub link if user is subscribed to tag
-	comment subscriptions
+	-comment subscriptions
 		-pull from parsed submission
 		-subscribeall to ignore tag
 	message subscriptions
-		link subscription
-		subscribing to all overrides series subscription
-		subscribing to series is ignored if subscribed to all
+		-link subscription
+		-subscribing to all overrides series subscription
+		-subscribing to series is ignored if subscribed to all
 		add to list command
 	subscription removals
 		removing subscription for author removes all series

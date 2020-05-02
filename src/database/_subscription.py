@@ -106,6 +106,16 @@ class _DatabaseSubscriptions:
 			.filter(Subscription.subscriber == user)\
 			.delete(synchronize_session='fetch')
 
+	def delete_tagged_subreddit_author_subscriptions(self, subscriber, author, subreddit):
+		log.debug(f"Deleting all tagged subscriptions for u/{subscriber.name} : {subscriber.name} : {author.name} : {subreddit.name}")
+
+		return self.session.query(Subscription)\
+			.filter(Subscription.subscriber == subscriber)\
+			.filter(Subscription.author == author)\
+			.filter(Subscription.subreddit == subreddit)\
+			.filter(Subscription.tag != None)\
+			.delete(synchronize_session='fetch')
+
 	def delete_subscription(self, subscription):
 		log.debug(f"Deleting subscription by id: {subscription.id}")
 		self.session.delete(subscription)

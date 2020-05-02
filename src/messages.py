@@ -15,6 +15,11 @@ import utils
 def line_update_subscribe(line, user, bldr, database, reddit):
 	authors = re.findall(r'(?: /?u/)([\w-]+)', line)
 	subreddits = re.findall(r'(?: /?r/)(\w+)', line)
+	tags = re.findall(r'(?:<)(.+)(?:>)', line)
+
+	tag = None
+	if len(tags):
+		tag = tags[0]
 
 	author_name = None
 	subreddit_name = None
@@ -26,10 +31,23 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 
 	else:
 		links = re.findall(r'(?:reddit.com/r/\w+/comments/)(\w+)', line)
+
 		if len(links):
-			submission = reddit.get_submission(links[0])
-			author_name = submission.author.name
-			subreddit_name = submission.subreddit.display_name
+			db_submission = database.get_submission_by_id(links[0])
+			tag = None
+			if db_submission is not None:
+				author_name = db_submission.author_name
+				subreddit_name = db_submission.subreddit.name
+				if db_submission.subreddit.tag_enabled:
+					tag = db_submission.tag
+			else:
+				reddit_submission = reddit.get_submission(links[0])
+				try:
+					author_name = reddit_submission.author.name
+					subreddit_name = reddit_submission.subreddit.display_name
+				except Exception:
+					log.warning(f"Unable to fetch submission for link memssage: {links[0]}")
+					return
 
 	if author_name is not None and subreddit_name is not None:
 		author = database.get_or_add_user(author_name, case_is_user_supplied)
@@ -43,11 +61,9 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 			recurring = subreddit.default_recurring
 
 		result_message, subscription = Subscription.create_update_subscription(
-			database, user, author, subreddit, recurring, None
+			database, user, author, subreddit, recurring, tag
 		)
 		bldr.append(result_message)
-
-	bldr.append("  \n")
 
 
 def line_remove(line, user, bldr, database):
@@ -91,8 +107,6 @@ def line_remove(line, user, bldr, database):
 				bldr.append(f"I removed your subscription to u/{subscription.author.name} in r/{subscription.subreddit.name}")
 				database.delete_subscription(subscription)
 
-	bldr.append("  \n")
-
 
 def line_delete(line, user, bldr, database, reddit):
 	ids = re.findall(r'delete\s+(\w+)', line)
@@ -119,8 +133,6 @@ def line_delete(line, user, bldr, database, reddit):
 			log.debug(f"Comment doesn't exist: {ids[0]}")
 			bldr.append("This comment doesn't exist or was already deleted.")
 
-	bldr.append("  \n")
-
 
 def line_list(user, bldr, database):
 	subscriptions = database.get_user_subscriptions(user)
@@ -142,8 +154,6 @@ def line_list(user, bldr, database):
 			bldr.append(subscription.subreddit.name)
 			bldr.append("  \n")
 
-	bldr.append("  \n")
-
 
 def line_add_sub(line, bldr, database):
 	subs = re.findall(r'(?:/?r/)(\w+)', line)
@@ -163,8 +173,6 @@ def line_add_sub(line, bldr, database):
 		bldr.append(f"Activated r/{subreddit.name} with {count_subscriptions} subscriptions as ")
 		bldr.append('subscribe' if recurring else 'update')
 
-	bldr.append("  \n")
-
 
 def process_message(message, reddit, database, count_string=""):
 	log.info(f"{count_string}: Message u/{message.author.name} : {message.id}")
@@ -173,6 +181,7 @@ def process_message(message, reddit, database, count_string=""):
 
 	bldr = []
 	append_list = False
+	current_len = 0
 	for line in body.splitlines():
 		if line.startswith(static.TRIGGER_UPDATE_LOWER) or line.startswith(static.TRIGGER_SUBSCRIBE_LOWER) \
 				or line.startswith("http"):
@@ -186,6 +195,10 @@ def process_message(message, reddit, database, count_string=""):
 		elif user.name == static.OWNER:
 			if line.startswith("addsubreddit"):
 				line_add_sub(line, bldr, database)
+
+		if len(bldr) > current_len:
+			current_len = len(bldr)
+			bldr.append("  \n")
 
 	if append_list:
 		line_list(user, bldr, database)

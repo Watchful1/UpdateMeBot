@@ -83,7 +83,13 @@ class Subscription(Base):
 				subscription.recurring = recurring
 
 		else:
-			if tag is not None:
+			if not subreddit.is_enabled:
+				log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}, subreddit not enabled")
+				result_message = f"Subreddit r/{subreddit.name} is not being tracked by the bot. More details [here]"\
+					f"({static.TRACKING_INFO_URL})"
+				utils.check_update_disabled_subreddit(database, subreddit)
+
+			elif subreddit.tag_enabled and tag is not None:
 				subscription_all = database.get_subscription_by_fields(subscriber, author, subreddit)
 				if subscription_all is not None:
 					log.info(
@@ -94,18 +100,24 @@ class Subscription(Base):
 						f"<{tag}>, then you'll need to unsubscribe first"
 					return result_message, None
 
-			elif subreddit.tag_enabled:
-				tagged_subscriptions = database.get_tagged_subscriptions_by_fields(subscriber, author, subreddit)
-				if len(tagged_subscriptions):
-					log.info(
-						f"u/{subscriber.name} has {len(tagged_subscriptions)} tagged subscriptions to "
-						f"u/{author.name} in r/{subreddit.name} when adding all, deleting")
-					result_message = f"You're already {'subscribed' if recurring else 'updated'} to all " \
-						f"posts from u/{author.name} in r/{subreddit.name}. If you want to only get messages for " \
-						f"<{tag}>, then you'll need to unsubscribe first"
+				else:
+					log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}, {tag}")
+					result_message = f"I will message you {'each' if recurring else 'next'} time u/{author.name} " \
+						f"posts stories tagged <{tag}> in r/{subreddit.name}"
 
+			elif subreddit.tag_enabled and len(database.get_tagged_subscriptions_by_fields(subscriber, author, subreddit)):
+				log.info(
+					f"u/{subscriber.name} has tagged subscriptions to u/{author.name} in r/{subreddit.name} when "
+					f"adding all, deleting")
+				result_message = f"I will message you {'each' if recurring else 'next'} time u/{author.name} " \
+					f"posts in r/{subreddit.name}. This replaces your " \
+					f"{'subscriptions' if recurring else 'updates'} to specific tagged posts of theirs"
+				database.delete_tagged_subreddit_author_subscriptions(subscriber, author, subreddit)
 
-
+			else:
+				log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}")
+				result_message = f"I will message you {'each' if recurring else 'next'} time u/{author.name} " \
+					f"posts in r/{subreddit.name}"
 
 			subscription = Subscription(
 				subscriber=subscriber,
@@ -115,21 +127,6 @@ class Subscription(Base):
 				tag=tag
 			)
 			database.add_subscription(subscription)
-
-			if not subreddit.is_enabled:
-				log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}, subreddit not enabled")
-				result_message = f"Subreddit r/{subreddit.name} is not being tracked by the bot. More details [here]"\
-					f"({static.TRACKING_INFO_URL})"
-				utils.check_update_disabled_subreddit(database, subreddit)
-			else:
-				if tag is not None:
-					log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}, {tag}")
-					result_message = f"I will message you {'each' if recurring else 'next'} time u/{author.name} " \
-						f"posts stories tagged <{tag}> in r/{subreddit.name}"
-				else:
-					log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}")
-					result_message = f"I will message you {'each' if recurring else 'next'} time u/{author.name} " \
-						f"posts in r/{subreddit.name}"
 
 		return result_message, subscription
 
