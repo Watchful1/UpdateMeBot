@@ -29,7 +29,8 @@ class Submission(Base):
 		author_name,
 		subreddit,
 		permalink,
-		tag=None
+		tag=None,
+		messages_sent=0
 	):
 		self.submission_id = submission_id
 		self.time_created = time_created
@@ -37,8 +38,8 @@ class Submission(Base):
 		self.author_name = author_name
 		self.subreddit = subreddit
 		self.url = "https://www.reddit.com" + permalink
-		self.messages_sent = 0
 		self.tag = tag
+		self.messages_sent = messages_sent
 
 	def __str__(self):
 		return \

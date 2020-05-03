@@ -171,7 +171,7 @@ def process_comments(reddit, database):
 			log.warning(traceback.format_exc())
 
 		reddit.mark_keyword_comment_processed(comment['id'])
-		database.save_keystore("comment_timestamp", datetime.utcfromtimestamp(comment['created_utc']))
+		database.save_datetime("comment_timestamp", datetime.utcfromtimestamp(comment['created_utc']))
 
 	return len(comments)
 

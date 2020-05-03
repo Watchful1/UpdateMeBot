@@ -2,6 +2,7 @@ import discord_logging
 import math
 import traceback
 import time
+import prawcore
 from datetime import datetime, timedelta
 
 log = discord_logging.get_logger()
@@ -16,13 +17,20 @@ from classes.enums import SubredditPromptType, ReturnType
 def subreddit_posts_per_hour(reddit, subreddit_name):
 	count = 0
 	oldest_submission = utils.datetime_now()
-	for submission in reddit.get_subreddit_submissions(subreddit_name):
-		count += 1
-		submission_created = datetime.utcfromtimestamp(submission.created_utc)
-		if submission_created < oldest_submission:
-			oldest_submission = submission_created
-		if count >= 50:
-			break
+	try:
+		for submission in reddit.get_subreddit_submissions(subreddit_name):
+			count += 1
+			submission_created = datetime.utcfromtimestamp(submission.created_utc)
+			if submission_created < oldest_submission:
+				oldest_submission = submission_created
+			if count >= 50:
+				break
+	except (prawcore.exceptions.Redirect, prawcore.exceptions.NotFound):
+		log.warning(f"Subreddit r/{subreddit_name} doesn't exist when profiling")
+		return 1
+	except prawcore.exceptions.Forbidden:
+		log.warning(f"Subreddit r/{subreddit_name} forbidden when profiling")
+		return 1
 
 	if count == 0:
 		return 1
@@ -61,6 +69,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	submissions_subreddits = []
 	count_existing = 0
 	count_found = 0
+	newest_datetime = utils.datetime_now()
 	for submission in reddit.get_subreddit_submissions('+'.join(subreddit_names)):
 		if database.get_submission_by_id(submission.id) is None:
 			if submission.subreddit.display_name not in subreddits:
@@ -68,6 +77,9 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 				continue
 
 			subreddit = subreddits[submission.subreddit.display_name]
+			if subreddit.last_scanned is None:
+				log.warning(f"r/{subreddit.name} has a scan time of none, initializing")
+				subreddit.last_scanned = utils.datetime_now()
 			submission_datetime = datetime.utcfromtimestamp(submission.created_utc)
 			skip = False
 			if submission_datetime < subreddit.last_scanned:
@@ -135,6 +147,10 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 				# save prompt comment here
 
 		subreddit.last_scanned = submission_datetime
+		newest_datetime = submission_datetime
+
+	for subreddit_name in subreddits:
+		subreddits[subreddit_name].last_scanned = newest_datetime
 
 	database.commit()
 	return True

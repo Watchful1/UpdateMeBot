@@ -23,7 +23,7 @@
 	-save stat per user/sub/day
 
 
-series tags
+-series tags
 	-tags can be enclosed in [], or at the start of the title and followed by : or -
 	-subreddit scan parsing
 		-parse post title into tag
@@ -45,20 +45,22 @@ series tags
 			-removing subscription for author removes all series
 	-prompts
 		-if tag present, prompt should include
-	stats
-		all subs
-		combined subs
-		series subs
+	-stats
+		-all subs
+		-combined subs
+		-series subs
 subscribe to all posts in sub
 migration script
-	set all subreddits with prompts, plus nosleep, to pm only
-	default prompts from prompts table
-	test stats
-	startup mode for subreddit scanning
+	-set all subreddits with prompts, plus nosleep, to pm only
+	-default prompts from prompts table
+	-test stats
+	-startup mode for subreddit scanning
 	ingest existing submissions
+	-profile subreddits
 new in footer
 
 
+verify that a subreddit/user exists when subscribing
 clear old comments/submissions
 pushshift why? page
 does replying to a message mark it as read

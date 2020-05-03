@@ -7,18 +7,12 @@ class User(Base):
 
 	id = Column(Integer, primary_key=True)
 	name = Column(String(80, collation="NOCASE"), nullable=False, unique=True)
-	prompt = Column(String(200))
-	blocked = Column(Boolean, nullable=False)
 
 	def __init__(
 		self,
-		name,
-		prompt=None,
-		blocked=False
+		name
 	):
 		self.name = name
-		self.prompt = prompt
-		self.blocked = blocked
 
 	def __str__(self):
 		return f"u/{self.name}"

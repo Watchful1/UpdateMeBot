@@ -80,4 +80,5 @@ class Database(
 		self.session.commit()
 
 	def close(self):
+		self.commit()
 		self.engine.dispose()

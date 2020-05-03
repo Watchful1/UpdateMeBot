@@ -24,3 +24,22 @@ class _DatabaseStats:
 			.all()
 
 		return stats
+
+	def get_stat_for_author_subreddit_day(self, date, author, subreddit, tag=None):
+		log.debug(f"Getting count subscriptions on {date} for u/{author.name} in r/{subreddit.name}")
+		stat = self.session.query(Stat)\
+			.filter(Stat.author == author)\
+			.filter(Stat.subreddit == subreddit)\
+			.filter(Stat.tag == tag)\
+			.filter(Stat.date == date)\
+			.first()
+
+		return stat
+
+	def get_all_stats_for_day(self, date):
+		log.debug(f"Getting all stats for {date}")
+		stats = self.session.query(Stat)\
+			.filter(Stat.date == date)\
+			.all()
+
+		return stats

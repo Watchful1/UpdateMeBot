@@ -54,7 +54,7 @@ class Subreddit(Base):
 		self.prompt_type = SubredditPromptType.NONE
 
 	def __str__(self):
-		return f"r/{self.name}"
+		return f"r/{self.name} : {self.is_enabled}"
 
 	def get_flair_blacklist(self):
 		if self.flair_blacklist is None:

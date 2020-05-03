@@ -22,9 +22,13 @@ class Reddit:
 		self.no_post = no_post
 
 		config = discord_logging.get_config()
-		client_id = discord_logging.get_config_var(config, user_name, f"{prefix}_client_id")
-		client_secret = discord_logging.get_config_var(config, user_name, f"{prefix}_client_secret")
-		refresh_token = discord_logging.get_config_var(config, user_name, f"{prefix}_refresh_token")
+		if prefix is None:
+			prefix = ''
+		else:
+			prefix = prefix + "_"
+		client_id = discord_logging.get_config_var(config, user_name, f"{prefix}client_id")
+		client_secret = discord_logging.get_config_var(config, user_name, f"{prefix}client_secret")
+		refresh_token = discord_logging.get_config_var(config, user_name, f"{prefix}refresh_token")
 		self.reddit = praw.Reddit(
 			user_name,
 			client_id=client_id,

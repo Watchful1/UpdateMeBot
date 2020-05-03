@@ -9,12 +9,12 @@ from database import Database
 from classes.stat import Stat
 
 
-new_db = Database(debug=True, publish=True)
+new_db = Database()
+new_db.session.query(Stat).delete(synchronize_session='fetch')
 
 base_folder = r"C:\Users\greg\Desktop\UpdateMeBot"
 
 current_day = -1
-count_days = 0
 for filename in reversed(os.listdir(base_folder)):
 	date_time = datetime.strptime(filename, "%Y-%m-%d_%H-%M.db")
 	if date_time.day == current_day:
@@ -41,13 +41,3 @@ for filename in reversed(os.listdir(base_folder)):
 		)
 
 	dbConn.close()
-
-	count_days += 1
-	# if count_days >= 3:
-	# 	break
-
-# for stat in new_db.get_recent_stats_for_author_subreddit(
-# 		new_db.get_or_add_user("hyperobscura"),
-# 		new_db.get_or_add_subreddit("nosleep")
-# ):
-# 	log.info(stat)
