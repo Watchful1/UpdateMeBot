@@ -57,7 +57,7 @@ def process_comment(comment, reddit, database, count_string=""):
 	db_submission = database.get_submission_by_id(thread_id)
 	tag = None
 	if db_submission is not None:
-		author_name = db_submission.author_name
+		author = db_submission.author
 		if use_tag:
 			tag = db_submission.tag
 	else:
@@ -68,8 +68,8 @@ def process_comment(comment, reddit, database, count_string=""):
 		except Exception:
 			log.warning(f"Unable to fetch parent submission for comment: {thread_id}")
 			return
+		author = database.get_or_add_user(author_name)
 
-	author = database.get_or_add_user(author_name)
 	result_message, subscription = Subscription.create_update_subscription(
 		database, subscriber, author, subreddit, recurring, tag
 	)

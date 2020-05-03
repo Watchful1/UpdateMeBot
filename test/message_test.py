@@ -181,15 +181,15 @@ def test_add_link(database, reddit):
 
 def test_add_link_with_tag(database, reddit):
 	username = "Watchful1"
-	author_name = "AuthorName"
+	author = database.get_or_add_user("AuthorName")
 	subreddit_name = "SubredditName"
 	tag = "this is a tag"
-	init_db(database, [author_name], [subreddit_name], enable_tags=True)
+	init_db(database, [author.name], [subreddit_name], enable_tags=True)
 	submission_id = utils.random_id()
 	db_submission = Submission(
 		submission_id=submission_id,
 		time_created=utils.datetime_now(),
-		author_name=author_name,
+		author=author,
 		subreddit=database.get_or_add_subreddit(subreddit_name),
 		permalink=f"/r/{subreddit_name}/comments/{submission_id}/",
 		tag=tag
@@ -201,11 +201,11 @@ def test_add_link_with_tag(database, reddit):
 	)
 
 	messages.process_message(message, reddit, database)
-	assert_message(message.get_first_child().body, [author_name, subreddit_name, "next time"])
+	assert_message(message.get_first_child().body, [author.name, subreddit_name, "next time"])
 
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
-	assert_subscription(subscriptions[0], username, author_name, subreddit_name, False, tag)
+	assert_subscription(subscriptions[0], username, author.name, subreddit_name, False, tag)
 
 
 def test_add_link_default_subscribe(database, reddit):
@@ -362,7 +362,7 @@ def test_remove_all_subscription(database, reddit):
 
 def test_delete_comment(database, reddit):
 	username = "Watchful1"
-	author = "AuthorName"
+	author = database.get_or_add_user("AuthorName")
 	subreddit_name = "SubredditName"
 	reddit_comment = reddit_test.RedditObject(
 		author=username,
@@ -372,7 +372,7 @@ def test_delete_comment(database, reddit):
 	db_submission = Submission(
 		submission_id=reddit_comment.link_id,
 		time_created=utils.datetime_now(),
-		author_name=author,
+		author=author,
 		subreddit=database.get_or_add_subreddit(subreddit_name, enable_subreddit_if_new=True),
 		permalink=f"none"
 	)
@@ -382,7 +382,7 @@ def test_delete_comment(database, reddit):
 			comment_id=reddit_comment.id,
 			submission=db_submission,
 			subscriber=database.get_or_add_user(username),
-			author=database.get_or_add_user(author),
+			author=author,
 			subreddit=database.get_or_add_subreddit(subreddit_name),
 			recurring=True
 		)
@@ -399,7 +399,7 @@ def test_delete_comment(database, reddit):
 
 def test_delete_comment_not_author(database, reddit):
 	username = "Watchful1"
-	author = "AuthorName"
+	author = database.get_or_add_user("AuthorName")
 	subreddit_name = "SubredditName"
 	reddit_comment = reddit_test.RedditObject(
 		author=username,
@@ -409,7 +409,7 @@ def test_delete_comment_not_author(database, reddit):
 	db_submission = Submission(
 		submission_id=reddit_comment.link_id,
 		time_created=utils.datetime_now(),
-		author_name=author,
+		author=author,
 		subreddit=database.get_or_add_subreddit(subreddit_name, enable_subreddit_if_new=True),
 		permalink=f"none"
 	)
@@ -419,7 +419,7 @@ def test_delete_comment_not_author(database, reddit):
 			comment_id=reddit_comment.id,
 			submission=db_submission,
 			subscriber=database.get_or_add_user(username),
-			author=database.get_or_add_user(author),
+			author=author,
 			subreddit=database.get_or_add_subreddit(subreddit_name),
 			recurring=True
 		)

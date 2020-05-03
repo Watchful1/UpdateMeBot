@@ -208,8 +208,8 @@ def test_scan_subreddit_flair_blacklist(database, reddit):
 
 	notifications = database.get_pending_notifications()
 	assert len(notifications) == 2
-	assert notifications[0].submission.author_name == "Author2"
-	assert notifications[1].submission.author_name == "Author2"
+	assert notifications[0].submission.author.name == "Author2"
+	assert notifications[1].submission.author.name == "Author2"
 
 
 def test_scan_subreddit_post_prompt_all(database, reddit):

@@ -56,7 +56,7 @@ for subreddit in subreddit_authors:
 					Submission(
 						submission_id=submission['id'],
 						time_created=submission_created,
-						author_name=author.name,
+						author=author,
 						subreddit=subreddit,
 						permalink=submission['permalink'],
 						messages_sent=stat.count_subscriptions

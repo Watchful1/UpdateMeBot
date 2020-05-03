@@ -36,7 +36,7 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 			db_submission = database.get_submission_by_id(links[0])
 			tag = None
 			if db_submission is not None:
-				author_name = db_submission.author_name
+				author_name = db_submission.author.name
 				subreddit_name = db_submission.subreddit.name
 				if db_submission.subreddit.tag_enabled:
 					tag = db_submission.tag

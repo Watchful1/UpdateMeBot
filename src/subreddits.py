@@ -110,10 +110,12 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 		tag = None
 		if subreddit.tag_enabled:
 			tag = utils.extract_tag_from_title(submission.title)
+
+		author = database.get_or_add_user(submission.author.name)
 		db_submission = Submission(
 			submission_id=submission.id,
 			time_created=submission_datetime,
-			author_name=submission.author.name,
+			author=author,
 			subreddit=subreddit,
 			permalink=submission.permalink,
 			tag=tag
@@ -127,14 +129,12 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 				blacklist_matched = True
 
 		if not blacklist_matched:
-			author = database.get_user(submission.author.name)
-			if author is not None:
-				subscriptions = database.get_subscriptions_for_author_subreddit(author, subreddit, db_submission.tag)
+			subscriptions = database.get_subscriptions_for_author_subreddit(author, subreddit, db_submission.tag)
 
-				if len(subscriptions):
-					log.info(f"Queuing {len(subscriptions)} for u/{author.name} in r/{subreddit.name} : {submission.id}")
-					for subscription in subscriptions:
-						database.add_notification(Notification(subscription, db_submission))
+			if len(subscriptions):
+				log.info(f"Queuing {len(subscriptions)} for u/{author.name} in r/{subreddit.name} : {submission.id}")
+				for subscription in subscriptions:
+					database.add_notification(Notification(subscription, db_submission))
 
 			if subreddit.prompt_type == SubredditPromptType.ALL or \
 					(

@@ -15,7 +15,7 @@ from classes.user import User
 
 def test_process_comment_update(database, reddit):
 	subscriber_name = "Subscriber1"
-	author_name = "Author1"
+	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
 	comment_id = utils.random_id()
 	submission_id = utils.random_id()
@@ -30,7 +30,7 @@ def test_process_comment_update(database, reddit):
 	db_submission = Submission(
 		submission_id=submission_id,
 		time_created=utils.datetime_now(),
-		author_name=author_name,
+		author=author,
 		subreddit=db_subreddit,
 		permalink=f"/r/{db_subreddit.name}/comments/{submission_id}/"
 	)
@@ -43,21 +43,21 @@ def test_process_comment_update(database, reddit):
 	result = comment.get_first_child().body
 
 	assert "I will message you next time" in result
-	assert author_name in result
+	assert author.name in result
 	assert db_subreddit.name in result
 	assert "Click this link" in result
 
 	subscriptions = database.get_user_subscriptions_by_name(subscriber_name)
 	assert len(subscriptions) == 1
 	assert subscriptions[0].subscriber.name == subscriber_name
-	assert subscriptions[0].author.name == author_name
+	assert subscriptions[0].author.name == author.name
 	assert subscriptions[0].subreddit.name == db_subreddit.name
 	assert subscriptions[0].recurring is False
 
 
 def test_process_comment_subscribe(database, reddit):
 	subscriber_name = "Subscriber1"
-	author_name = "Author1"
+	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
 	comment_id = utils.random_id()
 	submission_id = utils.random_id()
@@ -72,7 +72,7 @@ def test_process_comment_subscribe(database, reddit):
 	db_submission = Submission(
 		submission_id=submission_id,
 		time_created=utils.datetime_now(),
-		author_name=author_name,
+		author=author,
 		subreddit=db_subreddit,
 		permalink=f"/r/{db_subreddit.name}/comments/{submission_id}/"
 	)
@@ -85,21 +85,21 @@ def test_process_comment_subscribe(database, reddit):
 	result = comment.get_first_child().body
 
 	assert "I will message you each time" in result
-	assert author_name in result
+	assert author.name in result
 	assert db_subreddit.name in result
 	assert "Click this link" in result
 
 	subscriptions = database.get_user_subscriptions_by_name(subscriber_name)
 	assert len(subscriptions) == 1
 	assert subscriptions[0].subscriber.name == subscriber_name
-	assert subscriptions[0].author.name == author_name
+	assert subscriptions[0].author.name == author.name
 	assert subscriptions[0].subreddit.name == db_subreddit.name
 	assert subscriptions[0].recurring is True
 
 
 def test_process_comment_subscribe_tag(database, reddit):
 	subscriber_name = "Subscriber1"
-	author_name = "Author1"
+	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
 	comment_id = utils.random_id()
 	submission_id = utils.random_id()
@@ -114,7 +114,7 @@ def test_process_comment_subscribe_tag(database, reddit):
 	db_submission = Submission(
 		submission_id=submission_id,
 		time_created=utils.datetime_now(),
-		author_name=author_name,
+		author=author,
 		subreddit=db_subreddit,
 		permalink=f"/r/{db_subreddit.name}/comments/{submission_id}/",
 		tag="Story1"
@@ -129,14 +129,14 @@ def test_process_comment_subscribe_tag(database, reddit):
 
 	assert "I will message you each time" in result
 	assert "a story tagged <Story1>" in result
-	assert author_name in result
+	assert author.name in result
 	assert db_subreddit.name in result
 	assert "Click this link" in result
 
 	subscriptions = database.get_user_subscriptions_by_name(subscriber_name)
 	assert len(subscriptions) == 1
 	assert subscriptions[0].subscriber.name == subscriber_name
-	assert subscriptions[0].author.name == author_name
+	assert subscriptions[0].author.name == author.name
 	assert subscriptions[0].subreddit.name == db_subreddit.name
 	assert subscriptions[0].recurring is True
 	assert subscriptions[0].tag == "Story1"
@@ -144,7 +144,7 @@ def test_process_comment_subscribe_tag(database, reddit):
 
 def test_process_comment_subscribe_all(database, reddit):
 	subscriber_name = "Subscriber1"
-	author_name = "Author1"
+	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
 	comment_id = utils.random_id()
 	submission_id = utils.random_id()
@@ -159,7 +159,7 @@ def test_process_comment_subscribe_all(database, reddit):
 	db_submission = Submission(
 		submission_id=submission_id,
 		time_created=utils.datetime_now(),
-		author_name=author_name,
+		author=author,
 		subreddit=db_subreddit,
 		permalink=f"/r/{db_subreddit.name}/comments/{submission_id}/",
 		tag="Story1"
@@ -174,14 +174,14 @@ def test_process_comment_subscribe_all(database, reddit):
 
 	assert "I will message you each time" in result
 	assert "a story tagged <Story1>" not in result
-	assert author_name in result
+	assert author.name in result
 	assert db_subreddit.name in result
 	assert "Click this link" in result
 
 	subscriptions = database.get_user_subscriptions_by_name(subscriber_name)
 	assert len(subscriptions) == 1
 	assert subscriptions[0].subscriber.name == subscriber_name
-	assert subscriptions[0].author.name == author_name
+	assert subscriptions[0].author.name == author.name
 	assert subscriptions[0].subreddit.name == db_subreddit.name
 	assert subscriptions[0].recurring is True
 	assert subscriptions[0].tag is None
@@ -189,7 +189,7 @@ def test_process_comment_subscribe_all(database, reddit):
 
 def test_process_comment_subreddit_not_enabled(database, reddit):
 	subscriber_name = "Subscriber1"
-	author_name = "Author1"
+	author = database.get_or_add_user("Author1")
 	subreddit_name = "TestSub"
 	comment_id = utils.random_id()
 	submission_id = utils.random_id()
@@ -202,7 +202,7 @@ def test_process_comment_subreddit_not_enabled(database, reddit):
 		subreddit=subreddit_name
 	)
 	reddit.add_comment(comment)
-	reddit.add_submission(RedditObject(id=submission_id, subreddit=subreddit_name, author=author_name))
+	reddit.add_submission(RedditObject(id=submission_id, subreddit=subreddit_name, author=author.name))
 
 	comments.process_comment(comment.get_pushshift_dict(), reddit, database)
 
@@ -211,7 +211,7 @@ def test_process_comment_subreddit_not_enabled(database, reddit):
 	subscriptions = database.get_user_subscriptions_by_name(subscriber_name, only_enabled=False)
 	assert len(subscriptions) == 1
 	assert subscriptions[0].subscriber.name == subscriber_name
-	assert subscriptions[0].author.name == author_name
+	assert subscriptions[0].author.name == author.name
 	assert subscriptions[0].subreddit.name == subreddit_name
 	assert subscriptions[0].recurring is True
 
@@ -222,7 +222,7 @@ def test_process_comment_subreddit_not_enabled(database, reddit):
 
 def test_process_comment_thread_replied(database, reddit):
 	subscriber_name = "Subscriber1"
-	author_name = "Author1"
+	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
 	comment_id = utils.random_id()
 	submission_id = utils.random_id()
@@ -238,7 +238,7 @@ def test_process_comment_thread_replied(database, reddit):
 	db_submission = Submission(
 		submission_id=submission_id,
 		time_created=utils.datetime_now(),
-		author_name=author_name,
+		author=author,
 		subreddit=db_subreddit,
 		permalink=f"/r/{db_subreddit.name}/comments/{submission_id}/"
 	)
@@ -247,7 +247,7 @@ def test_process_comment_thread_replied(database, reddit):
 		comment_id=utils.random_id(),
 		submission=db_submission,
 		subscriber=database.get_or_add_user("Subscriber2"),
-		author=database.get_or_add_user(author_name),
+		author=author,
 		subreddit=db_subreddit,
 		recurring=False
 	)
@@ -261,7 +261,7 @@ def test_process_comment_thread_replied(database, reddit):
 	subscriptions = database.get_user_subscriptions_by_name(subscriber_name)
 	assert len(subscriptions) == 1
 	assert subscriptions[0].subscriber.name == subscriber_name
-	assert subscriptions[0].author.name == author_name
+	assert subscriptions[0].author.name == author.name
 	assert subscriptions[0].subreddit.name == db_subreddit.name
 	assert subscriptions[0].recurring is False
 
@@ -272,7 +272,7 @@ def test_process_comment_thread_replied(database, reddit):
 
 def test_process_comment_already_subscribed(database, reddit):
 	subscriber_name = "Subscriber1"
-	author_name = "Author1"
+	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
 	comment_id = utils.random_id()
 	submission_id = utils.random_id()
@@ -285,11 +285,11 @@ def test_process_comment_already_subscribed(database, reddit):
 		subreddit=db_subreddit.name
 	)
 	reddit.add_comment(comment)
-	reddit.add_submission(RedditObject(id=submission_id, subreddit=db_subreddit.name, author=author_name))
+	reddit.add_submission(RedditObject(id=submission_id, subreddit=db_subreddit.name, author=author.name))
 	database.add_subscription(
 		Subscription(
 			subscriber=database.get_or_add_user(subscriber_name),
-			author=database.get_or_add_user(author_name),
+			author=author,
 			subreddit=db_subreddit,
 			recurring=False
 		)
@@ -309,7 +309,7 @@ def test_process_comment_already_subscribed(database, reddit):
 
 def test_process_comment_update_subscription(database, reddit):
 	subscriber_name = "Subscriber1"
-	author_name = "Author1"
+	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
 	comment_id = utils.random_id()
 	submission_id = utils.random_id()
@@ -322,11 +322,11 @@ def test_process_comment_update_subscription(database, reddit):
 		subreddit=db_subreddit.name
 	)
 	reddit.add_comment(comment)
-	reddit.add_submission(RedditObject(id=submission_id, subreddit=db_subreddit.name, author=author_name))
+	reddit.add_submission(RedditObject(id=submission_id, subreddit=db_subreddit.name, author=author.name))
 	database.add_subscription(
 		Subscription(
 			subscriber=database.get_or_add_user(subscriber_name),
-			author=database.get_or_add_user(author_name),
+			author=author,
 			subreddit=db_subreddit,
 			recurring=True
 		)
@@ -366,15 +366,15 @@ def test_update_incorrect_comments(database, reddit):
 	bulk_sub_to(database, "Subreddit1", "Author2", ["User2", "User3"])
 	bulk_sub_to(database, "Subreddit2", "Author3", ["User3"])
 	submission1 = Submission(
-		submission_id=utils.random_id(), time_created=utils.datetime_now(), author_name="Author1",
+		submission_id=utils.random_id(), time_created=utils.datetime_now(), author=database.get_or_add_user("Author1"),
 		subreddit=database.get_or_add_subreddit("Subreddit1"), permalink="")
 	database.add_submission(submission1)
 	submission2 = Submission(
-		submission_id=utils.random_id(), time_created=utils.datetime_now(), author_name="Author2",
+		submission_id=utils.random_id(), time_created=utils.datetime_now(), author=database.get_or_add_user("Author2"),
 		subreddit=database.get_or_add_subreddit("Subreddit1"), permalink="")
 	database.add_submission(submission2)
 	submission3 = Submission(
-		submission_id=utils.random_id(), time_created=utils.datetime_now(), author_name="Author3",
+		submission_id=utils.random_id(), time_created=utils.datetime_now(), author=database.get_or_add_user("Author3"),
 		subreddit=database.get_or_add_subreddit("Subreddit2"), permalink="")
 	database.add_submission(submission3)
 	comment1 = DbComment(

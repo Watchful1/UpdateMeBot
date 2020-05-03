@@ -32,7 +32,7 @@ def queue_message(database, subscriber_name, author_name, subreddit_name, submis
 		submission = Submission(
 			submission_id=submission_id,
 			time_created=utils.datetime_now(),
-			author_name=author_name,
+			author=author,
 			subreddit=subreddit,
 			permalink=f"/r/{subreddit_name}/comments/{submission_id}/",
 			tag=tag
