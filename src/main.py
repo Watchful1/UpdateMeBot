@@ -13,6 +13,7 @@ log = discord_logging.init_logging(
 )
 
 
+from database import Database
 import static
 import reddit_class
 import messages
@@ -21,7 +22,6 @@ import subreddits
 import notifications
 import utils
 import stats
-from database import Database
 
 
 database = None
@@ -89,16 +89,16 @@ if __name__ == "__main__":
 			errors += 1
 
 		try:
-			actions += notifications.send_queued_notifications(reddit_message, database)
+			subreddits.scan_subreddits(reddit_search, database)
 		except Exception as err:
-			log.warning(f"Error sending notifications: {err}")
+			log.warning(f"Error scanning subreddits: {err}")
 			log.warning(traceback.format_exc())
 			errors += 1
 
 		try:
-			subreddits.scan_subreddits(reddit_search, database)
+			actions += notifications.send_queued_notifications(reddit_message, database)
 		except Exception as err:
-			log.warning(f"Error scanning subreddits: {err}")
+			log.warning(f"Error sending notifications: {err}")
 			log.warning(traceback.format_exc())
 			errors += 1
 
@@ -132,6 +132,7 @@ if __name__ == "__main__":
 		log.debug(f"Run complete after: {int(time.perf_counter() - startTime)}")
 
 		discord_logging.flush_discord()
+		database.commit()
 
 		if args.once:
 			break

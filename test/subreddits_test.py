@@ -32,7 +32,7 @@ def create_sub_with_posts(database, reddit, subreddit_name, posts, last_scanned=
 		last_scanned = utils.datetime_now() - timedelta(minutes=30)
 	db_subreddit.last_scanned = last_scanned
 	db_subreddit.is_enabled = True
-	db_subreddit.post_per_hour = posts_per_hour
+	db_subreddit.posts_per_hour = posts_per_hour
 	database.commit()
 
 
@@ -199,7 +199,7 @@ def test_scan_subreddit_flair_blacklist(database, reddit):
 	db_subreddit.last_scanned = utils.datetime_now() - timedelta(minutes=30)
 	db_subreddit.is_enabled = True
 	db_subreddit.flair_blacklist = "psa,meta"
-	db_subreddit.post_per_hour = 2
+	db_subreddit.posts_per_hour = 2
 	database.commit()
 
 	bulk_sub_to(database, "Subreddit1", "Author1", ["User1", "User2"])

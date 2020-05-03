@@ -8,7 +8,6 @@ from database import Database
 from classes.subscription import Subscription
 
 new_db = Database()
-new_db.session.query(Subscription).delete(synchronize_session='fetch')
 
 count_subscriptions = 0
 

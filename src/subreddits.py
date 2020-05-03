@@ -49,8 +49,8 @@ def profile_subreddits(database, reddit):
 	for subreddit in database.get_unprofiled_subreddits():
 		try:
 			posts_per_hour = subreddit_posts_per_hour(reddit, subreddit.name)
-			log.info(f"Profiled subreddit {subreddit.name} from {subreddit.post_per_hour} to {posts_per_hour}")
-			subreddit.post_per_hour = posts_per_hour
+			log.info(f"Profiled subreddit {subreddit.name} from {subreddit.posts_per_hour} to {posts_per_hour}")
+			subreddit.posts_per_hour = posts_per_hour
 			subreddit.last_profiled = utils.datetime_now()
 			changes_made = True
 		except Exception as err:
@@ -66,6 +66,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	for subreddit_name in subreddits:
 		subreddit_names.append(subreddit_name)
 
+	log.debug(f"Scanning subreddit group: {','.join(subreddit_names)}")
 	submissions_subreddits = []
 	count_existing = 0
 	count_found = 0
@@ -83,7 +84,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 			submission_datetime = datetime.utcfromtimestamp(submission.created_utc)
 			skip = False
 			if submission_datetime < subreddit.last_scanned:
-				if subreddit.is_new or submission_datetime + timedelta(hours=24) < subreddit.last_scanned:
+				if submission_datetime < subreddit.date_enabled or submission_datetime + timedelta(hours=24) < subreddit.last_scanned:
 					skip = True
 				else:
 					log.warning(
@@ -91,15 +92,13 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 						f"{utils.get_datetime_string(subreddit.last_scanned)} : {submission.url}")
 
 			if not skip:
-				if subreddit.is_new:
-					log.warning(f"Found first submission in new subreddit r/{subreddit.name}")
-					subreddit.is_new = False
 				submissions_subreddits.append((submission, subreddit, submission_datetime))
 				count_found += 1
 		else:
 			count_existing += 1
 
-		if count_existing > 10:
+		if count_existing >= 10:
+			log.debug("Breaking due to hitting 10 existing")
 			break
 		if count_found > 500 and len(subreddits) > 1:
 			log.info("Found more than 500 posts in group, splitting")
@@ -170,7 +169,7 @@ def scan_subreddits(reddit, database):
 			single_subreddits.append(subreddit)
 			continue
 
-		if current_group_size + subreddit.post_per_hour > 50:
+		if current_group_size + subreddit.posts_per_hour > 50:
 			if current_group_size > 0:
 				if scan_subreddit_group(database, reddit, current_group, submission_ids_scanned):
 					subreddits_scanned += len(current_group)
@@ -178,10 +177,10 @@ def scan_subreddits(reddit, database):
 				else:
 					single_subreddits.extend(current_group.values())
 			current_group = {subreddit.name: subreddit}
-			current_group_size = subreddit.post_per_hour
+			current_group_size = subreddit.posts_per_hour
 		else:
 			current_group[subreddit.name] = subreddit
-			current_group_size += subreddit.post_per_hour
+			current_group_size += subreddit.posts_per_hour
 
 	if current_group:
 		if scan_subreddit_group(database, reddit, current_group, submission_ids_scanned):
@@ -197,6 +196,8 @@ def scan_subreddits(reddit, database):
 
 	delta_time = time.perf_counter() - start_time
 
+	if not len(submission_ids_scanned):
+		submission_ids_scanned.append("none")
 	log.info(
 		f"{' '.join(submission_ids_scanned)} in {subreddits_scanned} subs across {groups_scanned} groups in "
 		f"{delta_time:.2} seconds")

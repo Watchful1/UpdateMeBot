@@ -13,7 +13,6 @@ from classes.enums import SubredditPromptType
 r = praw.Reddit("Watchful1BotTest")
 
 new_db = Database()
-new_db.session.query(Subreddit).delete(synchronize_session='fetch')
 
 count_subreddits = 0
 

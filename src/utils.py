@@ -38,7 +38,7 @@ def check_update_disabled_subreddit(database, subreddit):
 		bldr.append(" has passed the notice threshold with ")
 		bldr.append(str(count_subscriptions))
 		bldr.append(" requests. It has ")
-		bldr.append(str(subreddit.post_per_hour))
+		bldr.append(str(subreddit.posts_per_hour))
 		bldr.append(" posts per hour: ")
 		bldr.append(
 			build_message_link(

@@ -36,7 +36,7 @@ class Reddit:
 			refresh_token=refresh_token,
 			user_agent=static.USER_AGENT)
 
-		log.info(f"Logged into reddit as /u/{static.ACCOUNT_NAME} {prefix}_")
+		log.info(f"Logged into reddit as /u/{static.ACCOUNT_NAME} {prefix}")
 
 		self.processed_comments = Queue(100)
 		self.consecutive_timeouts = 0
@@ -124,6 +124,16 @@ class Reddit:
 				log.warning(traceback.format_exc())
 				return False
 		return True
+
+	def send_message(self, user_name, subject, body):
+		log.debug(f"Sending message to u/{user_name}")
+		if self.no_post:
+			log.info(body)
+			return ReturnType.SUCCESS
+		else:
+			redditor = self.reddit.redditor(user_name)
+			output, result = self.run_function(redditor.message, [subject, body])
+			return result
 
 	def reply_comment(self, comment, body):
 		log.debug(f"Replying to comment: {comment.id}")

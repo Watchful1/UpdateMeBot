@@ -195,7 +195,10 @@ def line_add_sub(line, bldr, database):
 			f"{'subscription' if recurring else 'update'}")
 		subreddit.is_enabled = True
 		subreddit.last_scanned = utils.datetime_now()
+		subreddit.date_enabled = utils.datetime_now()
 		subreddit.default_recurring = recurring
+		if subreddit.posts_per_hour is None:
+			subreddit.posts_per_hour = 50
 		bldr.append(f"Activated r/{subreddit.name} with {count_subscriptions} subscriptions as ")
 		bldr.append('subscribe' if recurring else 'update')
 

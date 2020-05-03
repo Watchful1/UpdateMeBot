@@ -45,6 +45,7 @@ class Notification(Base):
 				bldr.append(self.submission.tag)
 				bldr.append(">")
 			bldr.append(".")
+			bldr.append("\n\n")
 
 		else:
 			bldr.append("u/")
