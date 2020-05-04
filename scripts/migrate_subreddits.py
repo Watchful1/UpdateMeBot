@@ -6,6 +6,7 @@ import discord_logging
 log = discord_logging.init_logging()
 
 import static
+import utils
 from database import Database
 from classes.subreddit import Subreddit
 from classes.enums import SubredditPromptType
@@ -36,6 +37,8 @@ for row in c.execute('''
 		continue
 	subreddit = new_db.get_or_add_subreddit(reddit_subreddit.display_name)
 	subreddit.is_enabled = row[1] == 1
+	subreddit.last_scanned = utils.datetime_now()
+	subreddit.date_enabled = utils.datetime_now()
 	subreddit.default_recurring = row[2]
 	subreddit.no_comment = row[4]
 	if subreddit_name == 'hfy':

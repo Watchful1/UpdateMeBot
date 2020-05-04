@@ -22,11 +22,11 @@ for row in c.execute('''
 		and sW.Status = 1
 	group by s.Subreddit, s.LastChecked
 '''):
-	subreddit = new_db.get_or_add_subreddit(row[0])
-	if row[0] == "relationships":
-		log.info(row[1])
-	scan_datetime = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S").replace(microsecond=0)
-	subreddit.last_scanned = scan_datetime
+	subreddit = new_db.get_subreddit(row[0])
+	if subreddit is not None:
+		scan_datetime = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S").replace(microsecond=0)
+		subreddit.last_scanned = scan_datetime
+		subreddit.date_enabled = scan_datetime
 
 	count_subreddits += 1
 	if count_subreddits % 100 == 0:

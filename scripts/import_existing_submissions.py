@@ -2,13 +2,14 @@ import discord_logging
 import requests
 from collections import defaultdict
 from datetime import datetime, timedelta
+import time
 
 log = discord_logging.init_logging()
 
 from database import Database
 from classes.submission import Submission
 
-earliest_date = datetime(2016, 8, 27)
+earliest_date = datetime(2020, 4, 23)#datetime(2016, 8, 27)
 url = "https://api.pushshift.io/reddit/submission/search/?limit=1000&sort=desc&subreddit={}&author={}&before={}"
 previousEpoch = int(datetime.utcnow().timestamp())
 endEpoch = int(earliest_date.timestamp())
@@ -18,25 +19,32 @@ new_db.session.query(Submission).delete(synchronize_session='fetch')
 
 log.info(f"Starting submission ingest")
 subreddit_authors = defaultdict(set)
-for subscription in new_db.get_all_subscriptions():
-	if subscription.subreddit.is_enabled:
-		subreddit_authors[subscription.subreddit].add(subscription.author)
+for stat in new_db.get_all_stats_for_day(datetime.utcnow().date() - timedelta(days=1)):
+	subreddit_authors[stat.subreddit].add(stat.author)
 
 log.info(f"Ingesting across {len(subreddit_authors)} subreddits")
 count_submissions = 0
 count_authors = 0
 for subreddit in subreddit_authors:
-	log.info(f"Ingesting r/{subreddit.name}")
+	log.info(f"Ingesting {len(subreddit_authors[subreddit])} authors in r/{subreddit.name}")
 	for author in subreddit_authors[subreddit]:
-		log.info(f"Ingesting u/{author.name} in r/{subreddit.name}")
 		count_authors += 1
 		count_submissions_for_author = 0
 		breakOut = False
 		while True:
-			submissions = requests.get(
-				url.format(subreddit.name, author.name, str(previousEpoch)),
-				headers={'User-Agent': "keyword counter"}
-			).json()['data']
+			formatted_url = url.format(subreddit.name, author.name, str(previousEpoch))
+			try:
+				submissions = requests.get(
+					formatted_url,
+					headers={'User-Agent': "keyword counter"}
+				).json()['data']
+			except Exception as err:
+				log.info(f"Errored {err} on url: {formatted_url}")
+				breakOut = True
+				break
+
+			time.sleep(1)
+
 			if len(submissions) == 0:
 				break
 			for submission in submissions:
@@ -70,7 +78,7 @@ for subreddit in subreddit_authors:
 					break
 			if breakOut:
 				break
-		log.info(f"Done ingesting {count_submissions_for_author} submissions")
+		log.info(f"Done ingesting {count_submissions_for_author} submissions for u/{author.name} in r/{subreddit.name}")
 		new_db.commit()
 
 log.info(f"Done ingesting {count_submissions} submissions across {count_authors} authors")

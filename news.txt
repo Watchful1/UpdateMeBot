@@ -1,6 +1,53 @@
-Minor changes
-If you are subscribed to yourself, the bot will send the message to you last to indicate it's done sending out the
-notifications for your post. It will also include how many messages were sent out.
+UpdateMeBot Info v2.0
+-------------------------------
+**What is UpdateMeBot?**
 
-watch for missing notifications
-any minor spelling or formatting mistakes
+UpdateMeBot is a reddit bot that lets you subscribe to users in specific subreddits and get a message every time they post. Use it to follow authors that regularly post content or get up an update on an interesting thread.
+
+**UpdateMeBot commands**
+
+Comment commands:
+
+* **SubscribeMe!** Subscribes to the author of the post it's commented on. The bot will send you a message every time they post in that subreddit until you tell it to stop.
+* **UpdateMe!** Subscribes to the author of the post it's commented on. The bot will send you a message only the next time they post in that subreddit.
+
+Message commands, these only work as [messages to the bot](https://www.reddit.com/message/compose/?to=UpdateMeBot&subject=UpdateMe):
+
+* **SubscribeMe! r/subreddit u/author** Subscribes to the author in the subreddit from the message. The bot will send you a message every time they post in that subreddit until you tell it to stop.
+* **UpdateMe! r/subreddit u/author** Subscribes to the author in the subreddit from the message. The bot will send you a message only the next time they post in that subreddit.
+* **https://www.reddit.com/r/UpdateMeBot/comments/4wirnm/updatemebot_info/** Sent the full link of a post to subscribe to that author and subreddit. The bot will either send you a message each time or just the next time they post based on a per subreddit default.
+* **Remove r/subreddit u/author** Removes your subscription or pending update to an author in a subreddit.
+* **MySubscriptions** Responds with a list of all your subscriptions.
+
+**Message links**
+
+UpdateMeBot makes use of prefilled message links, like [this one](https://www.reddit.com/message/compose/?to=UpdateMeBot&subject=Test&message=Test). From my research, these links work correctly in the browser on the classic site, the redesign, the mobile web site, and every single reddit app, except the official iOS reddit app. If you are on iOS, you can open the link in your mobile browser, switch to a different reddit app, or wait till you're on a computer browser.
+
+**Limited subreddits**
+
+The bot works by checking every subreddit that someone is subscribed to every few minutes. Each subreddit it checks takes several seconds, so I have to limit the number of subreddits or the bot will get overloaded. New subreddits are automatically added once they get enough requests.
+
+**Source**
+
+The bot is open source:
+
+https://github.com/Watchful1/UpdateMeBot
+
+**Changelog**
+
+2.0: Completely rewrote code. If an author subscribes to themselves, they will receive a message after all the other messages for a post is sent stating how many messages were sent.
+
+-------------------------------
+UpdateMeBot here! New changes, plus I need your help!
+-------------------------------
+Hi! I run the u/UpdateMeBot that sends out all the new story notifications.
+
+I've just finished completely rewriting the code for the bot. It was previously written in a way that made it very difficult to add new features. Additionally, there were a few rare, but significant bugs that occasionally caused it to miss a story and not send out messages for it.
+
+This new rewrite fixes that bug, but it's always a bit tricky to account for every possible edge case. I need your help to keep a close eye out for posts you were expecting to get a notification for, but didn't, and either post in this thread or direct message me to let me know. For some popular authors, it can take up to half an hour to get all the messages sent. Hopefully there won't be any problems.
+
+Also let me know if you see any misspellings or formatting mistakes.
+
+In addition to the rewrite, I have made one minor addition. If you are an author and you subscribe to yourself, the bot will send the message to you last to indicate it's done sending out the notifications for your post. It will also include how many messages were sent out.
+
+I have some plans for improvements that I'll be adding, but I'm also open to ideas.
