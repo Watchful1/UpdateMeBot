@@ -22,7 +22,7 @@ existing_authors = set()
 authors_file_read = open("valid_authors.txt", 'r')
 for line in authors_file_read:
 	count_valid += 1
-	existing_authors.add(line.strip())
+	existing_authors.add(line.strip().lower())
 authors_file_read.close()
 
 log.info(f"Read in {count_valid} valid existing authors")
@@ -31,7 +31,7 @@ count_invalid = 0
 authors_file_read = open("invalid_authors.txt", 'r')
 for line in authors_file_read:
 	count_invalid += 1
-	existing_authors.add(line.strip())
+	existing_authors.add(line.strip().lower())
 authors_file_read.close()
 
 log.info(f"Read in {count_invalid} invalid existing authors")
@@ -52,6 +52,9 @@ count_total_authors = count_valid + count_invalid + len(pending_authors)
 valid_authors_file_write = open("valid_authors.txt", 'a')
 invalid_authors_file_write = open("invalid_authors.txt", 'a')
 for author in pending_authors:
+	if not author or author == 'me':
+		count_invalid += 1
+		continue
 	if (count_valid + count_invalid) % 100 == 0:
 		log.info(f"{count_valid + count_invalid}/{count_total_authors}")
 		valid_authors_file_write.close()
@@ -62,7 +65,11 @@ for author in pending_authors:
 	try:
 		reddit_author._fetch()
 	except prawcore.exceptions.NotFound:
-		invalid_authors_file_write.write(f"{reddit_author.name}\n")
+		try:
+			invalid_authors_file_write.write(f"{reddit_author.name}\n")
+		except Exception as err:
+			log.info(err)
+			log.info(reddit_author.name.encode(encoding='ascii', errors='ignore').decode())
 		count_invalid += 1
 		continue
 

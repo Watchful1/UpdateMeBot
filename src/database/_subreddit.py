@@ -43,6 +43,13 @@ class _DatabaseSubreddit:
 
 		return subreddits
 
+	def get_all_subreddits(self):
+		log.debug(f"Fetching all subreddits")
+		subreddits = self.session.query(Subreddit)\
+			.all()
+
+		return subreddits
+
 	def get_unprofiled_subreddits(self):
 		log.debug(f"Fetching subreddits to profile")
 		subreddits = self.session.query(Subreddit)\

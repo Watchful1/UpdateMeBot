@@ -49,19 +49,37 @@
 		-all subs
 		-combined subs
 		-series subs
-subscribe to all posts in sub
-migration script
+-migration script
 	-set all subreddits with prompts, plus nosleep, to pm only
 	-default prompts from prompts table
 	-test stats
 	-startup mode for subreddit scanning
-	ingest existing submissions
+	-ingest existing submissions
 	-profile subreddits
-new in footer
 
-
+subscribe to all posts in sub
 verify that a subreddit/user exists when subscribing
-clear old comments/submissions
+clear old comments/submissions/users
+new in footer
+send message when activating subreddit
+what timezone are timestamps in
+change triggers back
+submission import per subreddit for nosleep and hfy
+better subreddit not activated message
+migrate subreddits not in whitelist
+
+migration steps
+	validate new authors
+	reset database
+	migrate subreddits
+	profile subreddits
+	load stats
+	extrapolate stats
+	import existing submissions
+	migrate subscriptions
+	migrate scan times
+	migrate comment timestamps
+
 pushshift why? page
 does replying to a message mark it as read
 r/hfy should prompt be stickied
@@ -70,7 +88,6 @@ tags from new series should prompt whether to message everyone
 blacklist certain subs
 active author polls
 	should the subscription number be posted publicly
-
 
 
 site ideas:
