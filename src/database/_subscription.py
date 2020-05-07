@@ -18,7 +18,9 @@ class _DatabaseSubscriptions:
 		self.session.add(subscription)
 
 	def get_subscription_by_fields(self, subscriber, author, subreddit, tag=None):
-		log.debug(f"Fetching subscription by fields: {subscriber.name} : {author.name} : {subreddit.name}: {tag}")
+		log.debug(
+			f"Fetching subscription by fields: {subscriber.name} : {author.name if author is not None else '-all'} "
+			f": {subreddit.name}: {tag}")
 
 		subscription = self.session.query(Subscription)\
 			.filter(Subscription.subscriber == subscriber)\
@@ -65,15 +67,17 @@ class _DatabaseSubscriptions:
 		log.debug(f"Fetching subscriptions by author and subreddit: {author.name} : {subreddit.name} : {tag}")
 
 		subscriptions = self.session.query(Subscription)\
-			.filter(Subscription.author == author)\
+			.filter((Subscription.author == author) | (Subscription.author == None))\
 			.filter(Subscription.subreddit == subreddit)\
 			.filter((Subscription.tag == None) | (Subscription.tag == tag))\
 			.all()
 
 		return sorted(
 			subscriptions,
-			key=lambda subscription:
-				(subscription.subscriber.name == subscription.author.name, subscription.subscriber.id)
+			key=lambda subscription: (
+				subscription.subscriber.name == (subscription.author.name if subscription.author is not None else ""),
+				subscription.subscriber.id
+			)
 		)
 
 	def get_user_subscriptions_by_name(self, user_name, only_enabled=True):
@@ -99,7 +103,11 @@ class _DatabaseSubscriptions:
 
 		return sorted(
 			subscriptions,
-			key=lambda subscription: (subscription.subreddit.name, subscription.author.name, subscription.tag)
+			key=lambda subscription: (
+				subscription.subreddit.name,
+				subscription.author.name if subscription.author is not None else None,
+				subscription.tag
+			)
 		)
 
 	def delete_user_subscriptions(self, user):

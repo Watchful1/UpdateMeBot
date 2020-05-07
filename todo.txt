@@ -67,6 +67,7 @@ change triggers back
 submission import per subreddit for nosleep and hfy
 better subreddit not activated message
 migrate subreddits not in whitelist
+remove some low usage subs
 
 migration steps
 	validate new authors

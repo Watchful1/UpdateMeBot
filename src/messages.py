@@ -16,6 +16,7 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 	authors = re.findall(r'(?: /?u/)([\w-]+)', line)
 	subreddits = re.findall(r'(?: /?r/)(\w+)', line)
 	tags = re.findall(r'(?:<)(.+)(?:>)', line)
+	is_all = "-all" in line
 
 	tag = None
 	if len(tags):
@@ -27,6 +28,10 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 	if len(authors) and len(subreddits):
 		case_is_user_supplied = True
 		author_name = authors[0]
+		subreddit_name = subreddits[0]
+
+	elif is_all and len(subreddits):
+		case_is_user_supplied = True
 		subreddit_name = subreddits[0]
 
 	else:
@@ -46,11 +51,14 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 					author_name = reddit_submission.author.name
 					subreddit_name = reddit_submission.subreddit.display_name
 				except Exception:
-					log.warning(f"Unable to fetch submission for link memssage: {links[0]}")
+					log.warning(f"Unable to fetch submission for link message: {links[0]}")
 					return
 
-	if author_name is not None and subreddit_name is not None:
-		author = database.get_or_add_user(author_name, case_is_user_supplied)
+	if (author_name is not None or is_all) and subreddit_name is not None:
+		if is_all:
+			author = None
+		else:
+			author = database.get_or_add_user(author_name, case_is_user_supplied)
 		subreddit = database.get_or_add_subreddit(subreddit_name, case_is_user_supplied)
 
 		if line.startswith(static.TRIGGER_UPDATE_LOWER):
@@ -75,9 +83,14 @@ def line_remove(line, user, bldr, database):
 
 		else:
 			for subscription in subscriptions:
-				bldr.append(
-					f"Removed your {'subscription' if subscription.recurring else 'update'} to "
-					f"u/{subscription.author.name} in r/{subscription.subreddit.name}")
+				if subscription.author is None:
+					bldr.append(
+						f"Removed your {'subscription' if subscription.recurring else 'update'} to "
+						f" r/{subscription.subreddit.name}")
+				else:
+					bldr.append(
+						f"Removed your {'subscription' if subscription.recurring else 'update'} to "
+						f"u/{subscription.author.name} in r/{subscription.subreddit.name}")
 
 			count_removed = database.delete_user_subscriptions(user)
 			if count_removed != len(subscriptions):
@@ -87,46 +100,79 @@ def line_remove(line, user, bldr, database):
 		users = re.findall(r'(?:/?u/)([\w-]+)', line)
 		subs = re.findall(r'(?:/?r/)(\w+)', line)
 		tags = re.findall(r'(?:<)(.+)(?:>)', line)
+		is_all = "-all" in line
 
 		tag = None
 		if len(tags):
 			tag = tags[0]
 
-		if not len(users) or not len(subs):
+		if (not len(users) and not is_all) or not len(subs):
 			log.info("Couldn't find anything in removal message")
 			bldr.append("I couldn't figure out what subscription to remove")
 
 		else:
-			author = database.get_user(users[0])
 			subreddit = database.get_subreddit(subs[0])
-			subscription = None
-			if author is not None and subreddit is not None:
-				subscription = database.get_subscription_by_fields(user, author, subreddit, tag)
-
-			if subscription is None:
-				if tag is None and database.get_count_tagged_subscriptions_by_fields(user, author, subreddit):
-					log.info(f"Removed tagged subscriptions for u/{user.name} to u/{author.name} in r/{subreddit.name}")
-					bldr.append(f"I've removed all your tagged subscriptions to u/{author.name} in r/{subreddit.name}")
-					database.delete_tagged_subreddit_author_subscriptions(user, author, subreddit)
-
-				else:
-					log.info(
-						f"Could not find subscription for u/{user.name} to u/{author.name} "
-						f"{('with tag '+tag if tag is not None else '')}in r/{subreddit.name} to remove")
-					bldr.append(
-						f"I couldn't find a subscription for you to u/{author.name} "
-						f"{('with tag '+tag+'>' if tag is not None else '')}in r/{subreddit.name} to remove")
+			if subreddit is None:
+				log.info(f"Could not find subreddit r/{subs[0]} for removal")
+				bldr.append(f"I couldn't find any subscriptions in r/{subs[0]} to remove")
 
 			else:
-				log.info(
-					f"Removed {'subscription' if subscription.recurring else 'update'} for u/{user.name} to "
-					f"u/{subscription.author.name} {('with tag '+tag if tag is not None else '')}in "
-					f"r/{subscription.subreddit.name}")
-				bldr.append(
-					f"I removed your {'subscription' if subscription.recurring else 'update'} to "
-					f"u/{subscription.author.name} in r/{subscription.subreddit.name}"
-					f"{(' with tag <'+tag+'>' if tag is not None else '')}")
-				database.delete_subscription(subscription)
+				if is_all:
+					subscription = database.get_subscription_by_fields(user, None, subreddit, tag)
+					if subscription is None:
+						if tag is None and database.get_count_tagged_subscriptions_by_fields(user, None, subreddit):
+							log.info(f"Removed tagged subscriptions for u/{user.name} to in r/{subreddit.name}")
+							bldr.append(f"I've removed all your global tagged subscriptions in r/{subreddit.name}")
+							database.delete_tagged_subreddit_author_subscriptions(user, None, subreddit)
+
+						else:
+							log.info(
+								f"Could not find subscription for u/{user.name} "
+								f"{('with tag '+tag if tag is not None else '')}in r/{subreddit.name} to remove")
+							bldr.append(
+								f"I couldn't find a subscription for you "
+								f"{('with tag <'+tag+'>' if tag is not None else '')}in r/{subreddit.name} to remove")
+
+					else:
+						log.info(
+							f"Removed {'subscription' if subscription.recurring else 'update'} for u/{user.name} "
+							f" {('with tag '+tag if tag is not None else '')}in r/{subscription.subreddit.name}")
+						bldr.append(
+							f"I removed your {'subscription' if subscription.recurring else 'update'} "
+							f"in r/{subscription.subreddit.name}{(' with tag <'+tag+'>' if tag is not None else '')}")
+						database.delete_subscription(subscription)
+				else:
+					author = database.get_user(users[0])
+					if author is None:
+						log.info(f"Could not find author u/{users[0]} for removal")
+						bldr.append(f"I couldn't find any subscriptions to u/{users[0]} in r/{subs[0]} to remove")
+
+					else:
+						subscription = database.get_subscription_by_fields(user, author, subreddit, tag)
+						if subscription is None:
+							if tag is None and database.get_count_tagged_subscriptions_by_fields(user, author, subreddit):
+								log.info(f"Removed tagged subscriptions for u/{user.name} to u/{author.name} in r/{subreddit.name}")
+								bldr.append(f"I've removed all your tagged subscriptions to u/{author.name} in r/{subreddit.name}")
+								database.delete_tagged_subreddit_author_subscriptions(user, author, subreddit)
+
+							else:
+								log.info(
+									f"Could not find subscription for u/{user.name} to u/{author.name} "
+									f"{('with tag '+tag if tag is not None else '')}in r/{subreddit.name} to remove")
+								bldr.append(
+									f"I couldn't find a subscription for you to u/{author.name} "
+									f"{('with tag <'+tag+'>' if tag is not None else '')}in r/{subreddit.name} to remove")
+
+						else:
+							log.info(
+								f"Removed {'subscription' if subscription.recurring else 'update'} for u/{user.name} to "
+								f"u/{subscription.author.name} {('with tag '+tag if tag is not None else '')}in "
+								f"r/{subscription.subreddit.name}")
+							bldr.append(
+								f"I removed your {'subscription' if subscription.recurring else 'update'} to "
+								f"u/{subscription.author.name} in r/{subscription.subreddit.name}"
+								f"{(' with tag <'+tag+'>' if tag is not None else '')}")
+							database.delete_subscription(subscription)
 
 
 def line_delete(line, user, bldr, database, reddit):
@@ -169,9 +215,12 @@ def line_list(user, bldr, database):
 				bldr.append("Each")
 			else:
 				bldr.append("Next")
-			bldr.append(" time u/")
-			bldr.append(subscription.author.name)
-			bldr.append(" posts")
+			if subscription.author is None:
+				bldr.append(" post")
+			else:
+				bldr.append(" time u/")
+				bldr.append(subscription.author.name)
+				bldr.append(" posts")
 			if subscription.tag is not None:
 				bldr.append(" tagged <")
 				bldr.append(subscription.tag)

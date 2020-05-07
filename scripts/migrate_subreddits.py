@@ -12,6 +12,7 @@ from classes.subreddit import Subreddit
 from classes.enums import SubredditPromptType
 
 r = praw.Reddit("Watchful1BotTest")
+blacklist = {'pics', 'mildlyinteresting', '3dprinting', 'rocketleague'}
 
 new_db = Database()
 
@@ -26,6 +27,8 @@ for row in c.execute('''
 	FROM subredditWhitelist
 '''):
 	subreddit_name = row[0]
+	if subreddit_name in blacklist:
+		continue
 	reddit_subreddit = r.subreddit(subreddit_name)
 	try:
 		reddit_subreddit._fetch()

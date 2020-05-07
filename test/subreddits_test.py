@@ -301,3 +301,40 @@ def test_scan_subreddit_tag(database, reddit):
 	assert len(notifications) == 2
 	assert notifications[0].subscription.subscriber.name == "User1"
 	assert notifications[1].subscription.subscriber.name == "User3"
+
+
+def test_scan_single_all_subscription_subreddit(database, reddit):
+	create_sub_with_posts(
+		database, reddit, "Subreddit1",
+		[
+			("Author1", timedelta(minutes=5)),
+			("Author2", timedelta(minutes=6))
+		]
+	)
+	bulk_sub_to(
+		database, "Subreddit1", "Author1",
+		["User2"]
+	)
+	bulk_sub_to(
+		database, "Subreddit1", "Author2",
+		["User3"]
+	)
+	subreddit = database.get_subreddit("Subreddit1")
+	user = database.get_or_add_user("User1")
+	database.add_subscription(
+		Subscription(
+			subscriber=user,
+			author=None,
+			subreddit=subreddit,
+			recurring=True
+		)
+	)
+	database.commit()
+	subreddits.scan_subreddits(reddit, database)
+
+	notifications = database.get_pending_notifications()
+	assert len(notifications) == 4
+	assert notifications[0].subscription.subscriber.name == "User3"
+	assert notifications[1].subscription.subscriber.name == "User1"
+	assert notifications[2].subscription.subscriber.name == "User2"
+	assert notifications[3].subscription.subscriber.name == "User1"

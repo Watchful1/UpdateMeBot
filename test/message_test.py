@@ -18,7 +18,10 @@ def assert_message(message, included):
 
 def assert_subscription(subscription, subscriber, author, subreddit, recurring, tag=None):
 	assert subscription.subscriber.name == subscriber
-	assert subscription.author.name == author
+	if author is None:
+		assert subscription.author is None
+	else:
+		assert subscription.author.name == author
 	assert subscription.subreddit.name == subreddit
 	assert subscription.recurring is recurring
 	assert subscription.tag == tag
@@ -78,6 +81,23 @@ def test_add_subscribe(database, reddit):
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
 	assert_subscription(subscriptions[0], username, author, subreddit_name, True)
+
+
+def test_add_subscribe_subreddit(database, reddit):
+	username = "Watchful1"
+	subreddit_name = "SubredditName"
+	init_db(database, [], [subreddit_name])
+	message = reddit_test.RedditObject(
+		body=f"SubscribeMe! r/{subreddit_name} -all",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(message.get_first_child().body, [subreddit_name, "each post"])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 1
+	assert_subscription(subscriptions[0], username, None, subreddit_name, True)
 
 
 def test_update_subscribe(database, reddit):
@@ -322,6 +342,32 @@ def test_remove_all_tagged_subscriptions(database, reddit):
 	assert_message(
 		message.get_first_child().body,
 		[author, subreddit_name, "removed all your tagged subscriptions"])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 0
+
+
+def test_remove_global_subscription(database, reddit):
+	username = "Watchful1"
+	subreddit_name = "SubredditName"
+	database.add_subscription(
+		Subscription(
+			database.get_or_add_user(username),
+			None,
+			database.get_or_add_subreddit(subreddit_name),
+			True
+		)
+	)
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"Remove! r/{subreddit_name} -all",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(
+		message.get_first_child().body,
+		[subreddit_name, "removed your subscription in"])
 
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 0

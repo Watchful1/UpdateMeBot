@@ -16,7 +16,7 @@ def send_queued_notifications(reddit, database):
 			notifications_sent += 1
 			log.info(
 				f"{notifications_sent}/{len(notifications)}/{count_pending_notifications}: Notifying u/"
-				f"{notification.subscription.subscriber.name} for u/{notification.subscription.author.name} in r/"
+				f"{notification.subscription.subscriber.name} for u/{notification.submission.author.name} in r/"
 				f"{notification.subscription.subreddit.name} : {notification.submission.submission_id}")
 
 			bldr = utils.get_footer(notification.render_notification())
