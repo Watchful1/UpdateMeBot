@@ -70,8 +70,8 @@
 		-don't have a linked submission
 		-don't have a linked subscription
 -new in footer
-what timezone are timestamps in
-change triggers back
+-what timezone are timestamps in
+-change triggers back
 -submission import per subreddit for nosleep and hfy
 -remove some low usage subs
 update info and new post links
