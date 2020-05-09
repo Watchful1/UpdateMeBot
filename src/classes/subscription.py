@@ -118,8 +118,8 @@ class Subscription(Base):
 					log.info(f"Subscription added, -all, r/{subreddit.name}, {recurring}, subreddit not enabled")
 				else:
 					log.info(f"Subscription added, u/{author.name}, r/{subreddit.name}, {recurring}, subreddit not enabled")
-				result_message = f"Subreddit r/{subreddit.name} is not being tracked by the bot. More details [here]"\
-					f"({static.TRACKING_INFO_URL})"
+				result_message = f"Subreddit r/{subreddit.name} is not being tracked by the bot. It will be automatically" \
+					f" added if enough users request it. More details [here]({static.TRACKING_INFO_URL})"
 				utils.check_update_disabled_subreddit(database, subreddit)
 
 			elif subreddit.tag_enabled and tag is not None:

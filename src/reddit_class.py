@@ -103,6 +103,26 @@ class Reddit:
 		else:
 			return self.reddit.comment(comment_id)
 
+	def subreddit_exists(self, subreddit_name):
+		log.debug(f"Checking if subreddit exists: {subreddit_name}")
+		reddit_subreddit = self.reddit.subreddit(subreddit_name)
+		try:
+			reddit_subreddit._fetch()
+		except (prawcore.exceptions.Redirect, prawcore.exceptions.NotFound):
+			return False
+		except prawcore.exceptions.Forbidden:
+			return False
+		return True
+
+	def redditor_exists(self, redditor_name):
+		log.debug(f"Checking if redditor exists: {redditor_name}")
+		redditor = self.reddit.redditor(redditor_name)
+		try:
+			redditor._fetch()
+		except prawcore.exceptions.NotFound:
+			return False
+		return True
+
 	def edit_comment(self, body, comment=None, comment_id=None):
 		if comment is None:
 			comment = self.get_comment(comment_id)

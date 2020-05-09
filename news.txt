@@ -51,3 +51,18 @@ Also let me know if you see any misspellings or formatting mistakes.
 In addition to the rewrite, I have made one minor addition. If you are an author and you subscribe to yourself, the bot will send the message to you last to indicate it's done sending out the notifications for your post. It will also include how many messages were sent out.
 
 I have some plans for improvements that I'll be adding, but I'm also open to ideas.
+
+-------------------------------
+UpdateMeBot bot updated to version 2.0
+-------------------------------
+u/UpdateMeBot is currently down for maintenance as I upgrade the database for the new version
+-----
+I've just finished completely rewriting the code for the bot. It was previously written in a way that made it very difficult to add new features. Additionally, there were a few rare, but significant bugs that occasionally caused it to miss a post and not send out messages for it.
+
+This new rewrite fixes that bug, but it's always a bit tricky to account for every possible edge case. I need your help to keep a close eye out for posts you were expecting to get a notification for, but didn't, and either post in this thread or direct message me to let me know. For some popular posters, it can take up to half an hour to get all the messages sent. Hopefully there won't be any problems.
+
+Also let me know if you see any misspellings or formatting mistakes.
+
+In addition to the rewrite, I have made one minor addition. If you are an author and you subscribe to yourself, the bot will send the message to you last to indicate it's done sending out the notifications for your post. It will also include how many messages were sent out.
+
+I have some plans for improvements that I'll be adding, but I'm also open to ideas.

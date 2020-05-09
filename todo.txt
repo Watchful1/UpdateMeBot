@@ -58,8 +58,8 @@
 	-profile subreddits
 
 -subscribe to all posts in sub
-verify that a subreddit/user exists when subscribing
-clear old comments/submissions/users
+-verify that a subreddit/user exists when subscribing
+-clear old comments/submissions/users
 	-delete all comments older than 6 months
 	-delete all submissions that
 		-don't have a comment
@@ -69,11 +69,12 @@ clear old comments/submissions/users
 		-don't have a linked comment
 		-don't have a linked submission
 		-don't have a linked subscription
-new in footer
+-new in footer
 what timezone are timestamps in
 change triggers back
 -submission import per subreddit for nosleep and hfy
 -remove some low usage subs
+update info and new post links
 
 migration steps
 	validate new authors
@@ -95,6 +96,7 @@ tags from new series should prompt whether to message everyone
 blacklist certain subs
 active author polls
 	should the subscription number be posted publicly
+remove new from footer
 
 
 site ideas:

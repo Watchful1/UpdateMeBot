@@ -58,8 +58,22 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 		if is_all:
 			author = None
 		else:
-			author = database.get_or_add_user(author_name, case_is_user_supplied)
-		subreddit = database.get_or_add_subreddit(subreddit_name, case_is_user_supplied)
+			author = database.get_user(author_name)
+			if author is None:
+				if not reddit.redditor_exists(author_name):
+					log.info(f"u/{author_name} doesn't exist when creating subscription")
+					bldr.append(f"It doesn't look like u/{author_name} exists, are you sure you spelled it right?")
+					return
+				else:
+					author = database.get_or_add_user(author_name, case_is_user_supplied)
+		subreddit = database.get_subreddit(subreddit_name)
+		if subreddit is None:
+			if not reddit.redditor_exists(subreddit_name):
+				log.info(f"r/{subreddit_name} doesn't exist when creating subscription")
+				bldr.append(f"It doesn't look like r/{subreddit_name} exists, are you sure you spelled it right?")
+				return
+			else:
+				subreddit = database.get_or_add_subreddit(subreddit_name, case_is_user_supplied)
 
 		if line.startswith(static.TRIGGER_UPDATE_LOWER):
 			recurring = False

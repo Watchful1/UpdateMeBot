@@ -18,5 +18,6 @@ TRIGGER_COMBINED = "|".join([TRIGGER_UPDATE_LOWER, TRIGGER_SUBSCRIBE_LOWER, TRIG
 
 TRACKING_INFO_URL = "https://www.reddit.com/r/UpdateMeBot/comments/g86jrs/subreddit_tracking_info/"
 INFO_POST = "https://www.reddit.com/r/UpdateMeBot/comments/4wirnm/updatemebot_info/"
+NEW_POST = "https://www.reddit.com/r/UpdateMeBot/comments/4wirnm/updatemebot_info/"
 
 DB_TO_MIGRATE_FROM = r"C:\Users\greg\Desktop\PyCharm\UpdateMeBot\databaseOld.db"

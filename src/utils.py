@@ -153,7 +153,9 @@ def get_footer(bldr=None):
 		"UpdateMeBot Feedback"
 	))
 	bldr.append(")")
-	bldr.append("|\n|-|-|-|-|")
+	bldr.append("|[*^(New)*](")
+	bldr.append(replace_np(static.NEW_POST))
+	bldr.append("|\n|-|-|-|-|-|")
 
 	return bldr
 

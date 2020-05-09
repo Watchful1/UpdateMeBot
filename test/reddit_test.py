@@ -156,6 +156,14 @@ class Reddit:
 		self.sent_messages.append(new_message)
 		return ReturnType.SUCCESS
 
+	def subreddit_exists(self, subreddit_name):
+		# not worth testing without the reddit api
+		return True
+
+	def redditor_exists(self, redditor_name):
+		# not worth testing without the reddit api
+		return True
+
 	def get_comment(self, comment_id):
 		if comment_id in self.all_comments:
 			return self.all_comments[comment_id]
