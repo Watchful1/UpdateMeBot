@@ -14,7 +14,7 @@ earliest_nosleep_date = datetime(2017, 11, 1)
 earliest_date = datetime(2016, 8, 27)
 subreddit_author_url = "https://api.pushshift.io/reddit/submission/search/?limit=1000&sort=desc&subreddit={}&author={}&before={}"
 subreddit_url = "https://api.pushshift.io/reddit/submission/search/?limit=1000&sort=desc&subreddit={}&before={}"
-nowEpoch = int(datetime(2020, 5, 5).timestamp())
+nowEpoch = int(datetime(2020, 5, 9, 21, 52, 36).timestamp())
 endEpoch = int(earliest_date.timestamp())
 
 new_db = Database()
@@ -29,9 +29,6 @@ log.info(f"Ingesting across {len(subreddit_authors)} subreddits")
 count_submissions = 0
 count_authors = 0
 for subreddit in subreddit_authors:
-	if subreddit.name != 'Nazer_The_Lazer':
-		continue
-
 	if subreddit.name in ['nosleep', 'HFY']:
 		log.info(f"Ingesting r/{subreddit.name} by date")
 		authors = subreddit_authors[subreddit]
