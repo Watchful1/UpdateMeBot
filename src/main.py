@@ -124,6 +124,8 @@ if __name__ == "__main__":
 			try:
 				database.backup()
 				last_backup = utils.datetime_now()
+
+				database.clean()
 			except Exception as err:
 				log.warning(f"Error backing up database: {err}")
 				log.warning(traceback.format_exc())

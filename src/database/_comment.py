@@ -64,3 +64,12 @@ class _DatabaseComments:
 
 		log.debug(f"Found incorrect comments: {len(results)}")
 		return results
+
+	def get_old_comments(self, before_date):
+		log.debug(f"Getting comments created before: {before_date}")
+
+		results = self.session.query(DbComment)\
+			.filter(DbComment.time_created < before_date)\
+			.all()
+
+		return results

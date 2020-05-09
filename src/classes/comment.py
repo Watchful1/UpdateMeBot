@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Boolean
+from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -18,6 +18,7 @@ class DbComment(Base):
 	recurring = Column(Boolean, nullable=False)
 	current_count = Column(Integer, nullable=False)
 	tag = Column(String(200, collation="NOCASE"))
+	time_created = Column(DateTime(), nullable=False)
 
 	submission = relationship("Submission", lazy="joined")
 	subscriber = relationship("User", foreign_keys=[subscriber_id], lazy="joined")
@@ -43,6 +44,7 @@ class DbComment(Base):
 		self.recurring = recurring
 		self.current_count = current_count
 		self.tag = tag
+		self.time_created = utils.datetime_now()
 
 	def __str__(self):
 		return f"{self.comment_id} : u/{self.subscriber.name}"

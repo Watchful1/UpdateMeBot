@@ -57,17 +57,23 @@
 	-ingest existing submissions
 	-profile subreddits
 
-subscribe to all posts in sub
+-subscribe to all posts in sub
 verify that a subreddit/user exists when subscribing
 clear old comments/submissions/users
+	-delete all comments older than 6 months
+	-delete all submissions that
+		-don't have a comment
+		-don't have any sent messages
+		-are older than 48 hours
+	-delete all users that
+		-don't have a linked comment
+		-don't have a linked submission
+		-don't have a linked subscription
 new in footer
-send message when activating subreddit
 what timezone are timestamps in
 change triggers back
-submission import per subreddit for nosleep and hfy
-better subreddit not activated message
-migrate subreddits not in whitelist
-remove some low usage subs
+-submission import per subreddit for nosleep and hfy
+-remove some low usage subs
 
 migration steps
 	validate new authors

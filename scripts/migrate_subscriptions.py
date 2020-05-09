@@ -31,17 +31,20 @@ for row in c.execute('''
 	select Subscriber, SubscribedTo, Subreddit, Single
 	from subscriptions
 '''):
-	if row[1] in valid_authors:
+	if row[1] in valid_authors or row[1] == 'sub':
 		subreddit = subreddits.get(row[2])
 		if subreddit is not None:
 			subscriber = user_map.get(row[0])
 			if subscriber is None:
 				subscriber = new_db.get_or_add_user(row[0])
 				user_map[row[0]] = subscriber
-			author = user_map.get(row[1])
-			if author is None:
-				author = new_db.get_or_add_user(row[1])
-				user_map[row[1]] = author
+			if row[1] == 'sub':
+				author = None
+			else:
+				author = user_map.get(row[1])
+				if author is None:
+					author = new_db.get_or_add_user(row[1])
+					user_map[row[1]] = author
 			subscription = Subscription(
 				subscriber=subscriber,
 				author=author,
