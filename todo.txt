@@ -97,6 +97,7 @@ blacklist certain subs
 active author polls
 	should the subscription number be posted publicly
 remove new from footer
+add readme
 
 
 site ideas:
