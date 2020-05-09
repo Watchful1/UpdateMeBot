@@ -1,307 +1,362 @@
-import logging.handlers
-import re
+import discord_logging
 import traceback
-from datetime import datetime
-from collections import defaultdict
-
-import praw
-
-import database
-import globals
-import reddit
-import strings
-import utility
-
-log = logging.getLogger("bot")
+import re
 
 
-def MessageLineUpdateSubscribe(line, author, created):
-	results = defaultdict(list)
-	line = line.replace("\u00A0"," ")
-	if line.startswith("updateme") or line.startswith("subscribeme") or line.startswith("http"):
-		users = re.findall('(?: /?u/)([\w-]*)', line)
-		subs = re.findall('(?: /?r/)(\w*)', line)
-		links = re.findall('(?:reddit.com/r/\w*/comments/)(\w*)', line)
-		filters = re.findall('(?:filter=)(\S*)', line)
+log = discord_logging.get_logger()
 
-		if len(links) != 0:
-			try:
-				submission = reddit.getSubmission(links[0])
-				users.append(str(submission.author))
-				subs.append(str(submission.subreddit))
-			except Exception as err:
-				log.debug("Exception parsing link")
 
-		if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
-			if line.startswith("updateme"):
-				subscriptionTypeSingle = True
-			elif line.startswith("subscribeme"):
-				subscriptionTypeSingle = False
+from classes.subscription import Subscription
+from classes.enums import ReturnType
+import static
+import utils
+
+
+def line_update_subscribe(line, user, bldr, database, reddit):
+	authors = re.findall(r'(?: /?u/)([\w-]+)', line)
+	subreddits = re.findall(r'(?: /?r/)(\w+)', line)
+	tags = re.findall(r'(?:<)(.+)(?:>)', line)
+	is_all = "-all" in line
+
+	tag = None
+	if len(tags):
+		tag = tags[0]
+
+	author_name = None
+	subreddit_name = None
+	case_is_user_supplied = False
+	if len(authors) and len(subreddits):
+		case_is_user_supplied = True
+		author_name = authors[0]
+		subreddit_name = subreddits[0]
+
+	elif is_all and len(subreddits):
+		case_is_user_supplied = True
+		subreddit_name = subreddits[0]
+
+	else:
+		links = re.findall(r'(?:reddit.com/r/\w+/comments/)(\w+)', line)
+
+		if len(links):
+			db_submission = database.get_submission_by_id(links[0])
+			tag = None
+			if db_submission is not None:
+				author_name = db_submission.author.name
+				subreddit_name = db_submission.subreddit.name
+				if db_submission.subreddit.tag_enabled:
+					tag = db_submission.tag
 			else:
-				subscriptionTypeSingle = not database.subredditDefaultSubscribe(subs[0].lower())
+				reddit_submission = reddit.get_submission(links[0])
+				try:
+					author_name = reddit_submission.author.name
+					subreddit_name = reddit_submission.subreddit.display_name
+				except Exception:
+					log.warning(f"Unable to fetch submission for link message: {links[0]}")
+					return
 
-			if len(filters):
-				filter = filters[0]
+	if (author_name is not None or is_all) and subreddit_name is not None:
+		if is_all:
+			author = None
+		else:
+			author = database.get_user(author_name)
+			if author is None:
+				if not reddit.redditor_exists(author_name):
+					log.info(f"u/{author_name} doesn't exist when creating subscription")
+					bldr.append(f"It doesn't look like u/{author_name} exists, are you sure you spelled it right?")
+					return
+				else:
+					author = database.get_or_add_user(author_name, case_is_user_supplied)
+		subreddit = database.get_subreddit(subreddit_name)
+		if subreddit is None:
+			if not reddit.redditor_exists(subreddit_name):
+				log.info(f"r/{subreddit_name} doesn't exist when creating subscription")
+				bldr.append(f"It doesn't look like r/{subreddit_name} exists, are you sure you spelled it right?")
+				return
 			else:
-				filter = None
-			if len(users) > 1:
-				for user in users:
-					result, data = utility.addUpdateSubscription(author, user, subs[0], created, subscriptionTypeSingle, filter)
-					results[result].append(data)
-			elif len(subs) > 1:
-				for sub in subs:
-					result, data = utility.addUpdateSubscription(author, users[0], sub, created, subscriptionTypeSingle, filter)
-					results[result].append(data)
-			else:
-				result, data = utility.addUpdateSubscription(author, users[0], subs[0], created, subscriptionTypeSingle, filter)
-				results[result].append(data)
+				subreddit = database.get_or_add_subreddit(subreddit_name, case_is_user_supplied)
 
-	return results
+		if line.startswith(static.TRIGGER_UPDATE_LOWER):
+			recurring = False
+		elif line.startswith(static.TRIGGER_SUBSCRIBE_LOWER):
+			recurring = True
+		else:
+			recurring = subreddit.default_recurring
+
+		result_message, subscription = Subscription.create_update_subscription(
+			database, user, author, subreddit, recurring, tag
+		)
+		bldr.append(result_message)
 
 
-def MessageLineRemove(line, author):
-	results = defaultdict(list)
+def line_remove(line, user, bldr, database):
 	if line.startswith("removeall"):
-		log.info("Removing all subscriptions for /u/"+author)
-		results['removed'].extend(database.getMySubscriptions(author))
-		database.removeAllSubscriptions(author)
+		subscriptions = database.get_user_subscriptions(user)
+		if not len(subscriptions):
+			log.info(f"u/{user.name} doesn't have any subscriptions to remove")
+			bldr.append("You don't have any subscriptions to remove")
 
-	elif line.startswith("remove"):
-		users = re.findall('(?:/?u/)([\w-]*)', line)
-		subs = re.findall('(?:/?r/)(\w*)', line)
-
-		if len(users) != 0 and len(subs) != 0 and not (len(users) > 1 and len(subs) > 1):
-			if len(users) > 1:
-				for user in users:
-					result, data = utility.removeSubscription(author, user, subs[0])
-					results[result].append(data)
-			elif len(subs) > 1:
-				for sub in subs:
-					result, data = utility.removeSubscription(author, users[0], sub)
-					results[result].append(data)
-			else:
-				result, data = utility.removeSubscription(author, users[0], subs[0])
-				results[result].append(data)
-
-	return results
-
-
-def MessageLineList(line, author):
-	results = defaultdict(list)
-	if line.startswith("mysubscriptions") or line.startswith("myupdates"):
-		log.info("Listing subscriptions for /u/"+author)
-		results['list'] = True
-
-	return results
-
-
-def MessageLineDelete(line, author):
-	results = defaultdict(list)
-	if line.startswith("deletecomment"):
-		threadID = re.findall('(?: t3_)(\w*)', line)
-
-		if len(threadID) == 0: return results
-
-		commentID = database.deleteComment(threadID[0], author)
-		if commentID:
-			log.info("Deleting comment with ID %s/%s", threadID[0], commentID)
-			if reddit.deleteComment(id=commentID):
-				results['commentsDeleted'].append(threadID[0])
-			else:
-				log.warning("Could not delete comment with ID %s/%s", threadID[0], commentID)
-
-	return results
-
-
-def MessageLineAddSubreddit(line):
-	results = defaultdict(list)
-	if line.startswith("addsubreddit"):
-		subs = re.findall('(?:/?r/)(\w*)', line)
-		filters = re.findall('(?:filter=)(\S*)', line)
-		if len(filters):
-			filter = filters[0]
-			log.debug("Found filter in addsubreddit: "+filter)
 		else:
-			filter = None
-
-		for sub in subs:
-			log.info("Whitelisting subreddit /r/"+sub)
-			deniedRequests = database.getDeniedSubscriptions(sub.lower())
-
-			for user in deniedRequests:
-				log.info("Messaging /u/%s that their subscriptions in /r/%s have been activated", user, sub)
-				strList = strings.activatingSubredditMessage(sub.lower(), deniedRequests[user])
-				strList.append("\n\n*****\n\n")
-				strList.append(strings.footer)
-				if not reddit.sendMessage(user, strings.messageSubject(user), ''.join(strList)):
-					log.warning("Could not send message to /u/%s when activating subreddit", user)
-
-			results['subredditsAdded'].append({'subreddit': sub, 'subscribers': len(deniedRequests)})
-
-			database.activateSubreddit(sub, line.startswith("addsubredditsub"), filter)
-
-	return results
-
-
-def MessageLineSubredditPM(line):
-	results = defaultdict(list)
-	if line.startswith("subredditpm"):
-		subs = re.findall('(?:/?r/)(\w*)', line)
-		if line.startswith("subredditpmtrue"):
-			alwaysPM = True
-		elif line.startswith("subredditpmfalse"):
-			alwaysPM = False
-		else:
-			return results
-
-		for sub in subs:
-			log.info("Setting subreddit /r/"+sub+" to "+("don't " if not alwaysPM else "")+"alwaysPM")
-			database.setAlwaysPMForSubreddit(sub.lower(), alwaysPM)
-			results['alwaysPM'].append({'subreddit': sub, 'alwaysPM': alwaysPM})
-
-	return results
-
-
-def MessageLineMute(line, author, hasAdmin):
-	results = defaultdict(list)
-	if line.startswith("leavemealone") or line.startswith("talktome"):
-		addBlacklist = True if line.startswith("leavemealone") else False
-		subs = re.findall('(?:/?r/)(\w*)', line)
-		users = re.findall('(?:/?u/)([\w-]*)', line)
-
-		if len(subs) or len(users):
-			if hasAdmin:
-				for sub in subs:
-					log.info(("Blacklisting" if addBlacklist else "Removing blacklist for")+" subreddit /r/"+sub)
-					result = database.blacklist(sub, True, addBlacklist)
-					results['blacklist'].append({'name': sub, 'isSubreddit': True, 'added': addBlacklist, 'result': result})
-
-				for user in users:
-					log.info(("Blacklisting" if addBlacklist else "Removing blacklist for")+" user /u/"+user)
-					result = database.blacklist(user, False, addBlacklist)
-					results['blacklist'].append({'name': user, 'isSubreddit': False, 'added': addBlacklist, 'result': result})
-			else:
-				log.info("User /u/"+author+" tried to blacklist")
-				results['blacklistNot'] = True
-		else:
-			log.info(("Blacklisting" if addBlacklist else "Removing blacklist for")+" user /u/"+author)
-			result = database.blacklist(author, False, addBlacklist)
-			results['blacklist'].append({'name': author, 'isSubreddit': False, 'added': addBlacklist, 'result': result})
-
-	return results
-
-
-def MessageLinePrompt(line, author, hasAdmin):
-	results = defaultdict(list)
-	if line.startswith("prompt") or line.startswith("dontprompt"):
-		addPrompt = True if line.startswith("prompt") else False
-		subs = re.findall('(?:/?r/)(\w*)', line)
-		users = re.findall('(?:/?u/)([\w-]*)', line)
-
-		skip = False
-		if len(subs) and len(users) and hasAdmin:
-			sub = subs[0].lower()
-			user = users[0].lower()
-		elif len(subs):
-			sub = subs[0].lower()
-			user = author
-		else:
-			skip = True
-
-		if not skip and not database.isSubredditWhitelisted(sub):
-			log.info("Could not add prompt for /u/"+user+" in /r/"+sub+", not whitelisted")
-			results["couldnotadd"].append({'subreddit': sub})
-			skip = True
-			utility.checkDeniedRequests(sub)
-
-		if not skip:
-			if database.isPrompt(user, sub):
-				if not addPrompt:
-					log.info("Removing prompt for /u/"+user+" in /r/"+sub)
-					database.removePrompt(user, sub)
-					results['prompt'].append({'name': user, 'subreddit': sub, 'added': False, 'exists': False})
+			for subscription in subscriptions:
+				if subscription.author is None:
+					bldr.append(
+						f"Removed your {'subscription' if subscription.recurring else 'update'} to "
+						f" r/{subscription.subreddit.name}")
 				else:
-					log.info("Prompt doesn't exist for /u/"+user+" in /r/"+sub)
-					results['prompt'].append({'name': user, 'subreddit': sub, 'added': False, 'exists': True})
+					bldr.append(
+						f"Removed your {'subscription' if subscription.recurring else 'update'} to "
+						f"u/{subscription.author.name} in r/{subscription.subreddit.name}")
+
+			count_removed = database.delete_user_subscriptions(user)
+			if count_removed != len(subscriptions):
+				log.warning(f"Error removing subscriptions for u/{user.name} : {len(subscriptions)} : {count_removed}")
+
+	else:
+		users = re.findall(r'(?:/?u/)([\w-]+)', line)
+		subs = re.findall(r'(?:/?r/)(\w+)', line)
+		tags = re.findall(r'(?:<)(.+)(?:>)', line)
+		is_all = "-all" in line
+
+		tag = None
+		if len(tags):
+			tag = tags[0]
+
+		if (not len(users) and not is_all) or not len(subs):
+			log.info("Couldn't find anything in removal message")
+			bldr.append("I couldn't figure out what subscription to remove")
+
+		else:
+			subreddit = database.get_subreddit(subs[0])
+			if subreddit is None:
+				log.info(f"Could not find subreddit r/{subs[0]} for removal")
+				bldr.append(f"I couldn't find any subscriptions in r/{subs[0]} to remove")
+
 			else:
-				if addPrompt:
-					log.info("Adding prompt for /u/"+user+" in /r/"+sub)
-					database.addPrompt(user, sub)
-					results['prompt'].append({'name': user, 'subreddit': sub, 'added': True, 'exists': False})
+				if is_all:
+					subscription = database.get_subscription_by_fields(user, None, subreddit, tag)
+					if subscription is None:
+						if tag is None and database.get_count_tagged_subscriptions_by_fields(user, None, subreddit):
+							log.info(f"Removed tagged subscriptions for u/{user.name} to in r/{subreddit.name}")
+							bldr.append(f"I've removed all your global tagged subscriptions in r/{subreddit.name}")
+							database.delete_tagged_subreddit_author_subscriptions(user, None, subreddit)
+
+						else:
+							log.info(
+								f"Could not find subscription for u/{user.name} "
+								f"{('with tag '+tag if tag is not None else '')}in r/{subreddit.name} to remove")
+							bldr.append(
+								f"I couldn't find a subscription for you "
+								f"{('with tag <'+tag+'>' if tag is not None else '')}in r/{subreddit.name} to remove")
+
+					else:
+						log.info(
+							f"Removed {'subscription' if subscription.recurring else 'update'} for u/{user.name} "
+							f" {('with tag '+tag if tag is not None else '')}in r/{subscription.subreddit.name}")
+						bldr.append(
+							f"I removed your {'subscription' if subscription.recurring else 'update'} "
+							f"in r/{subscription.subreddit.name}{(' with tag <'+tag+'>' if tag is not None else '')}")
+						database.delete_subscription(subscription)
 				else:
-					log.info("Prompt already exists for /u/"+user+" in /r/"+sub)
-					results['prompt'].append({'name': user, 'subreddit': sub, 'added': False, 'exists': True})
+					author = database.get_user(users[0])
+					if author is None:
+						log.info(f"Could not find author u/{users[0]} for removal")
+						bldr.append(f"I couldn't find any subscriptions to u/{users[0]} in r/{subs[0]} to remove")
 
-	return results
+					else:
+						subscription = database.get_subscription_by_fields(user, author, subreddit, tag)
+						if subscription is None:
+							if tag is None and database.get_count_tagged_subscriptions_by_fields(user, author, subreddit):
+								log.info(f"Removed tagged subscriptions for u/{user.name} to u/{author.name} in r/{subreddit.name}")
+								bldr.append(f"I've removed all your tagged subscriptions to u/{author.name} in r/{subreddit.name}")
+								database.delete_tagged_subreddit_author_subscriptions(user, author, subreddit)
+
+							else:
+								log.info(
+									f"Could not find subscription for u/{user.name} to u/{author.name} "
+									f"{('with tag '+tag if tag is not None else '')}in r/{subreddit.name} to remove")
+								bldr.append(
+									f"I couldn't find a subscription for you to u/{author.name} "
+									f"{('with tag <'+tag+'>' if tag is not None else '')}in r/{subreddit.name} to remove")
+
+						else:
+							log.info(
+								f"Removed {'subscription' if subscription.recurring else 'update'} for u/{user.name} to "
+								f"u/{subscription.author.name} {('with tag '+tag if tag is not None else '')}in "
+								f"r/{subscription.subreddit.name}")
+							bldr.append(
+								f"I removed your {'subscription' if subscription.recurring else 'update'} to "
+								f"u/{subscription.author.name} in r/{subscription.subreddit.name}"
+								f"{(' with tag <'+tag+'>' if tag is not None else '')}")
+							database.delete_subscription(subscription)
 
 
-def processMessages():
-	messagesProcessed = 0
-	try:
-		for message in reddit.getMessages():
-			# checks to see as some comments might be replys and non PMs
-			if isinstance(message, praw.models.Message):
-				messagesProcessed += 1
-				replies = defaultdict(list)
-				msgAuthor = str(message.author).lower()
-				log.info("Parsing message from /u/{} : {}".format(msgAuthor, message.id))
-				hasAdmin = msgAuthor == globals.OWNER_NAME.lower()
+def line_delete(line, user, bldr, database, reddit):
+	ids = re.findall(r'delete\s+(\w+)', line)
 
-				for line in message.body.lower().splitlines():
-					utility.combineDictLists(replies, MessageLineUpdateSubscribe(line, msgAuthor, datetime.utcfromtimestamp(message.created_utc)))
-					utility.combineDictLists(replies, MessageLineRemove(line, msgAuthor))
-					utility.combineDictLists(replies, MessageLineList(line, msgAuthor))
-					utility.combineDictLists(replies, MessageLineDelete(line, msgAuthor))
-					utility.combineDictLists(replies, MessageLineMute(line, msgAuthor, hasAdmin))
-					utility.combineDictLists(replies, MessageLinePrompt(line, msgAuthor, hasAdmin))
-					if hasAdmin:
-						utility.combineDictLists(replies, MessageLineAddSubreddit(line))
-						utility.combineDictLists(replies, MessageLineSubredditPM(line))
-
-				sections = [
-					{'key': "added", 'function': strings.confirmationSection},
-					{'key': "updated", 'function': strings.updatedSubscriptionSection},
-					{'key': "exist", 'function': strings.alreadySubscribedSection},
-					{'key': "removed", 'function': strings.removeUpdatesConfirmationSection},
-					{'key': "commentsDeleted", 'function': strings.deletedCommentSection},
-					{'key': "couldnotadd", 'function': strings.couldNotSubscribeSection},
-					{'key': "subredditsAdded", 'function': strings.subredditActivatedMessage},
-					{'key': "alwaysPM", 'function': strings.subredditAlwaysPMMessage},
-					{'key': "blacklist", 'function': strings.blacklistSection},
-					{'key': "blacklistNot", 'function': strings.blacklistNotSection},
-					{'key': "prompt", 'function': strings.promptSection},
-				]
-
-				strList = []
-				for section in sections:
-					if section['key'] in replies:
-						strList.extend(section['function'](replies[section['key']]))
-						strList.append("\n\n*****\n\n")
-
-				# this is special cased since we need to pull in the subscriptions now, rather than during line processing
-				if 'list' in replies:
-					strList.extend(strings.yourUpdatesSection(database.getMySubscriptions(msgAuthor)))
-					strList.append("\n\n*****\n\n")
-
-				if len(strList) == 0:
-					log.info("Nothing found in message")
-					strList.append(strings.couldNotUnderstandSection)
-					strList.append("\n\n*****\n\n")
-
-				strList.append(strings.footer)
-
-				reddit.markMessageRead(message)
-
-				log.debug("Sending message to /u/"+str(message.author))
-				if not reddit.replyMessage(message, ''.join(strList)):
-					log.warning("Exception sending confirmation message")
+	if len(ids) == 0:
+		log.info("Couldn't find a thread id to delete")
+		return
+	else:
+		db_comment = database.get_comment_by_thread(ids[0])
+		if db_comment is not None:
+			if db_comment.subscriber.name == user.name:
+				comment = reddit.get_comment(db_comment.comment_id)
+				if not reddit.delete_comment(comment):
+					log.debug(f"Unable to delete comment: {db_comment.comment_id}")
+					bldr.append("Something went wrong deleting the comment")
+				else:
+					database.delete_comment(db_comment)
+					log.debug(f"Deleted comment: {db_comment.comment_id}")
+					bldr.append("Comment deleted.")
 			else:
-				body = message.body.lower()
-				if globals.SUBSCRIPTION_NAME in body or globals.UPDATE_NAME in body:
-					log.debug("Marking comment as read: {}".format(message.id))
-					reddit.markMessageRead(message)
-	except Exception as err:
-		log.warning("Exception reading messages")
-		log.warning(traceback.format_exc())
+				log.debug(f"Bot wasn't replying to owner: {db_comment.subscriber.name} : {user.name}")
+				bldr.append("It looks like the bot wasn't replying to you.")
+		else:
+			log.debug(f"Comment doesn't exist: {ids[0]}")
+			bldr.append("This comment doesn't exist or was already deleted.")
 
-	return messagesProcessed
+
+def line_list(user, bldr, database):
+	subscriptions = database.get_user_subscriptions(user)
+	if not len(subscriptions):
+		log.info(f"u/{user.name} doesn't have any subscriptions to list")
+		bldr.append("You don't have any subscriptions")
+
+	else:
+		log.info(f"Listing subscriptions for u/{user.name}")
+		bldr.append("I'll message you for each of the following:  \n")
+		for subscription in subscriptions:
+			if subscription.recurring:
+				bldr.append("Each")
+			else:
+				bldr.append("Next")
+			if subscription.author is None:
+				bldr.append(" post")
+			else:
+				bldr.append(" time u/")
+				bldr.append(subscription.author.name)
+				bldr.append(" posts")
+			if subscription.tag is not None:
+				bldr.append(" tagged <")
+				bldr.append(subscription.tag)
+				bldr.append(">")
+			bldr.append(" in r/")
+			bldr.append(subscription.subreddit.name)
+			bldr.append("  \n")
+
+
+def line_add_sub(line, bldr, database):
+	subs = re.findall(r'(?:/?r/)(\w+)', line)
+	if len(subs):
+		subreddit = database.get_or_add_subreddit(subs[0])
+		count_subscriptions = database.get_count_subscriptions_for_subreddit(subreddit)
+		if "subscribe" in line:
+			recurring = True
+		else:
+			recurring = False
+		log.warning(
+			f"Activating r/{subreddit.name} with {count_subscriptions} subscriptions as "
+			f"{'subscription' if recurring else 'update'}")
+		subreddit.is_enabled = True
+		subreddit.last_scanned = utils.datetime_now()
+		subreddit.date_enabled = utils.datetime_now()
+		subreddit.default_recurring = recurring
+		if subreddit.posts_per_hour is None:
+			subreddit.posts_per_hour = 50
+		bldr.append(f"Activated r/{subreddit.name} with {count_subscriptions} subscriptions as ")
+		bldr.append('subscribe' if recurring else 'update')
+
+
+def process_message(message, reddit, database, count_string=""):
+	log.info(f"{count_string}: Message u/{message.author.name} : {message.id}")
+	user = database.get_or_add_user(message.author.name)
+	body = message.body.lower().replace("\u00A0", " ")
+
+	bldr = []
+	append_list = False
+	current_len = 0
+	for line in body.splitlines():
+		if line.startswith(static.TRIGGER_UPDATE_LOWER) or line.startswith(static.TRIGGER_SUBSCRIBE_LOWER) \
+				or line.startswith("http"):
+			line_update_subscribe(line, user, bldr, database, reddit)
+		elif line.startswith("remove"):
+			line_remove(line, user, bldr, database)
+		elif line.startswith("delete"):
+			line_delete(line, user, bldr, database, reddit)
+		elif line.startswith("mysubscriptions") or line.startswith("myupdates"):
+			append_list = True
+		elif user.name == static.OWNER:
+			if line.startswith("addsubreddit"):
+				line_add_sub(line, bldr, database)
+
+		if len(bldr) > current_len:
+			current_len = len(bldr)
+			bldr.append("  \n")
+
+	if append_list:
+		line_list(user, bldr, database)
+
+	if not len(bldr):
+		log.info("Nothing found in message")
+		bldr.append("I couldn't find anything in your message.")
+
+	bldr.extend(utils.get_footer())
+	full_message = ''.join(bldr)
+	replies = []
+	if len(full_message) > 9500:
+		partial_message = []
+		partial_length = 0
+		for line in full_message.split("\n"):
+			partial_message.append(line)
+			partial_message.append("\n")
+			partial_length += len(line) + 1
+			if partial_length > 9500:
+				replies.append(''.join(partial_message))
+				partial_message = []
+				partial_length = 0
+
+		if len(partial_message):
+			replies.append(''.join(partial_message))
+	else:
+		replies.append(full_message)
+
+	for reply in replies:
+		result = reddit.reply_message(message, reply)
+		if result != ReturnType.SUCCESS:
+			if result == ReturnType.INVALID_USER:
+				log.info("User banned before reply could be sent")
+			else:
+				raise ValueError(f"Error sending message: {result.name}")
+
+	database.commit()
+
+
+def process_messages(reddit, database):
+	messages = reddit.get_messages()
+	if len(messages):
+		log.debug(f"Processing {len(messages)} messages")
+	i = 0
+	for message in messages[::-1]:
+		i += 1
+		if reddit.is_message(message):
+			if message.author is None:
+				log.info(f"Message {message.id} is a system notification")
+			elif message.author.name == "reddit":
+				log.info(f"Message {message.id} is from reddit, skipping")
+			else:
+				try:
+					process_message(message, reddit, database, f"{i}/{len(messages)}")
+				except Exception:
+					log.warning(f"Error processing message: {message.id} : u/{message.author.name}")
+					log.warning(traceback.format_exc())
+				finally:
+					database.commit()
+		else:
+			log.info(f"Object not message, skipping: {message.id}")
+
+		try:
+			reddit.mark_read(message)
+		except Exception:
+			log.warning(f"Error marking message read: {message.id} : {message.author.name}")
+			log.warning(traceback.format_exc())
+
+	return len(messages)

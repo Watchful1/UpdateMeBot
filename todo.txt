@@ -1,0 +1,107 @@
+-messages
+	-subscribe
+	-remove
+	-delete
+	-list
+	-add sub
+	-limit size
+-comments
+	-scan comments
+	-update comment numbers
+	-subreddit pm
+-subreddit checking
+	-profile subreddit
+	-scan subreddits
+	-log scanned post ids
+	-track some stats for subreddits/groups/time
+	-flair filtering
+	-prompts
+	-add sub log warning
+-notification sending
+	-if author is subscribed, include how many messages were sent in their message
+-stats
+	-save stat per user/sub/day
+
+
+-series tags
+	-tags can be enclosed in [], or at the start of the title and followed by : or -
+	-subreddit scan parsing
+		-parse post title into tag
+		-subscriptions with tag or no tag should trigger notifications
+	-subreddit settings
+		-tags enabled
+	-notification sending
+		-notification should include tag
+		-unsub link if user is subscribed to tag
+	-comment subscriptions
+		-pull from parsed submission
+		-subscribeall to ignore tag
+	-message subscriptions
+		-link subscription
+		-subscribing to all overrides series subscription
+		-subscribing to series is ignored if subscribed to all
+		-add to list command
+		-subscription removals
+			-removing subscription for author removes all series
+	-prompts
+		-if tag present, prompt should include
+	-stats
+		-all subs
+		-combined subs
+		-series subs
+-migration script
+	-set all subreddits with prompts, plus nosleep, to pm only
+	-default prompts from prompts table
+	-test stats
+	-startup mode for subreddit scanning
+	-ingest existing submissions
+	-profile subreddits
+
+-subscribe to all posts in sub
+-verify that a subreddit/user exists when subscribing
+-clear old comments/submissions/users
+	-delete all comments older than 6 months
+	-delete all submissions that
+		-don't have a comment
+		-don't have any sent messages
+		-are older than 48 hours
+	-delete all users that
+		-don't have a linked comment
+		-don't have a linked submission
+		-don't have a linked subscription
+-new in footer
+-what timezone are timestamps in
+-change triggers back
+-submission import per subreddit for nosleep and hfy
+-remove some low usage subs
+update info and new post links
+
+migration steps
+	validate new authors
+	reset database
+	migrate subreddits
+	profile subreddits
+	load stats
+	extrapolate stats
+	import existing submissions
+	migrate subscriptions
+	migrate scan times
+	migrate comment timestamps
+
+pushshift why? page
+does replying to a message mark it as read
+r/hfy should prompt be stickied
+r/nosleep can I post prompt
+tags from new series should prompt whether to message everyone
+blacklist certain subs
+active author polls
+	should the subscription number be posted publicly
+remove new from footer
+
+
+site ideas:
+graph of subscribers over time
+	per story if there are multiple stories
+graph of posts with score, number of comments and number of messages sent/pending
+edit fields for
+	subscription prompts

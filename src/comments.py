@@ -1,168 +1,198 @@
-import logging.handlers
-import time
+import discord_logging
 import traceback
 from datetime import datetime
-from datetime import timedelta
 
-import requests
+log = discord_logging.get_logger()
 
-import database
-import globals
-import reddit
-import strings
-import utility
-
-log = logging.getLogger("bot")
+import utils
+import static
+from classes.subscription import Subscription
+from classes.comment import DbComment
+from classes.enums import ReturnType
 
 
-def searchComments(searchTerm, startTime):
-	errors = []
-	if searchTerm == globals.UPDATE_NAME:
-		subscriptionType = True
-	elif searchTerm == globals.SUBSCRIPTION_NAME:
-		subscriptionType = False
-
-	url = "https://api.pushshift.io/reddit/comment/search?q="+searchTerm+"&limit=200&sort=desc"
-	try:
-		requestTime = time.perf_counter()
-		json = requests.get(url, headers={'User-Agent': globals.USER_AGENT})
-		requestSeconds = int(time.perf_counter() - requestTime)
-		if json.status_code != 200:
-			log.warning("Could not parse data for search term: "+searchTerm + " status: " + str(json.status_code))
-			errors.append("Could not parse data for search term: "+str(json.status_code) + " : " + url)
-			return 0, 0, 0, errors
-		comments = json.json()['data']
-	except Exception as err:
-		log.warning("Could not parse data for search term: "+searchTerm)
-		log.warning(traceback.format_exc())
-		errors.append("Could not parse data for search term: "+url)
-		return 0, 0, 0, errors
-
-	if len(comments) == 0:
-		log.warning("Could not parse data for search term, no results: "+searchTerm + " status: "+str(json.status_code))
-		errors.append("Could not parse data for search term, no results: "+str(json.status_code) + " : " +url)
-		return 0, 0, 0, errors
-	elif requestSeconds > 80 and len(comments) > 0:
-		log.warning("Long request, but returned successfully: "+str(requestSeconds))
-
-	timestamp = database.getCommentSearchTime(searchTerm)
-	if timestamp is None:
-		timestamp = startTime
-		database.updateCommentSearchSeconds(searchTerm, timestamp)
-
-	# we want to start at the oldest. Since we update the current timestamp at each item,
-	# if we crash, we don't want to lose anything
-	oldestIndex = len(comments) - 1
-	for i, comment in enumerate(comments):
-		if datetime.utcfromtimestamp(comment['created_utc']) < timestamp:
-			oldestIndex = i - 1
-			break
-		if i == 99:
-			log.info("Messaging owner that that we might have missed a comment")
-			strList = strings.possibleMissedCommentMessage(datetime.utcfromtimestamp(comment['created_utc']), timestamp)
-			strList.append("\n\n*****\n\n")
-			strList.append(strings.footer)
-			if not reddit.sendMessage(globals.OWNER_NAME, "Missed Comment", ''.join(strList)):
-				log.warning("Could not send message to owner that we might have missed a comment")
+# def database_set_seen(database, comment_seen):
+# 	database.save_keystore("comment_timestamp", comment_seen.strftime("%Y-%m-%d %H:%M:%S"))
+#
+#
+# def database_get_seen(database):
+# 	result = database.get_keystore("comment_timestamp")
+# 	if result is None:
+# 		log.warning("Comment time not in database, returning now")
+# 		now = utils.datetime_now()
+# 		database_set_seen(database, now)
+# 		return now
+# 	return datetime.strptime(result, "%Y-%m-%d %H:%M:%S")
 
 
-	if oldestIndex == -1:
-		return 0, 0, requestSeconds, errors
+def process_comment(comment, reddit, database, count_string=""):
+	if comment['author'] == static.ACCOUNT_NAME:
+		log.debug("Comment is from updatemebot")
+		return
+	if comment['author'] in static.BLACKLISTED_ACCOUNTS:
+		log.debug("Comment is from a blacklisted account")
+		return
 
-	commentsAdded = 0
-	commentsSearched = 0
-	for comment in comments[oldestIndex::-1]:
-		if comment['author'].lower() != globals.ACCOUNT_NAME.lower():
-			commentsSearched += 1
+	log.info(f"{count_string}: Processing comment {comment['id']} from u/{comment['author']}")
+	body = comment['body'].lower().strip()
+	use_tag = True
+	if static.TRIGGER_SUBSCRIBE_LOWER in body:
+		log.debug("Subscription comment")
+		recurring = True
+	elif static.TRIGGER_UPDATE_LOWER in body:
+		log.debug("Update comment")
+		recurring = False
+	elif static.TRIGGER_SUBSCRIBE_ALL_LOWER in body:
+		log.debug("Subscribe all comment")
+		recurring = True
+		use_tag = False
+	else:
+		log.debug("Command not in comment")
+		return
 
-			if database.isBlacklisted(comment['author'].lower(), comment['subreddit'].lower()):
-				continue
+	comment_result = None
+	thread_id = utils.id_from_fullname(comment['link_id'])
+	subscriber = database.get_or_add_user(comment['author'])
+	subreddit = database.get_or_add_subreddit(comment['subreddit'])
+	db_submission = database.get_submission_by_id(thread_id)
+	tag = None
+	if db_submission is not None:
+		author = db_submission.author
+		if use_tag:
+			tag = db_submission.tag
+	else:
+		comment_result = ReturnType.SUBMISSION_NOT_PROCESSED
+		reddit_submission = reddit.get_submission(thread_id)
+		try:
+			author_name = reddit_submission.author.name
+		except Exception:
+			log.warning(f"Unable to fetch parent submission for comment: {thread_id}")
+			return
+		author = database.get_or_add_user(author_name)
 
-			log.info("Found public comment by /u/"+comment['author'])
+	result_message, subscription = Subscription.create_update_subscription(
+		database, subscriber, author, subreddit, recurring, tag
+	)
 
-			comment['link_author'] = str(reddit.getSubmission(comment['link_id'][3:]).author)
+	commented = False
+	if db_submission is not None and db_submission.comment is not None:
+		comment_result = ReturnType.THREAD_REPLIED
+	elif subreddit.is_banned or subreddit.no_comment:
+		comment_result = ReturnType.FORBIDDEN
+	elif not subreddit.is_enabled:
+		comment_result = ReturnType.SUBREDDIT_NOT_ENABLED
+	if comment_result is None:
+		reddit_comment = reddit.get_comment(comment['id'])
+		count_subscriptions = database.get_count_subscriptions_for_author_subreddit(author, subreddit, tag)
+		db_comment = DbComment(
+			comment_id=None,
+			submission=db_submission,
+			subscriber=subscriber,
+			author=author,
+			subreddit=subreddit,
+			recurring=recurring,
+			current_count=count_subscriptions,
+			tag=tag
+		)
 
-			result, data = utility.addUpdateSubscription(comment['author'], comment['link_author'], comment['subreddit'],
-					datetime.utcfromtimestamp(comment['created_utc']), subscriptionType, None)
+		bldr = utils.get_footer(db_comment.render_comment(
+			count_subscriptions=count_subscriptions,
+			pushshift_minutes=reddit.pushshift_lag
+		))
 
-			posted = False
-			if result != 'couldnotadd' and not database.alwaysPMForSubreddit(comment['subreddit'].lower()) \
-						and not database.isThreadReplied(comment['link_id'][3:]):
-				strList = []
-				existingSubscribers = database.getAuthorSubscribersCount(comment['subreddit'].lower(),
-				                                                         comment['link_author'].lower())
-				strList.extend(
-					strings.confirmationComment(subscriptionType, comment['link_author'], comment['subreddit'],
-					                            comment['link_id'][3:], existingSubscribers))
-				strList.append("\n\n*****\n\n")
-				strList.append(strings.footer)
+		result_id, comment_result = reddit.reply_comment(reddit_comment, ''.join(bldr))
 
-				log.info("Publicly replying to /u/%s for /u/%s in /r/%s:", comment['author'], comment['link_author'],
-				         comment['subreddit'])
-				resultCommentID = reddit.replyComment(comment['id'], ''.join(strList))
-				if resultCommentID is not None:
-					database.addThread(comment['link_id'][3:], resultCommentID, comment['link_author'].lower(),
-					                   comment['subreddit'].lower(), comment['author'].lower(),
-					                   datetime.utcnow(), existingSubscribers, subscriptionType, False)
-					posted = True
-				else:
-					log.warning("Could not publicly reply to /u/%s", comment['author'])
+		if comment_result in (
+				ReturnType.INVALID_USER,
+				ReturnType.USER_DOESNT_EXIST,
+				ReturnType.THREAD_LOCKED,
+				ReturnType.DELETED_COMMENT,
+				ReturnType.RATELIMIT):
+			log.info(f"Unable to reply as comment: {comment_result.name}")
 
-			if not posted:
-				strList = []
-				if result == 'couldnotadd':
-					utility.checkDeniedRequests(data['subreddit'])
-					strList.extend(strings.couldNotSubscribeSection([data]))
-				else:
-					if result == 'added':
-						commentsAdded += 1
-						strList.extend(strings.confirmationSection([data]))
-					elif result == 'updated':
-						commentsAdded += 1
-						strList.extend(strings.updatedSubscriptionSection([data]))
-					elif result == 'exist':
-						strList.extend(strings.alreadySubscribedSection([data]))
+		elif comment_result == ReturnType.FORBIDDEN:
+			log.warning(f"Banned in subreddit, saving: {subreddit.name}")
+			subreddit.is_banned = True
 
-				strList.append("\n\n*****\n\n")
-				strList.append(strings.footer)
-
-				log.info("Messaging confirmation for public comment to /u/%s for /u/%s in /r/%s:", comment['author'],
-				         comment['link_author'], comment['subreddit'])
-				if not reddit.sendMessage(comment['author'], strings.messageSubject(comment['author']),
-				                          ''.join(strList)):
-					log.warning("Could not send message to /u/%s when sending confirmation for public comment",
-					            comment['author'])
-
-		database.updateCommentSearchSeconds(searchTerm, datetime.utcfromtimestamp(comment['created_utc']) +
-		                                    timedelta(0, 1))
-
-	return commentsSearched, commentsAdded, requestSeconds, errors
-
-
-def updateExistingComments():
-	commentsUpdated = 0
-	for thread in database.getIncorrectThreads(datetime.utcnow() - timedelta(days=globals.COMMENT_EDIT_DAYS_CUTOFF)):
-		commentsUpdated += 1
-		strList = []
-		strList.extend(strings.confirmationComment(thread['single'], thread['subscribedTo'], thread['subreddit'],
-		                                           thread['threadID'], thread['currentCount']))
-		strList.append("\n\n*****\n\n")
-		strList.append(strings.footer)
-
-		if reddit.editComment(thread['commentID'], ''.join(strList)):
-			database.updateCurrentThreadCount(thread['threadID'], thread['currentCount'])
 		else:
-			log.warning("Could not update comment with ID %s/%s", thread['threadID'], thread['commentID'])
+			if comment_result == ReturnType.NOTHING_RETURNED:
+				result_id = "QUARANTINED"
+				log.warning(f"Opting in to quarantined subreddit: {subreddit.name}")
+				reddit.quarantine_opt_in(subreddit.name)
 
-	return commentsUpdated
+			if result_id is None:
+				log.warning(f"Got comment ID of None when replying to {comment['id']}")
+				comment_result = ReturnType.FORBIDDEN
+
+			else:
+				log.info(
+					f"Subscription created: {subscription.id}, replied as comment: {result_id}")
+
+				if comment_result != ReturnType.QUARANTINED:
+					db_comment.comment_id = result_id
+					database.add_comment(db_comment)
+				commented = True
+
+	if not commented:
+		log.info(
+			f"Subscription created: {subscription.id}, replying as message: {comment_result.name}")
+
+		bldr = utils.str_bldr()
+		if reddit.pushshift_lag > 15:
+			bldr.append("There is a ")
+			if reddit.pushshift_lag > 60:
+				bldr.append(str(int(round(reddit.pushshift_lag / 60, 1))))
+				bldr.append(" hour")
+			else:
+				bldr.append(str(reddit.pushshift_lag))
+				bldr.append(" minute")
+			bldr.append(" delay fetching comments.")
+			bldr.append("\n\n")
+
+		bldr.append(result_message)
+		bldr = utils.get_footer(bldr)
+
+		result = reddit.send_message(author.name, "UpdateMeBot Confirmation", ''.join(bldr))
+		if result != ReturnType.SUCCESS:
+			log.warning(f"Unable to send message: {result.name}")
 
 
-def deleteLowKarmaComments():
-	commentsDeleted = 0
-	for comment in reddit.getUserComments(globals.ACCOUNT_NAME):
-		if comment.score <= -5:
-			commentsDeleted += 1
-			log.info("Deleting low score comment")
-			reddit.deleteComment(comment=comment)
+def process_comments(reddit, database):
+	comments = reddit.get_keyword_comments(static.TRIGGER_COMBINED, database.get_or_init_datetime("comment_timestamp"))
+	if len(comments):
+		log.debug(f"Processing {len(comments)} comments")
+	i = 0
+	for comment in comments[::-1]:
+		i += 1
+		try:
+			process_comment(comment, reddit, database, f"{i}/{len(comments)}")
+		except Exception:
+			log.warning(f"Error processing comment: {comment['id']} : {comment['author']}")
+			log.warning(traceback.format_exc())
 
-	return commentsDeleted
+		reddit.mark_keyword_comment_processed(comment['id'])
+		database.save_datetime("comment_timestamp", datetime.utcfromtimestamp(comment['created_utc']))
+
+	return len(comments)
+
+
+def update_comments(reddit, database):
+	count_incorrect = database.get_pending_incorrect_comments()
+
+	i = 0
+	if count_incorrect > 0:
+		incorrect_items = database.get_incorrect_comments(utils.requests_available(count_incorrect))
+		for db_comment, new_count in incorrect_items:
+			i += 1
+			log.info(
+				f"{i}/{len(incorrect_items)}/{count_incorrect}: Updating comment : "
+				f"{db_comment.comment_id} : {db_comment.current_count}/{new_count}")
+
+			bldr = utils.get_footer(db_comment.render_comment(count_subscriptions=new_count))
+			reddit.edit_comment(''.join(bldr), comment_id=db_comment.comment_id)
+			db_comment.current_count = new_count
+
+	else:
+		log.debug("No incorrect comments")
+
+	return i
