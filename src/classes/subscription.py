@@ -185,6 +185,7 @@ class Subscription(Base):
 				tag=tag
 			)
 			database.add_subscription(subscription)
+			database.commit()
 
 		return result_message, subscription
 
