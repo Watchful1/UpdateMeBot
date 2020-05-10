@@ -74,7 +74,7 @@
 -change triggers back
 -submission import per subreddit for nosleep and hfy
 -remove some low usage subs
-update info and new post links
+-update info and new post links
 
 migration steps
 	validate new authors

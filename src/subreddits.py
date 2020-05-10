@@ -145,8 +145,10 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 				result_id, comment_result = reddit.reply_submission(submission, ''.join(bldr))
 				# save prompt comment here
 
-		subreddit.last_scanned = submission_datetime
-		newest_datetime = submission_datetime
+		if submission_datetime > subreddit.last_scanned:
+			subreddit.last_scanned = submission_datetime
+		if submission_datetime > newest_datetime:
+			newest_datetime = submission_datetime
 
 	for subreddit_name in subreddits:
 		subreddits[subreddit_name].last_scanned = newest_datetime
