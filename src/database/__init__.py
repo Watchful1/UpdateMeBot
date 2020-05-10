@@ -70,21 +70,21 @@ class Database(
 		for comment in self.get_old_comments(utils.datetime_now() - timedelta(days=190)):
 			deleted_comment_ids.append(comment.comment_id)
 			self.delete_comment(comment)
-		else:
+		if not len(deleted_comment_ids):
 			deleted_comment_ids.append("none")
 
 		deleted_submission_ids = []
 		for submission in self.get_old_orphan_submissions(utils.datetime_now() - timedelta(hours=48)):
 			deleted_submission_ids.append(submission.submission_id)
 			self.delete_submission(submission)
-		else:
+		if not len(deleted_submission_ids):
 			deleted_submission_ids.append("none")
 
 		deleted_users = []
 		for user in self.get_orphan_users():
 			deleted_users.append(f"{user.name}:{user.id}")
 			self.delete_user(user)
-		else:
+		if not len(deleted_users):
 			deleted_users.append("none")
 
 		delta_time = time.perf_counter() - start_time
