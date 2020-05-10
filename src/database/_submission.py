@@ -35,3 +35,9 @@ class _DatabaseSubmission:
 			.all()
 
 		return results
+
+	def get_count_submissions_for_author(self, user):
+		log.debug(f"Getting count submissions for u/{user}")
+		return self.session.query(Submission)\
+			.filter(Submission.author == user)\
+			.count()

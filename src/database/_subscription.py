@@ -110,6 +110,12 @@ class _DatabaseSubscriptions:
 			)
 		)
 
+	def get_count_subscriptions_for_author(self, user):
+		log.debug(f"Getting count subscriptions for u/{user}")
+		return self.session.query(Subscription)\
+			.filter(Subscription.author == user)\
+			.count()
+
 	def delete_user_subscriptions(self, user):
 		log.debug(f"Deleting all subscriptions for u/{user.name}")
 

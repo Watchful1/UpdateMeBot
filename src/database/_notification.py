@@ -39,6 +39,13 @@ class _DatabaseNotification:
 		self.session.query(Notification)\
 			.delete(synchronize_session='fetch')
 
+	def delete_notifications_for_subscription(self, subscription):
+		log.debug(f"Deleting notifications for {subscription}")
+
+		return self.session.query(Notification)\
+			.filter(Notification.subscription == subscription)\
+			.delete(synchronize_session='fetch')
+
 	def delete_notification(self, notification):
 		log.debug(f"Deleting notification by id: {notification.id}")
 		self.session.delete(notification)

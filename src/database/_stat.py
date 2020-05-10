@@ -43,3 +43,9 @@ class _DatabaseStats:
 			.all()
 
 		return stats
+
+	def get_count_stats_for_user(self, user):
+		log.debug(f"Getting count stats for u/{user}")
+		return self.session.query(Stat)\
+			.filter(Stat.author == user)\
+			.count()

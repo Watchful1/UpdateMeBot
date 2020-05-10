@@ -73,3 +73,10 @@ class _DatabaseComments:
 			.all()
 
 		return results
+
+	def delete_user_comments(self, user):
+		log.debug(f"Deleting all comments for u/{user.name}")
+
+		return self.session.query(DbComment)\
+			.filter(DbComment.subscriber == user)\
+			.delete(synchronize_session='fetch')

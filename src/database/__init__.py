@@ -92,6 +92,25 @@ class Database(
 			f"Cleanup {' '.join(deleted_comment_ids)} : {' '.join(deleted_submission_ids)} : {' '.join(deleted_users)} in "
 			f"{delta_time:.2} seconds")
 
+	def purge_user(self, user):
+		count_stats = self.get_count_stats_for_user(user)
+		count_subscriptions_as_author = self.get_count_subscriptions_for_author(user)
+		count_submissions_as_author = self.get_count_submissions_for_author(user)
+		if count_stats > 0 or count_subscriptions_as_author > 0 or count_submissions_as_author > 0:
+			log.warning(
+				f"Unable to purge user u/{user.name}: {count_stats} | {count_subscriptions_as_author} "
+				f"| {count_submissions_as_author}")
+			return False
+
+		count_comments = self.delete_user_comments(user)
+		count_notifications = 0
+		for subscription in self.get_user_subscriptions(user):
+			count_notifications += self.delete_notifications_for_subscription(subscription)
+		count_subscriptions = self.delete_user_subscriptions(user)
+		log.info(f"Purged u/{user.name}: {count_comments} | {count_notifications} | {count_subscriptions}")
+		self.delete_user(user)
+		return True
+
 	def backup(self):
 		log.info("Backing up database")
 		self.commit()

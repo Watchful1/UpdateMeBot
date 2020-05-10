@@ -11,6 +11,7 @@ def send_queued_notifications(reddit, database):
 
 	notifications_sent = 0
 	if count_pending_notifications > 0:
+		users_to_delete = set()
 		notifications = database.get_pending_notifications(utils.requests_available(count_pending_notifications))
 		for notification in notifications:
 			notifications_sent += 1
@@ -24,6 +25,7 @@ def send_queued_notifications(reddit, database):
 			notification.submission.messages_sent += 1
 			if result in (ReturnType.INVALID_USER, ReturnType.USER_DOESNT_EXIST):
 				log.info(f"User doesn't exist: u/{notification.subscription.subscriber.name}")
+				users_to_delete.add(notification.subscription.subscriber)
 
 			if not notification.subscription.recurring:
 				log.debug(f"{notification.subscription.id} deleted")
@@ -35,6 +37,10 @@ def send_queued_notifications(reddit, database):
 				database.commit()
 
 		database.commit()
+		if len(users_to_delete):
+			for user in users_to_delete:
+				database.purge_user(user)
+			database.commit()
 
 	else:
 		log.debug("No notifications to send")
