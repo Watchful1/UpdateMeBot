@@ -89,7 +89,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 				else:
 					log.warning(
 						f"Submission before last scanned: {utils.get_datetime_string(submission_datetime)} < "
-						f"{utils.get_datetime_string(subreddit.last_scanned)} : <{submission.url}>")
+						f"{utils.get_datetime_string(subreddit.last_scanned)} : <https://www.reddit.com{submission.permalink}>")
 
 			if not skip:
 				submissions_subreddits.append((submission, subreddit, submission_datetime))

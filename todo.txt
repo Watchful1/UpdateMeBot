@@ -99,6 +99,7 @@ active author polls
 remove new from footer
 add readme
 delete pending notifications when deleting subscriptions
+check backup syncing
 
 
 site ideas:
