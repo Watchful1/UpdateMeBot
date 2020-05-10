@@ -98,6 +98,7 @@ active author polls
 	should the subscription number be posted publicly
 remove new from footer
 add readme
+delete pending notifications when deleting subscriptions
 
 
 site ideas:

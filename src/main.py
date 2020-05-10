@@ -56,7 +56,7 @@ if __name__ == "__main__":
 	if args.debug:
 		discord_logging.set_level(logging.DEBUG)
 
-	# discord_logging.init_discord_logging(args.user, logging.WARNING, 1)
+	discord_logging.init_discord_logging(args.user, logging.WARNING, 1)
 	static.ACCOUNT_NAME = args.user
 	reddit_message = reddit_class.Reddit(args.user, "message", args.no_post)
 	reddit_search = reddit_class.Reddit(args.user, "search", args.no_post)

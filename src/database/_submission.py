@@ -10,7 +10,7 @@ class _DatabaseSubmission:
 		self.session = self.session  # for pycharm linting
 
 	def get_submission_by_id(self, submission_id):
-		log.debug(f"Fetching submission by id: {submission_id}")
+		#log.debug(f"Fetching submission by id: {submission_id}")
 		submission = self.session.query(Submission)\
 			.filter_by(submission_id=submission_id)\
 			.first()

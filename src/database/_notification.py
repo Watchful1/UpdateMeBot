@@ -11,7 +11,7 @@ class _DatabaseNotification:
 		self.session = self.session  # for pycharm linting
 
 	def add_notification(self, notification):
-		log.debug("Saving new notification")
+		#log.debug("Saving new notification")
 		self.session.add(notification)
 
 	def get_count_pending_notifications(self):

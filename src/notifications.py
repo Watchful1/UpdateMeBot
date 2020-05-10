@@ -31,6 +31,9 @@ def send_queued_notifications(reddit, database):
 
 			database.delete_notification(notification)
 
+			if notifications_sent % 50 == 0:
+				database.commit()
+
 		database.commit()
 
 	else:
