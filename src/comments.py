@@ -11,26 +11,12 @@ from classes.comment import DbComment
 from classes.enums import ReturnType
 
 
-# def database_set_seen(database, comment_seen):
-# 	database.save_keystore("comment_timestamp", comment_seen.strftime("%Y-%m-%d %H:%M:%S"))
-#
-#
-# def database_get_seen(database):
-# 	result = database.get_keystore("comment_timestamp")
-# 	if result is None:
-# 		log.warning("Comment time not in database, returning now")
-# 		now = utils.datetime_now()
-# 		database_set_seen(database, now)
-# 		return now
-# 	return datetime.strptime(result, "%Y-%m-%d %H:%M:%S")
-
-
 def process_comment(comment, reddit, database, count_string=""):
 	if comment['author'] == static.ACCOUNT_NAME:
-		log.debug("Comment is from updatemebot")
+		log.info(f"{count_string}: Comment is from updatemebot")
 		return
 	if comment['author'] in static.BLACKLISTED_ACCOUNTS:
-		log.debug("Comment is from a blacklisted account")
+		log.info(f"{count_string}: Comment is from a blacklisted account")
 		return
 
 	log.info(f"{count_string}: Processing comment {comment['id']} from u/{comment['author']}")

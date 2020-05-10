@@ -107,6 +107,7 @@ def line_remove(line, user, bldr, database):
 						f"u/{subscription.author.name} in r/{subscription.subreddit.name}")
 
 			count_removed = database.delete_user_subscriptions(user)
+			log.info(f"Removed all {count_removed} subscriptions for u/{user.name}")
 			if count_removed != len(subscriptions):
 				log.warning(f"Error removing subscriptions for u/{user.name} : {len(subscriptions)} : {count_removed}")
 
