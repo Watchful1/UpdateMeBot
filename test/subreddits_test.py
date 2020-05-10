@@ -31,6 +31,7 @@ def create_sub_with_posts(database, reddit, subreddit_name, posts, last_scanned=
 	if last_scanned is None:
 		last_scanned = utils.datetime_now() - timedelta(minutes=30)
 	db_subreddit.last_scanned = last_scanned
+	db_subreddit.date_enabled = last_scanned
 	db_subreddit.is_enabled = True
 	db_subreddit.posts_per_hour = posts_per_hour
 	database.commit()
