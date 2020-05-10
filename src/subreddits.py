@@ -70,7 +70,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	submissions_subreddits = []
 	count_existing = 0
 	count_found = 0
-	newest_datetime = utils.datetime_now()
+	newest_datetime = utils.datetime_now() - timedelta(seconds=30)
 	for submission in reddit.get_subreddit_submissions('+'.join(subreddit_names)):
 		if database.get_submission_by_id(submission.id) is None:
 			if submission.subreddit.display_name not in subreddits:
