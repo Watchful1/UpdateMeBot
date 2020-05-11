@@ -153,7 +153,8 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 			newest_datetime = submission_datetime
 
 	for subreddit_name in subreddits:
-		subreddits[subreddit_name].last_scanned = newest_datetime
+		if newest_datetime > subreddits[subreddit_name].last_scanned:
+			subreddits[subreddit_name].last_scanned = newest_datetime
 
 	database.commit()
 	return True
