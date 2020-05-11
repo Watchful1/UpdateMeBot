@@ -100,11 +100,11 @@ def line_remove(line, user, bldr, database):
 				if subscription.author is None:
 					bldr.append(
 						f"Removed your {'subscription' if subscription.recurring else 'update'} to "
-						f" r/{subscription.subreddit.name}")
+						f" r/{subscription.subreddit.name}  \n")
 				else:
 					bldr.append(
 						f"Removed your {'subscription' if subscription.recurring else 'update'} to "
-						f"u/{subscription.author.name} in r/{subscription.subreddit.name}")
+						f"u/{subscription.author.name} in r/{subscription.subreddit.name}  \n")
 
 			count_removed = database.delete_user_subscriptions(user)
 			log.info(f"Removed all {count_removed} subscriptions for u/{user.name}")
