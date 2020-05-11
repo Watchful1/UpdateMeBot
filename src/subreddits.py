@@ -70,7 +70,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	submissions_subreddits = []
 	count_existing = 0
 	count_found = 0
-	newest_datetime = utils.datetime_now() - timedelta(seconds=30)
+	newest_datetime = utils.datetime_now() - timedelta(minutes=3)
 	for submission in reddit.get_subreddit_submissions('+'.join(subreddit_names)):
 		if database.get_submission_by_id(submission.id) is None:
 			if submission.subreddit.display_name not in subreddits:
@@ -84,12 +84,14 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 			submission_datetime = datetime.utcfromtimestamp(submission.created_utc)
 			skip = False
 			if submission_datetime < subreddit.last_scanned:
-				if submission_datetime < subreddit.date_enabled or submission_datetime + timedelta(hours=24) < subreddit.last_scanned:
+				if submission_datetime < subreddit.date_enabled or \
+						submission_datetime + timedelta(hours=24) < subreddit.last_scanned:
 					skip = True
 				else:
 					log.warning(
 						f"Submission before last scanned: {utils.get_datetime_string(submission_datetime)} < "
-						f"{utils.get_datetime_string(subreddit.last_scanned)} : <https://www.reddit.com{submission.permalink}>")
+						f"{utils.get_datetime_string(subreddit.last_scanned)} : "
+						f"<https://www.reddit.com{submission.permalink}>")
 
 			if not skip:
 				submissions_subreddits.append((submission, subreddit, submission_datetime))
