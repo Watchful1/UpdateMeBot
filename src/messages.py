@@ -68,7 +68,7 @@ def line_update_subscribe(line, user, bldr, database, reddit):
 					author = database.get_or_add_user(author_name, case_is_user_supplied)
 		subreddit = database.get_subreddit(subreddit_name)
 		if subreddit is None:
-			if not reddit.redditor_exists(subreddit_name):
+			if not reddit.subreddit_exists(subreddit_name):
 				log.info(f"r/{subreddit_name} doesn't exist when creating subscription")
 				bldr.append(f"It doesn't look like r/{subreddit_name} exists, are you sure you spelled it right?")
 				return

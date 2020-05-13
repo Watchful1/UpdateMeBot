@@ -102,6 +102,7 @@ delete pending notifications when deleting subscriptions
 check backup syncing
 clear nosleepautobot subscriptions
 delete stats with less than 10 users
+add pending subs
 
 
 site ideas:
