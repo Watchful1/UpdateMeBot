@@ -88,21 +88,16 @@ migration steps
 	migrate scan times
 	migrate comment timestamps
 
-pushshift why? page
-does replying to a message mark it as read
-r/hfy should prompt be stickied
-r/nosleep can I post prompt
-tags from new series should prompt whether to message everyone
 blacklist certain subs
-active author polls
-	should the subscription number be posted publicly
-remove new from footer
 add readme
 delete pending notifications when deleting subscriptions
 check backup syncing
 clear nosleepautobot subscriptions
 delete stats with less than 10 users
-add pending subs
+add pending subreddits
+check if we can delete high traffic subs
+notifications missing a subscription should log a warning but not error
+figure out a way to not trigger a notification for an update subscription if there is already one pending
 
 
 site ideas:
@@ -111,3 +106,10 @@ graph of subscribers over time
 graph of posts with score, number of comments and number of messages sent/pending
 edit fields for
 	subscription prompts
+
+
+r/hfy should prompt be stickied
+r/nosleep can I post prompt
+tags from new series should prompt whether to message everyone
+remove new from footer
+if a post is deleted, cancel pending notifications for it

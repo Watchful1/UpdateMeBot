@@ -15,6 +15,14 @@ def send_queued_notifications(reddit, database):
 		notifications = database.get_pending_notifications(utils.requests_available(count_pending_notifications))
 		for notification in notifications:
 			notifications_sent += 1
+			if notification.subscription is None:
+				log.warning(
+					f"Notification for u/{notification.submission.author.name} in r/"
+					f"{notification.submission.subreddit.name} missing subscription, skipping: "
+					f"{notification.submission.submission_id}")
+				database.delete_notification(notification)
+				continue
+
 			log.info(
 				f"{notifications_sent}/{len(notifications)}/{count_pending_notifications}: Notifying u/"
 				f"{notification.subscription.subscriber.name} for u/{notification.submission.author.name} in r/"
