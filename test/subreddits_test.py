@@ -11,6 +11,7 @@ from reddit_test import RedditObject
 from reddit_test import Subreddit
 from classes.subscription import Subscription
 from classes.enums import SubredditPromptType
+from classes.notification import Notification
 
 
 def add_new_post_to_sub(subreddit, delta, author=None, flair=None, title=None):
@@ -37,7 +38,7 @@ def create_sub_with_posts(database, reddit, subreddit_name, posts, last_scanned=
 	database.commit()
 
 
-def bulk_sub_to(database, subreddit_name, author_name, subscriber_names):
+def bulk_sub_to(database, subreddit_name, author_name, subscriber_names, recurring=True):
 	subreddit = database.get_subreddit(subreddit_name)
 	author = database.get_or_add_user(author_name)
 	for subscriber_name in subscriber_names:
@@ -47,7 +48,7 @@ def bulk_sub_to(database, subreddit_name, author_name, subscriber_names):
 				subscriber=user,
 				author=author,
 				subreddit=subreddit,
-				recurring=True
+				recurring=recurring
 			)
 		)
 	database.commit()
@@ -339,3 +340,29 @@ def test_scan_single_all_subscription_subreddit(database, reddit):
 	assert notifications[1].subscription.subscriber.name == "User1"
 	assert notifications[2].subscription.subscriber.name == "User2"
 	assert notifications[3].subscription.subscriber.name == "User1"
+
+
+def test_scan_single_subreddit_multiple_times_same_author(database, reddit):
+	create_sub_with_posts(
+		database, reddit, "Subreddit1",
+		[
+			("Author1", timedelta(minutes=5))
+		]
+	)
+	bulk_sub_to(
+		database, "Subreddit1", "Author1",
+		["User1"],
+		False
+	)
+	bulk_sub_to(
+		database, "Subreddit1", "Author1", ["User2"]
+	)
+
+	subreddits.scan_subreddits(reddit, database)
+	assert len(database.get_pending_notifications()) == 2
+
+	add_new_post_to_sub(reddit.subreddits["Subreddit1"], timedelta(minutes=2), "Author1")
+	subreddits.scan_subreddits(reddit, database)
+
+	notifications = database.get_pending_notifications()
+	assert len(notifications) == 3

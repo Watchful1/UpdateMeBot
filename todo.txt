@@ -96,8 +96,8 @@ clear nosleepautobot subscriptions
 delete stats with less than 10 users
 add pending subreddits
 check if we can delete high traffic subs
-notifications missing a subscription should log a warning but not error
-figure out a way to not trigger a notification for an update subscription if there is already one pending
+-notifications missing a subscription should log a warning but not error
+-figure out a way to not trigger a notification for an update subscription if there is already one pending
 
 
 site ideas:

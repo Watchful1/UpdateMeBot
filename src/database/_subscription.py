@@ -5,6 +5,7 @@ import utils
 from classes.subscription import Subscription
 from classes.subreddit import Subreddit
 from classes.user import User
+from classes.notification import Notification
 
 log = discord_logging.get_logger()
 
@@ -67,9 +68,14 @@ class _DatabaseSubscriptions:
 		log.debug(f"Fetching subscriptions by author and subreddit: {author.name} : {subreddit.name} : {tag}")
 
 		subscriptions = self.session.query(Subscription)\
+			.join(
+				Notification,
+				(Subscription.recurring == False) & (Notification.subscription_id == Subscription.id),
+				isouter=True) \
 			.filter((Subscription.author == author) | (Subscription.author == None))\
 			.filter(Subscription.subreddit == subreddit)\
 			.filter((Subscription.tag == None) | (Subscription.tag == tag))\
+			.filter(Notification.id == None) \
 			.all()
 
 		return sorted(
