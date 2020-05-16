@@ -36,8 +36,10 @@ class Notification(Base):
 
 		if self.subscription.author is not None and self.subscription.author == self.subscription.subscriber:
 			bldr.append("I have finished sending out ")
-			bldr.append(str(self.submission.messages_sent))
-			bldr.append(" notifications for [your post](")
+			if self.submission.messages_sent >= static.STAT_MINIMUM:
+				bldr.append(str(self.submission.messages_sent))
+				bldr.append(" ")
+			bldr.append("notifications for [your post](")
 			bldr.append(self.submission.url)
 			bldr.append(")")
 			if self.submission.tag is not None:

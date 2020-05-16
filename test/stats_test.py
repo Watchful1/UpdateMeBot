@@ -4,7 +4,7 @@ from datetime import date, timedelta
 log = discord_logging.get_logger(init=True)
 
 import stats
-import utils
+import static
 from classes.subscription import Subscription
 
 
@@ -27,6 +27,7 @@ def bulk_sub_to(database, subreddit_name, author_name, subscriber_names, tag=Non
 
 
 def test_save_single_day_stats(database, reddit):
+	static.STAT_MINIMUM = 1
 	date_now = date(2020, 1, 1)
 	bulk_sub_to(
 		database, "Subreddit1", "Author1",
@@ -76,6 +77,7 @@ def test_save_single_day_stats(database, reddit):
 
 
 def test_save_multi_day_stats(database, reddit):
+	static.STAT_MINIMUM = 1
 	date_now = date(2020, 1, 10)
 	bulk_sub_to(
 		database, "Subreddit1", "Author1",
@@ -123,6 +125,7 @@ def test_save_multi_day_stats(database, reddit):
 
 
 def test_save_single_day_stats_with_tags(database, reddit):
+	static.STAT_MINIMUM = 1
 	date_now = date(2020, 1, 1)
 	bulk_sub_to(
 		database, "Subreddit1", "Author1",

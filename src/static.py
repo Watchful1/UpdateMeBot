@@ -17,4 +17,4 @@ TRACKING_INFO_URL = "https://www.reddit.com/r/UpdateMeBot/comments/g86jrs/subred
 INFO_POST = "https://www.reddit.com/r/UpdateMeBot/comments/ggotgx/updatemebot_info_v20/"
 NEW_POST = "https://www.reddit.com/r/UpdateMeBot/comments/ggou3c/updatemebot_bot_updated_to_version_20/"
 
-DB_TO_MIGRATE_FROM = r"C:\Users\greg\Desktop\PyCharm\UpdateMeBot\databaseOld.db"
+STAT_MINIMUM = 10
