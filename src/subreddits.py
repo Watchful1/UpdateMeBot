@@ -66,11 +66,12 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	for subreddit_name in subreddits:
 		subreddit_names.append(subreddit_name)
 
-	log.debug(f"Scanning subreddit group: {','.join(subreddit_names)}")
+	log.info(f"Scanning subreddit group: {','.join(subreddit_names)}")
 	submissions_subreddits = []
 	count_existing = 0
 	count_found = 0
 	newest_datetime = utils.datetime_now() - timedelta(minutes=3)
+	log.info(f"Setting default timestamp to {newest_datetime}")
 	for submission in reddit.get_subreddit_submissions('+'.join(subreddit_names)):
 		if database.get_submission_by_id(submission.id) is None:
 			if submission.subreddit.display_name not in subreddits:
@@ -148,12 +149,14 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 				# save prompt comment here
 
 		if submission_datetime > subreddit.last_scanned:
+			log.info(f"Updating last_scanned due to found submission r/{subreddit.name} to {submission_datetime}")
 			subreddit.last_scanned = submission_datetime
 		if submission_datetime > newest_datetime:
 			newest_datetime = submission_datetime
 
 	for subreddit_name in subreddits:
 		if newest_datetime > subreddits[subreddit_name].last_scanned:
+			log.info(f"Updating last_scanned at end r/{subreddit_name} to {newest_datetime}")
 			subreddits[subreddit_name].last_scanned = newest_datetime
 
 	database.commit()
