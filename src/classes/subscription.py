@@ -48,6 +48,14 @@ class Subscription(Base):
 		recurring,
 		tag=None
 	):
+		if subreddit.is_blacklisted:
+			log.info(
+				f"Subreddit blacklisted r/{subreddit.name}, not adding not adding subscription")
+			result_message = \
+				f"u/UpdateMeBot is not suited for subreddits like r/{subreddit.name}. It only works well in subs where" \
+				f" the original poster of the thread will post a followup as a new thread"
+			return result_message, None
+
 		subscription = database.get_subscription_by_fields(subscriber, author, subreddit, tag)
 		if subscription is not None:
 			if subscription.recurring == recurring:

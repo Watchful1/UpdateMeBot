@@ -28,6 +28,7 @@ class Subreddit(Base):
 	tag_enabled = Column(Boolean, nullable=False)
 	no_comment = Column(Boolean, nullable=False)
 	is_banned = Column(Boolean, nullable=False)
+	is_blacklisted = Column(Boolean, nullable=False)
 
 	notice_threshold = Column(Integer, nullable=False)
 	flair_blacklist = Column(String(300))
@@ -51,6 +52,7 @@ class Subreddit(Base):
 		self.no_comment = False
 		self.is_banned = False
 		self.prompt_type = SubredditPromptType.NONE
+		self.is_blacklisted = False
 
 	def __str__(self):
 		return f"r/{self.name} : {self.is_enabled}"

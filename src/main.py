@@ -82,16 +82,16 @@ if __name__ == "__main__":
 			errors += 1
 
 		try:
-			actions += comments.process_comments(reddit_message, database)
+			subreddits.scan_subreddits(reddit_search, database)
 		except Exception as err:
-			log.warning(f"Error processing comments: {err}")
+			log.warning(f"Error scanning subreddits: {err}")
 			log.warning(traceback.format_exc())
 			errors += 1
 
 		try:
-			subreddits.scan_subreddits(reddit_search, database)
+			actions += comments.process_comments(reddit_message, database)
 		except Exception as err:
-			log.warning(f"Error scanning subreddits: {err}")
+			log.warning(f"Error processing comments: {err}")
 			log.warning(traceback.format_exc())
 			errors += 1
 

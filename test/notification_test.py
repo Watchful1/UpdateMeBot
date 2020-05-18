@@ -3,7 +3,7 @@ import discord_logging
 log = discord_logging.get_logger(init=True)
 
 
-import reddit_test
+import static
 import notifications
 import utils
 from classes.subscription import Subscription
@@ -81,6 +81,7 @@ def test_send_message_update(database, reddit):
 
 
 def test_send_messages(database, reddit):
+	static.STAT_MINIMUM = 1
 	submission_id1 = utils.random_id()
 	submission_id2 = utils.random_id()
 	submission_id3 = utils.random_id()

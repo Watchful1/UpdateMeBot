@@ -125,22 +125,39 @@ class _DatabaseSubscriptions:
 	def delete_user_subscriptions(self, user):
 		log.debug(f"Deleting all subscriptions for u/{user.name}")
 
-		return self.session.query(Subscription)\
+		user_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.subscriber == user)\
-			.delete(synchronize_session='fetch')
+			.all()
+
+		count_deleted = len(user_subscriptions)
+		for subscription in user_subscriptions:
+			self.delete_subscription(subscription)
+
+		return count_deleted
 
 	def delete_tagged_subreddit_author_subscriptions(self, subscriber, author, subreddit):
 		log.debug(f"Deleting all tagged subscriptions for u/{subscriber.name} : {subscriber.name} : {author.name} : {subreddit.name}")
 
-		return self.session.query(Subscription)\
+		user_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.subscriber == subscriber)\
 			.filter(Subscription.author == author)\
 			.filter(Subscription.subreddit == subreddit)\
 			.filter(Subscription.tag != None)\
-			.delete(synchronize_session='fetch')
+			.all()
+
+		count_deleted = len(user_subscriptions)
+		for subscription in user_subscriptions:
+			self.delete_subscription(subscription)
+
+		return count_deleted
 
 	def delete_subscription(self, subscription):
 		log.debug(f"Deleting subscription by id: {subscription.id}")
+
+		self.session.query(Notification) \
+			.filter(Notification.subscription == subscription) \
+			.delete(synchronize_session='fetch')
+
 		self.session.delete(subscription)
 
 	def get_all_subscriptions(self):

@@ -9,6 +9,7 @@ import static
 from classes.submission import Submission
 from classes.subscription import Subscription
 from classes.comment import DbComment
+from classes.notification import Notification
 
 
 def assert_message(message, included):
@@ -281,6 +282,33 @@ def test_remove_subscription(database, reddit):
 	assert len(subscriptions) == 0
 
 
+def test_remove_subscription_with_notifications(database, reddit):
+	subscriber = database.get_or_add_user("User1")
+	subscriber2 = database.get_or_add_user("User2")
+	author = database.get_or_add_user("AuthorName")
+	subreddit = database.get_or_add_subreddit("SubredditName")
+	subscription = Subscription(subscriber, author, subreddit, True)
+	database.add_subscription(subscription)
+	subscription2 = Subscription(subscriber2, author, subreddit, True)
+	database.add_subscription(subscription2)
+	submission = Submission(utils.random_id(), utils.datetime_now(), author, subreddit,	"")
+	database.add_submission(submission)
+	notification = Notification(subscription, submission)
+	database.add_notification(notification)
+	notification = Notification(subscription2, submission)
+	database.add_notification(notification)
+	database.commit()
+
+	message = reddit_test.RedditObject(
+		body=f"Remove! u/{author.name} r/{subreddit.name}",
+		author=subscriber.name
+	)
+
+	messages.process_message(message, reddit, database)
+
+	assert len(database.get_pending_notifications()) == 1
+
+
 def test_remove_tagged_subscription(database, reddit):
 	username = "Watchful1"
 	author = "AuthorName"
@@ -404,6 +432,45 @@ def test_remove_all_subscription(database, reddit):
 
 	subscriptions = database.get_user_subscriptions_by_name(username, only_enabled=False)
 	assert len(subscriptions) == 0
+
+
+def test_remove_all_subscription_with_notifications(database, reddit):
+	subscriber = database.get_or_add_user("User1")
+	subscriber2 = database.get_or_add_user("User2")
+	author1 = database.get_or_add_user("Author1")
+	author2 = database.get_or_add_user("Author2")
+	subreddit = database.get_or_add_subreddit("SubredditName", enable_subreddit_if_new=True)
+
+	subscription = Subscription(subscriber, author1, subreddit, True)
+	database.add_subscription(subscription)
+	subscription2 = Subscription(subscriber2, author1, subreddit, True)
+	database.add_subscription(subscription2)
+	subscription3 = Subscription(subscriber, author2, subreddit, True)
+	database.add_subscription(subscription3)
+	subscription4 = Subscription(subscriber2, author2, subreddit, True)
+	database.add_subscription(subscription4)
+
+	submission1 = Submission(utils.random_id(), utils.datetime_now(), author1, subreddit, "")
+	database.add_submission(submission1)
+	submission2 = Submission(utils.random_id(), utils.datetime_now(), author2, subreddit, "")
+	database.add_submission(submission2)
+
+	notification = Notification(subscription, submission1)
+	database.add_notification(notification)
+	notification = Notification(subscription2, submission1)
+	database.add_notification(notification)
+	notification = Notification(subscription3, submission2)
+	database.add_notification(notification)
+	notification = Notification(subscription4, submission2)
+	database.add_notification(notification)
+
+	database.commit()
+
+	message = reddit_test.RedditObject(body="RemoveAll", author=subscriber.name)
+
+	messages.process_message(message, reddit, database)
+
+	assert len(database.get_pending_notifications()) == 2
 
 
 def test_delete_comment(database, reddit):
