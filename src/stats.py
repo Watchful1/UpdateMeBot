@@ -13,7 +13,7 @@ def save_stats_for_day(database, day):
 	combined_users = defaultdict(lambda: defaultdict(set))
 	count_subscriptions = 0
 	for subscription in database.get_all_subscriptions():
-		if subscription.subreddit.is_enabled and subscription.author is not None:
+		if subscription.subreddit.is_enabled and subscription.subreddit.default_recurring and subscription.author is not None:
 			if subscription.tag is not None:
 				tag_counts[subscription.subreddit][subscription.author][subscription.tag] += 1
 			else:

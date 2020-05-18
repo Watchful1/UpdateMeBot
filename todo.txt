@@ -88,19 +88,16 @@ migration steps
 	migrate scan times
 	migrate comment timestamps
 
-blacklist certain subs
-	tests
-add readme
-delete pending notifications when deleting subscriptions
-	tests
-check backup syncing
-clear nosleepautobot subscriptions
-delete stats with less than 10 users
-add pending subreddits
+-blacklist certain subs
+-delete pending notifications when deleting subscriptions
+-check backup syncing
+-clear nosleepautobot subscriptions
+-delete stats with less than 10 users
+-add pending subreddits
 -notifications missing a subscription should log a warning but not error
 -figure out a way to not trigger a notification for an update subscription if there is already one pending
-dont log stats for update default subs, plus clean up existing ones
-check for existing stats when cleaning
+-dont log stats for update default subs, plus clean up existing ones
+-check for existing stats when cleaning
 logging for subreddit last checked time
 
 
@@ -112,6 +109,7 @@ edit fields for
 	subscription prompts
 
 
+add readme
 r/hfy should prompt be stickied
 r/nosleep can I post prompt
 tags from new series should prompt whether to message everyone

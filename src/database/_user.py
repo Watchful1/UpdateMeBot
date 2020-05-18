@@ -5,6 +5,7 @@ from classes.user import User
 from classes.submission import Submission
 from classes.subscription import Subscription
 from classes.comment import DbComment
+from classes.stat import Stat
 
 log = discord_logging.get_logger()
 
@@ -49,11 +50,13 @@ class _DatabaseUsers:
 			.outerjoin(DbComment2, DbComment2.subscriber_id == User.id) \
 			.outerjoin(Subscription1, Subscription1.author_id == User.id) \
 			.outerjoin(Subscription2, Subscription2.subscriber_id == User.id) \
+			.outerjoin(Stat, Stat.author_id == User.id) \
 			.filter(Submission.id == None) \
 			.filter(DbComment1.id == None) \
 			.filter(DbComment2.id == None) \
 			.filter(Subscription1.id == None) \
 			.filter(Subscription2.id == None) \
+			.filter(Stat.id == None) \
 			.all()
 
 		return users
