@@ -11,6 +11,7 @@ from classes.subscription import Subscription
 def bulk_sub_to(database, subreddit_name, author_name, subscriber_names, tag=None):
 	subreddit = database.get_or_add_subreddit(subreddit_name)
 	subreddit.is_enabled = True
+	subreddit.default_recurring = True
 	author = database.get_or_add_user(author_name)
 	for subscriber_name in subscriber_names:
 		user = database.get_or_add_user(subscriber_name)
