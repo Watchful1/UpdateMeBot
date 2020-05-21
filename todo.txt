@@ -98,7 +98,7 @@ migration steps
 -figure out a way to not trigger a notification for an update subscription if there is already one pending
 -dont log stats for update default subs, plus clean up existing ones
 -check for existing stats when cleaning
-logging for subreddit last checked time
+-logging for subreddit last checked time
 
 
 site ideas:
@@ -116,3 +116,5 @@ tags from new series should prompt whether to message everyone
 remove new from footer
 if a post is deleted, cancel pending notifications for it
 move tags to their own class
+multi user subscriptions
+multi subreddit subscriptions

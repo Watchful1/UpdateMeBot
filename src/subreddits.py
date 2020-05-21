@@ -72,6 +72,9 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	count_found = 0
 	newest_datetime = utils.datetime_now() - timedelta(minutes=30)
 	for submission in reddit.get_subreddit_submissions('+'.join(subreddit_names)):
+		if submission.author is None:
+			log.debug(f"Submission {submission.id} has no author")
+			continue
 		if database.get_submission_by_id(submission.id) is None:
 			if submission.subreddit.display_name not in subreddits:
 				log.warning(f"Subreddit not in dict during scan: {submission.subreddit.display_name}")
