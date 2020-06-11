@@ -34,6 +34,8 @@ def send_queued_notifications(reddit, database):
 			if result in (ReturnType.INVALID_USER, ReturnType.USER_DOESNT_EXIST):
 				log.info(f"User doesn't exist: u/{notification.subscription.subscriber.name}")
 				users_to_delete.add(notification.subscription.subscriber)
+			if result in (ReturnType.NOT_WHITELISTED_BY_USER_MESSAGE):
+				log.warning(f"User blocked notification message: u/{notification.subscription.subscriber.name}")
 
 			if not notification.subscription.recurring:
 				log.debug(f"{notification.subscription.id} deleted")

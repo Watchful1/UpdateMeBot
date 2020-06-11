@@ -109,6 +109,7 @@ edit fields for
 	subscription prompts
 
 
+check that user or subreddit name is
 add readme
 r/hfy should prompt be stickied
 r/nosleep can I post prompt
