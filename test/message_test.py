@@ -4,7 +4,7 @@ log = discord_logging.get_logger(init=True)
 
 import messages
 import utils
-import reddit_test
+from praw_wrapper import reddit_test
 import static
 from classes.submission import Submission
 from classes.subscription import Subscription
@@ -179,7 +179,7 @@ def test_add_link(database, reddit):
 	author = "AuthorName"
 	subreddit_name = "SubredditName"
 	init_db(database, [author], [subreddit_name])
-	post_id = utils.random_id()
+	post_id = reddit_test.random_id()
 	reddit.add_submission(
 		reddit_test.RedditObject(
 			id=post_id,
@@ -206,7 +206,7 @@ def test_add_link_with_tag(database, reddit):
 	subreddit_name = "SubredditName"
 	tag = "this is a tag"
 	init_db(database, [author.name], [subreddit_name], enable_tags=True)
-	submission_id = utils.random_id()
+	submission_id = reddit_test.random_id()
 	db_submission = Submission(
 		submission_id=submission_id,
 		time_created=utils.datetime_now(),
@@ -234,7 +234,7 @@ def test_add_link_default_subscribe(database, reddit):
 	author = "AuthorName"
 	subreddit_name = "SubredditName"
 	init_db(database, [author], None, [subreddit_name])
-	post_id = utils.random_id()
+	post_id = reddit_test.random_id()
 	reddit.add_submission(
 		reddit_test.RedditObject(
 			id=post_id,
@@ -291,7 +291,7 @@ def test_remove_subscription_with_notifications(database, reddit):
 	database.add_subscription(subscription)
 	subscription2 = Subscription(subscriber2, author, subreddit, True)
 	database.add_subscription(subscription2)
-	submission = Submission(utils.random_id(), utils.datetime_now(), author, subreddit,	"")
+	submission = Submission(reddit_test.random_id(), utils.datetime_now(), author, subreddit,	"")
 	database.add_submission(submission)
 	notification = Notification(subscription, submission)
 	database.add_notification(notification)
@@ -450,9 +450,9 @@ def test_remove_all_subscription_with_notifications(database, reddit):
 	subscription4 = Subscription(subscriber2, author2, subreddit, True)
 	database.add_subscription(subscription4)
 
-	submission1 = Submission(utils.random_id(), utils.datetime_now(), author1, subreddit, "")
+	submission1 = Submission(reddit_test.random_id(), utils.datetime_now(), author1, subreddit, "")
 	database.add_submission(submission1)
-	submission2 = Submission(utils.random_id(), utils.datetime_now(), author2, subreddit, "")
+	submission2 = Submission(reddit_test.random_id(), utils.datetime_now(), author2, subreddit, "")
 	database.add_submission(submission2)
 
 	notification = Notification(subscription, submission1)
@@ -479,7 +479,7 @@ def test_delete_comment(database, reddit):
 	subreddit_name = "SubredditName"
 	reddit_comment = reddit_test.RedditObject(
 		author=username,
-		link_id=utils.random_id()
+		link_id=reddit_test.random_id()
 	)
 	reddit.add_comment(reddit_comment)
 	db_submission = Submission(
@@ -516,7 +516,7 @@ def test_delete_comment_not_author(database, reddit):
 	subreddit_name = "SubredditName"
 	reddit_comment = reddit_test.RedditObject(
 		author=username,
-		link_id=utils.random_id()
+		link_id=reddit_test.random_id()
 	)
 	reddit.add_comment(reddit_comment)
 	db_submission = Submission(
@@ -549,7 +549,7 @@ def test_delete_comment_not_author(database, reddit):
 
 def test_delete_comment_doesnt_exist(database, reddit):
 	message = reddit_test.RedditObject(
-		body=f"delete {utils.random_id()}",
+		body=f"delete {reddit_test.random_id()}",
 		author="Watchful1"
 	)
 
@@ -754,7 +754,7 @@ def test_add_link_tagged(database, reddit):
 	author = "AuthorName"
 	subreddit_name = "SubredditName"
 	init_db(database, [author], [subreddit_name])
-	post_id = utils.random_id()
+	post_id = reddit_test.random_id()
 	reddit.add_submission(
 		reddit_test.RedditObject(
 			id=post_id,

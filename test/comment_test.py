@@ -5,7 +5,8 @@ log = discord_logging.get_logger(init=True)
 import comments
 import utils
 import static
-from reddit_test import RedditObject
+from praw_wrapper import reddit_test
+from praw_wrapper.reddit_test import RedditObject
 from classes.submission import Submission
 from classes.subscription import Subscription
 from classes.subreddit import Subreddit
@@ -17,8 +18,8 @@ def test_process_comment_update(database, reddit):
 	subscriber_name = "Subscriber1"
 	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
-	comment_id = utils.random_id()
-	submission_id = utils.random_id()
+	comment_id = reddit_test.random_id()
+	submission_id = reddit_test.random_id()
 	comment = RedditObject(
 		body=f"{static.TRIGGER_UPDATE}!",
 		author=subscriber_name,
@@ -59,8 +60,8 @@ def test_process_comment_subscribe(database, reddit):
 	subscriber_name = "Subscriber1"
 	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
-	comment_id = utils.random_id()
-	submission_id = utils.random_id()
+	comment_id = reddit_test.random_id()
+	submission_id = reddit_test.random_id()
 	comment = RedditObject(
 		body=f"{static.TRIGGER_SUBSCRIBE}!",
 		author=subscriber_name,
@@ -101,8 +102,8 @@ def test_process_comment_subscribe_tag(database, reddit):
 	subscriber_name = "Subscriber1"
 	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
-	comment_id = utils.random_id()
-	submission_id = utils.random_id()
+	comment_id = reddit_test.random_id()
+	submission_id = reddit_test.random_id()
 	comment = RedditObject(
 		body=f"{static.TRIGGER_SUBSCRIBE}!",
 		author=subscriber_name,
@@ -146,8 +147,8 @@ def test_process_comment_subscribe_all(database, reddit):
 	subscriber_name = "Subscriber1"
 	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
-	comment_id = utils.random_id()
-	submission_id = utils.random_id()
+	comment_id = reddit_test.random_id()
+	submission_id = reddit_test.random_id()
 	comment = RedditObject(
 		body=f"{static.TRIGGER_SUBSCRIBE_ALL}!",
 		author=subscriber_name,
@@ -191,8 +192,8 @@ def test_process_comment_subreddit_not_enabled(database, reddit):
 	subscriber_name = "Subscriber1"
 	author = database.get_or_add_user("Author1")
 	subreddit_name = "TestSub"
-	comment_id = utils.random_id()
-	submission_id = utils.random_id()
+	comment_id = reddit_test.random_id()
+	submission_id = reddit_test.random_id()
 	comment = RedditObject(
 		body=f"{static.TRIGGER_SUBSCRIBE}!",
 		author=subscriber_name,
@@ -224,8 +225,8 @@ def test_process_comment_thread_replied(database, reddit):
 	subscriber_name = "Subscriber1"
 	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
-	comment_id = utils.random_id()
-	submission_id = utils.random_id()
+	comment_id = reddit_test.random_id()
+	submission_id = reddit_test.random_id()
 	comment = RedditObject(
 		body=f"{static.TRIGGER_UPDATE}!",
 		author=subscriber_name,
@@ -244,7 +245,7 @@ def test_process_comment_thread_replied(database, reddit):
 	)
 	database.add_submission(db_submission)
 	previous_comment = DbComment(
-		comment_id=utils.random_id(),
+		comment_id=reddit_test.random_id(),
 		submission=db_submission,
 		subscriber=database.get_or_add_user("Subscriber2"),
 		author=author,
@@ -274,8 +275,8 @@ def test_process_comment_already_subscribed(database, reddit):
 	subscriber_name = "Subscriber1"
 	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
-	comment_id = utils.random_id()
-	submission_id = utils.random_id()
+	comment_id = reddit_test.random_id()
+	submission_id = reddit_test.random_id()
 	comment = RedditObject(
 		body=f"{static.TRIGGER_UPDATE}!",
 		author=subscriber_name,
@@ -311,8 +312,8 @@ def test_process_comment_update_subscription(database, reddit):
 	subscriber_name = "Subscriber1"
 	author = database.get_or_add_user("Author1")
 	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
-	comment_id = utils.random_id()
-	submission_id = utils.random_id()
+	comment_id = reddit_test.random_id()
+	submission_id = reddit_test.random_id()
 	comment = RedditObject(
 		body=f"{static.TRIGGER_UPDATE}!",
 		author=subscriber_name,
@@ -366,29 +367,29 @@ def test_update_incorrect_comments(database, reddit):
 	bulk_sub_to(database, "Subreddit1", "Author2", ["User2", "User3"])
 	bulk_sub_to(database, "Subreddit2", "Author3", ["User3"])
 	submission1 = Submission(
-		submission_id=utils.random_id(), time_created=utils.datetime_now(), author=database.get_or_add_user("Author1"),
+		submission_id=reddit_test.random_id(), time_created=utils.datetime_now(), author=database.get_or_add_user("Author1"),
 		subreddit=database.get_or_add_subreddit("Subreddit1"), permalink="")
 	database.add_submission(submission1)
 	submission2 = Submission(
-		submission_id=utils.random_id(), time_created=utils.datetime_now(), author=database.get_or_add_user("Author2"),
+		submission_id=reddit_test.random_id(), time_created=utils.datetime_now(), author=database.get_or_add_user("Author2"),
 		subreddit=database.get_or_add_subreddit("Subreddit1"), permalink="")
 	database.add_submission(submission2)
 	submission3 = Submission(
-		submission_id=utils.random_id(), time_created=utils.datetime_now(), author=database.get_or_add_user("Author3"),
+		submission_id=reddit_test.random_id(), time_created=utils.datetime_now(), author=database.get_or_add_user("Author3"),
 		subreddit=database.get_or_add_subreddit("Subreddit2"), permalink="")
 	database.add_submission(submission3)
 	comment1 = DbComment(
-		comment_id=utils.random_id(), submission=submission1, subscriber=database.get_or_add_user("User1"),
+		comment_id=reddit_test.random_id(), submission=submission1, subscriber=database.get_or_add_user("User1"),
 		author=database.get_or_add_user("Author1"), subreddit=database.get_or_add_subreddit("Subreddit1"),
 		recurring=True, current_count=1)
 	database.add_comment(comment1)
 	comment2 = DbComment(
-		comment_id=utils.random_id(), submission=submission2, subscriber=database.get_or_add_user("User2"),
+		comment_id=reddit_test.random_id(), submission=submission2, subscriber=database.get_or_add_user("User2"),
 		author=database.get_or_add_user("Author2"), subreddit=database.get_or_add_subreddit("Subreddit1"),
 		recurring=True, current_count=1)
 	database.add_comment(comment2)
 	comment3 = DbComment(
-		comment_id=utils.random_id(), submission=submission3, subscriber=database.get_or_add_user("User3"),
+		comment_id=reddit_test.random_id(), submission=submission3, subscriber=database.get_or_add_user("User3"),
 		author=database.get_or_add_user("Author3"), subreddit=database.get_or_add_subreddit("Subreddit2"),
 		recurring=True, current_count=1)
 	database.add_comment(comment3)

@@ -7,7 +7,7 @@ log = discord_logging.get_logger()
 
 
 from classes.subscription import Subscription
-from classes.enums import ReturnType
+from praw_wrapper import ReturnType
 import static
 import utils
 

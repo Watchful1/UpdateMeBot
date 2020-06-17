@@ -5,10 +5,9 @@ from datetime import timedelta
 log = discord_logging.get_logger(init=True)
 
 import subreddits
-import reddit_test
+from praw_wrapper import reddit_test
+from praw_wrapper.reddit_test import RedditObject, Subreddit
 import utils
-from reddit_test import RedditObject
-from reddit_test import Subreddit
 from classes.subscription import Subscription
 from classes.enums import SubredditPromptType
 from classes.notification import Notification

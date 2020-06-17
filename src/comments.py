@@ -8,7 +8,7 @@ import utils
 import static
 from classes.subscription import Subscription
 from classes.comment import DbComment
-from classes.enums import ReturnType
+from praw_wrapper import ReturnType, id_from_fullname
 
 
 def process_comment(comment, reddit, database, count_string=""):
@@ -37,7 +37,7 @@ def process_comment(comment, reddit, database, count_string=""):
 		return
 
 	comment_result = None
-	thread_id = utils.id_from_fullname(comment['link_id'])
+	thread_id = id_from_fullname(comment['link_id'])
 	subscriber = database.get_or_add_user(comment['author'])
 	subreddit = database.get_or_add_subreddit(comment['subreddit'])
 	db_submission = database.get_submission_by_id(thread_id)

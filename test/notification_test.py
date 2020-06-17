@@ -6,6 +6,7 @@ log = discord_logging.get_logger(init=True)
 import static
 import notifications
 import utils
+from praw_wrapper import reddit_test
 from classes.subscription import Subscription
 from classes.submission import Submission
 from classes.notification import Notification
@@ -49,7 +50,7 @@ def assert_message(message, dest_username, contains):
 
 
 def test_send_message(database, reddit):
-	submission_id = utils.random_id()
+	submission_id = reddit_test.random_id()
 	queue_message(database, "Subscriber1", "Author1", "Subreddit1", submission_id)
 
 	assert database.get_count_pending_notifications() == 1
@@ -63,7 +64,7 @@ def test_send_message(database, reddit):
 
 
 def test_send_message_update(database, reddit):
-	submission_id = utils.random_id()
+	submission_id = reddit_test.random_id()
 	queue_message(database, "Subscriber1", "Author1", "Subreddit1", submission_id, False)
 
 	assert database.get_count_pending_notifications() == 1
@@ -82,9 +83,9 @@ def test_send_message_update(database, reddit):
 
 def test_send_messages(database, reddit):
 	static.STAT_MINIMUM = 1
-	submission_id1 = utils.random_id()
-	submission_id2 = utils.random_id()
-	submission_id3 = utils.random_id()
+	submission_id1 = reddit_test.random_id()
+	submission_id2 = reddit_test.random_id()
+	submission_id3 = reddit_test.random_id()
 	queue_message(database, "Subscriber1", "Author1", "Subreddit1", submission_id1)
 	queue_message(database, "Subscriber2", "Author1", "Subreddit1", submission_id1)
 	queue_message(database, "Subscriber1", "Author2", "Subreddit1", submission_id2)
@@ -113,7 +114,7 @@ def test_send_messages(database, reddit):
 
 
 def test_send_message_tag(database, reddit):
-	submission_id = utils.random_id()
+	submission_id = reddit_test.random_id()
 	queue_message(database, "Subscriber1", "Author1", "Subreddit1", submission_id, recurring=True, tag="Story1")
 
 	notifications.send_queued_notifications(reddit, database)

@@ -4,13 +4,14 @@ from datetime import timedelta
 log = discord_logging.get_logger(init=True)
 
 import utils
+from praw_wrapper import reddit_test
 from classes.submission import Submission
 from classes.subscription import Subscription
 from classes.comment import DbComment
 
 
 def test_cleanup_comments(database, reddit):
-	post_ids = [utils.random_id(), utils.random_id()]
+	post_ids = [reddit_test.random_id(), reddit_test.random_id()]
 	subreddit = database.get_or_add_subreddit("Subreddit1", enable_subreddit_if_new=True)
 	submission1 = Submission(
 		submission_id=post_ids[0],
@@ -21,7 +22,7 @@ def test_cleanup_comments(database, reddit):
 	)
 	database.add_submission(submission1)
 	comment1 = DbComment(
-		comment_id=utils.random_id(),
+		comment_id=reddit_test.random_id(),
 		submission=submission1,
 		subscriber=database.get_or_add_user("Author2"),
 		author=database.get_or_add_user("Author1"),
@@ -39,7 +40,7 @@ def test_cleanup_comments(database, reddit):
 	)
 	database.add_submission(submission2)
 	comment2 = DbComment(
-		comment_id=utils.random_id(),
+		comment_id=reddit_test.random_id(),
 		submission=submission2,
 		subscriber=database.get_or_add_user("Author4"),
 		author=database.get_or_add_user("Author3"),
@@ -56,7 +57,7 @@ def test_cleanup_comments(database, reddit):
 
 
 def test_cleanup_submissions(database, reddit):
-	post_ids = [utils.random_id(), utils.random_id(), utils.random_id(), utils.random_id()]
+	post_ids = [reddit_test.random_id(), reddit_test.random_id(), reddit_test.random_id(), reddit_test.random_id()]
 	subreddit = database.get_or_add_subreddit("Subreddit1", enable_subreddit_if_new=True)
 	submission1 = Submission(
 		submission_id=post_ids[0],
@@ -87,7 +88,7 @@ def test_cleanup_submissions(database, reddit):
 	submission3.time_created = utils.datetime_now() - timedelta(days=4)
 	database.add_submission(submission3)
 	comment = DbComment(
-		comment_id=utils.random_id(),
+		comment_id=reddit_test.random_id(),
 		submission=submission3,
 		subscriber=database.get_or_add_user("Author5"),
 		author=database.get_or_add_user("Author2"),
@@ -116,7 +117,7 @@ def test_cleanup_submissions(database, reddit):
 def test_cleanup_users(database, reddit):
 	subreddit = database.get_or_add_subreddit("Subreddit1", enable_subreddit_if_new=True)
 	submission1 = Submission(
-		submission_id=utils.random_id(),
+		submission_id=reddit_test.random_id(),
 		time_created=utils.datetime_now(),
 		author=database.get_or_add_user("Author1"),
 		subreddit=subreddit,
@@ -124,7 +125,7 @@ def test_cleanup_users(database, reddit):
 	)
 	database.add_submission(submission1)
 	submission2 = Submission(
-		submission_id=utils.random_id(),
+		submission_id=reddit_test.random_id(),
 		time_created=utils.datetime_now(),
 		author=database.get_or_add_user("Author6"),
 		subreddit=subreddit,
@@ -132,7 +133,7 @@ def test_cleanup_users(database, reddit):
 	)
 	database.add_submission(submission2)
 	previous_comment = DbComment(
-		comment_id=utils.random_id(),
+		comment_id=reddit_test.random_id(),
 		submission=submission1,
 		subscriber=database.get_or_add_user("Author3"),
 		author=database.get_or_add_user("Author2"),

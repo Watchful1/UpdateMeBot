@@ -6,6 +6,7 @@ import signal
 import time
 import traceback
 import discord_logging
+import praw_wrapper
 import argparse
 
 log = discord_logging.init_logging(
@@ -15,7 +16,6 @@ log = discord_logging.init_logging(
 
 from database import Database
 import static
-import reddit_class
 import messages
 import comments
 import subreddits
@@ -58,8 +58,9 @@ if __name__ == "__main__":
 
 	discord_logging.init_discord_logging(args.user, logging.WARNING, 1)
 	static.ACCOUNT_NAME = args.user
-	reddit_message = reddit_class.Reddit(args.user, "message", args.no_post)
-	reddit_search = reddit_class.Reddit(args.user, "search", args.no_post)
+	reddit_message = praw_wrapper.Reddit(args.user, args.no_post, "message")
+	reddit_search = praw_wrapper.Reddit(args.user, args.no_post, "search")
+	static.ACCOUNT_NAME = reddit_message.username
 	database = Database(debug=args.debug_db)
 	if args.reset_comment:
 		log.info("Resetting comment processed timestamp")

@@ -3,8 +3,6 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Uniqu
 from sqlalchemy.orm import relationship
 
 from database import Base
-import utils
-import static
 
 
 log = discord_logging.get_logger()

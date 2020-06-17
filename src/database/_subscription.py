@@ -1,7 +1,6 @@
 import discord_logging
 from sqlalchemy.sql import func
 
-import utils
 from classes.subscription import Subscription
 from classes.subreddit import Subreddit
 from classes.user import User

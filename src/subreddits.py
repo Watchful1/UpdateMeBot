@@ -10,8 +10,8 @@ log = discord_logging.get_logger()
 import utils
 from classes.submission import Submission
 from classes.notification import Notification
-from classes.comment import DbComment
-from classes.enums import SubredditPromptType, ReturnType
+from praw_wrapper import ReturnType
+from classes.enums import SubredditPromptType
 
 
 def subreddit_posts_per_hour(reddit, subreddit_name):

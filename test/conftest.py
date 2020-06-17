@@ -7,7 +7,7 @@ log = discord_logging.init_logging(debug=True)
 sys.path.append("src")
 
 from database import Database
-import reddit_test
+from praw_wrapper import reddit_test
 
 
 @pytest.fixture
