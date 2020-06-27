@@ -272,7 +272,7 @@ def line_purge_user(line, bldr, database):
 	if len(users):
 		user_name = users[0]
 		user = database.get_or_add_user(user_name, case_is_user_supplied=True)
-		log.info(f"Force purging user u/{user_name}")
+		log.info(f"Force purging user u/{user_name} : {user.id}")
 		database.purge_user(user, True)
 		bldr.append(f"Force purged user u/{user_name}")
 
