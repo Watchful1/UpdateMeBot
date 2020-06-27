@@ -99,7 +99,7 @@ class Database(
 		if not force and (count_stats >= 10 or count_subscriptions_as_author >= 10 or count_submissions_as_author >= 10):
 			log.warning(
 				f"Unable to purge user u/{user.name}: {count_stats} | {count_subscriptions_as_author} "
-				f"| {count_submissions_as_author}"
+				f"| {count_submissions_as_author} "
 				f"<{utils.build_message_link(static.ACCOUNT_NAME, 'Purge User', 'purgeuser u/'+user.name)}>"
 			)
 			return False

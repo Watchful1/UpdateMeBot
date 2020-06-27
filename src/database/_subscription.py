@@ -170,7 +170,7 @@ class _DatabaseSubscriptions:
 		log.debug(f"Deleting all subscriptions to u/{author.name}")
 
 		author_subscriptions = self.session.query(Subscription)\
-			.filter(Subscription.subscriber == author)\
+			.filter(Subscription.author == author)\
 			.all()
 
 		count_deleted = len(author_subscriptions)
