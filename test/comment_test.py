@@ -269,6 +269,7 @@ def test_process_comment_thread_replied(database, reddit):
 	assert len(reddit.sent_messages) == 1
 	assert "I will message you next" in reddit.sent_messages[0].body
 	assert db_subreddit.name in reddit.sent_messages[0].body
+	assert reddit.sent_messages[0].dest.name == subscriber_name
 
 
 def test_process_comment_already_subscribed(database, reddit):

@@ -138,7 +138,7 @@ def process_comment(comment, reddit, database, count_string=""):
 		bldr.append(result_message)
 		bldr = utils.get_footer(bldr)
 
-		result = reddit.send_message(author.name, "UpdateMeBot Confirmation", ''.join(bldr))
+		result = reddit.send_message(subscriber.name, "UpdateMeBot Confirmation", ''.join(bldr))
 		if result != ReturnType.SUCCESS:
 			log.warning(f"Unable to send message: {result.name}")
 
