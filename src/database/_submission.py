@@ -41,3 +41,10 @@ class _DatabaseSubmission:
 		return self.session.query(Submission)\
 			.filter(Submission.author == user)\
 			.count()
+
+	def delete_author_submissions(self, user):
+		log.debug(f"Deleting all submissions by u/{user.name}")
+
+		return self.session.query(Submission)\
+			.filter(Submission.author == user)\
+			.delete(synchronize_session='fetch')

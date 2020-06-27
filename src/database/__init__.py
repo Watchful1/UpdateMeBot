@@ -92,15 +92,26 @@ class Database(
 			f"Cleanup {' '.join(deleted_comment_ids)} : {' '.join(deleted_submission_ids)} : {' '.join(deleted_users)} in "
 			f"{delta_time:.2} seconds")
 
-	def purge_user(self, user):
+	def purge_user(self, user, force=False):
 		count_stats = self.get_count_stats_for_user(user)
 		count_subscriptions_as_author = self.get_count_subscriptions_for_author(user)
 		count_submissions_as_author = self.get_count_submissions_for_author(user)
-		if count_stats > 0 or count_subscriptions_as_author > 0 or count_submissions_as_author > 0:
+		if not force and (count_stats >= 10 or count_subscriptions_as_author >= 10 or count_submissions_as_author >= 10):
 			log.warning(
 				f"Unable to purge user u/{user.name}: {count_stats} | {count_subscriptions_as_author} "
-				f"| {count_submissions_as_author}")
+				f"| {count_submissions_as_author}"
+				f"<{utils.build_message_link(static.ACCOUNT_NAME, 'Purge User', 'purgeuser u/'+user.name)}>"
+			)
 			return False
+
+		if count_stats > 0:
+			self.delete_user_stats(user)
+
+		if count_subscriptions_as_author > 0:
+			self.delete_author_subscriptions(user)
+
+		if count_submissions_as_author > 0:
+			self.delete_author_submissions(user)
 
 		count_comments = self.delete_user_comments(user)
 		count_notifications = 0

@@ -267,6 +267,16 @@ def line_add_sub(line, bldr, database):
 		bldr.append('subscribe' if recurring else 'update')
 
 
+def line_purge_user(line, bldr, database):
+	users = re.findall(r'(?: /?u/)([\w-]+)', line)
+	if len(users):
+		user_name = users[0]
+		user = database.get_or_add_user(user_name, case_is_user_supplied=True)
+		log.info(f"Force purging user u/{user_name}")
+		database.purge_user(user, True)
+		bldr.append(f"Force purged user u/{user_name}")
+
+
 def process_message(message, reddit, database, count_string=""):
 	log.info(f"{count_string}: Message u/{message.author.name} : {message.id}")
 	user = database.get_or_add_user(message.author.name)
@@ -288,6 +298,8 @@ def process_message(message, reddit, database, count_string=""):
 		elif user.name == static.OWNER:
 			if line.startswith("addsubreddit"):
 				line_add_sub(line, bldr, database)
+			elif line.startswith("purgeuser"):
+				line_purge_user(line, bldr, database)
 
 		if len(bldr) > current_len:
 			current_len = len(bldr)

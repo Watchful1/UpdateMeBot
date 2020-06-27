@@ -165,3 +165,16 @@ class _DatabaseSubscriptions:
 			.all()
 
 		return subscriptions
+
+	def delete_author_subscriptions(self, author):
+		log.debug(f"Deleting all subscriptions to u/{author.name}")
+
+		author_subscriptions = self.session.query(Subscription)\
+			.filter(Subscription.subscriber == author)\
+			.all()
+
+		count_deleted = len(author_subscriptions)
+		for subscription in author_subscriptions:
+			self.delete_subscription(subscription)
+
+		return count_deleted

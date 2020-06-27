@@ -49,3 +49,10 @@ class _DatabaseStats:
 		return self.session.query(Stat)\
 			.filter(Stat.author == user)\
 			.count()
+
+	def delete_user_stats(self, user):
+		log.debug(f"Deleting all stats for u/{user.name}")
+
+		return self.session.query(Stat)\
+			.filter(Stat.author == user)\
+			.delete(synchronize_session='fetch')
