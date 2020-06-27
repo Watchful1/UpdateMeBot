@@ -58,8 +58,8 @@ if __name__ == "__main__":
 
 	discord_logging.init_discord_logging(args.user, logging.WARNING, 1)
 	static.ACCOUNT_NAME = args.user
-	reddit_message = praw_wrapper.Reddit(args.user, args.no_post, "message")
-	reddit_search = praw_wrapper.Reddit(args.user, args.no_post, "search")
+	reddit_message = praw_wrapper.Reddit(args.user, args.no_post, "message", static.USER_AGENT)
+	reddit_search = praw_wrapper.Reddit(args.user, args.no_post, "search", static.USER_AGENT)
 	static.ACCOUNT_NAME = reddit_message.username
 	database = Database(debug=args.debug_db)
 	if args.reset_comment:

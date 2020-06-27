@@ -38,12 +38,13 @@ def check_update_disabled_subreddit(database, subreddit):
 		bldr.append(str(count_subscriptions))
 		bldr.append(" requests. It has ")
 		bldr.append(str(subreddit.posts_per_hour))
-		bldr.append(" posts per hour: ")
+		bldr.append(" posts per hour: <")
 		bldr.append(
 			build_message_link(
 				static.ACCOUNT_NAME, 'Add sub', f'AddSubreddit r/{subreddit.name} subscribe'
 			)
 		)
+		bldr.append(">")
 		log.warning(''.join(bldr))
 		subreddit.notice_threshold = subreddit.notice_threshold * 2
 
