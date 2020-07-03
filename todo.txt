@@ -119,3 +119,5 @@ if a post is deleted, cancel pending notifications for it
 move tags to their own class
 multi user subscriptions
 multi subreddit subscriptions
+don't update comments more than a few days old
+look back farther for pushshift comments if the last seen timestamp is old

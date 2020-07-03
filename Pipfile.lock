@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "fec4bb5d3b43befa0b2025780c7e13228a8fcc83f1edee0ff77beaab9c262eeb"
+            "sha256": "4a917ddb998e5d71c2d5eafcbb058b2b88976f996e7a48039a0f58683d644811"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -36,10 +36,10 @@
         },
         "idna": {
             "hashes": [
-                "sha256:7588d1c14ae4c77d74036e8c22ff447b26d0fde8f007354fd48a7814db15b7cb",
-                "sha256:a068a21ceac8a4d63dbfd964670474107f541babbd2250d61922f029858365fa"
+                "sha256:b307872f855b18632ce0c21c5e45be78c0ea7ae4c15c828c20788b26921eb3f6",
+                "sha256:b97d804b1e9b523befed77c48dacec60e6dcb0b5391d57af6a65a312a90648c0"
             ],
-            "version": "==2.9"
+            "version": "==2.10"
         },
         "praw": {
             "hashes": [
@@ -59,6 +59,14 @@
                 "sha256:cf71388d869becbcbdfd90258b19d2173c197a457f2dd0bef0566b6cfb9b95a1"
             ],
             "version": "==1.4.0"
+        },
+        "prometheus-client": {
+            "hashes": [
+                "sha256:983c7ac4b47478720db338f1491ef67a100b474e3bc7dafcbaefb7d0b8f9b01c",
+                "sha256:c6e6b706833a6bd1fd51711299edee907857be10ece535126a158f911ee80915"
+            ],
+            "index": "pypi",
+            "version": "==0.8.0"
         },
         "requests": {
             "hashes": [

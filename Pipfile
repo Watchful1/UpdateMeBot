@@ -10,6 +10,7 @@ pytest = "*"
 discord-logging = {git = "https://github.com/Watchful1/DiscordLogging.git"}
 sqlalchemy = "*"
 praw-wrapper = {editable = true,git = "https://github.com/Watchful1/PrawWrapper.git"}
+prometheus-client = "*"
 
 [requires]
 python_version = "3.7"
