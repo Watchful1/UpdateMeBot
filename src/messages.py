@@ -343,7 +343,7 @@ def process_message(message, reddit, database, count_string=""):
 	database.commit()
 
 
-def process_messages(reddit, database, messages_counter):
+def process_messages(reddit, database, counters):
 	messages = reddit.get_messages()
 	if len(messages):
 		log.debug(f"Processing {len(messages)} messages")
@@ -358,7 +358,7 @@ def process_messages(reddit, database, messages_counter):
 			else:
 				try:
 					process_message(message, reddit, database, f"{i}/{len(messages)}")
-					messages_counter.inc()
+					counters.messages_replied.inc()
 				except Exception:
 					log.warning(f"Error processing message: {message.id} : u/{message.author.name}")
 					log.warning(traceback.format_exc())

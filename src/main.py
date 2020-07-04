@@ -16,6 +16,7 @@ log = discord_logging.init_logging(
 
 
 from database import Database
+from classes.counters import Counters
 import static
 import messages
 import comments
@@ -54,7 +55,8 @@ if __name__ == "__main__":
 	parser.add_argument("--debug", help="Set the log level to debug", action='store_const', const=True, default=False)
 	args = parser.parse_args()
 
-	prometheus_client.start_http_server(8000)
+	Counters.start_server(8000)
+	counters = Counters()
 
 	if args.debug:
 		discord_logging.set_level(logging.DEBUG)
@@ -69,8 +71,6 @@ if __name__ == "__main__":
 		log.info("Resetting comment processed timestamp")
 		database.save_datetime("comment_timestamp", utils.datetime_now())
 
-	messages_counter = prometheus_client.Counter('messages_replied', "Count of messages replied to")
-
 	last_backup = None
 	last_comments = None
 	while True:
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 		errors = 0
 
 		try:
-			actions += messages.process_messages(reddit_message, database, messages_counter)
+			actions += messages.process_messages(reddit_message, database, counters)
 		except Exception as err:
 			log.warning(f"Error processing messages: {err}")
 			log.warning(traceback.format_exc())
@@ -95,14 +95,14 @@ if __name__ == "__main__":
 			errors += 1
 
 		try:
-			actions += comments.process_comments(reddit_message, database)
+			actions += comments.process_comments(reddit_message, database, counters)
 		except Exception as err:
 			log.warning(f"Error processing comments: {err}")
 			log.warning(traceback.format_exc())
 			errors += 1
 
 		try:
-			actions += notifications.send_queued_notifications(reddit_message, database)
+			actions += notifications.send_queued_notifications(reddit_message, database, counters)
 		except Exception as err:
 			log.warning(f"Error sending notifications: {err}")
 			log.warning(traceback.format_exc())

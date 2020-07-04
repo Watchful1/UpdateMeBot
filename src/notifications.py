@@ -6,8 +6,10 @@ from praw_wrapper import ReturnType
 import utils
 
 
-def send_queued_notifications(reddit, database):
+def send_queued_notifications(reddit, database, counters=None):
 	count_pending_notifications = database.get_count_pending_notifications()
+	if counters is not None:
+		counters.queue_size.set(count_pending_notifications)
 
 	notifications_sent = 0
 	if count_pending_notifications > 0:
@@ -15,6 +17,9 @@ def send_queued_notifications(reddit, database):
 		notifications = database.get_pending_notifications(utils.requests_available(count_pending_notifications))
 		for notification in notifications:
 			notifications_sent += 1
+			if counters is not None:
+				counters.notifications_sent.inc()
+				counters.queue_size.dec()
 			if notification.subscription is None:
 				log.warning(
 					f"Notification for u/{notification.submission.author.name} in r/"
