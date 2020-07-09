@@ -8,6 +8,8 @@ class Counters:
 		self.notifications_sent = prometheus_client.Counter('notifications_sent', "Count of notifications sent")
 		self.queue_size = prometheus_client.Gauge('queue_size', "Current queue size")
 
+		self.count_objects = prometheus_client.Gauge('count_objects', "Current total number of reminders")
+
 	@staticmethod
 	def start_server(port):
 		prometheus_client.start_http_server(port)

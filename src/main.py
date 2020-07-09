@@ -8,7 +8,6 @@ import traceback
 import discord_logging
 import praw_wrapper
 import argparse
-import prometheus_client
 
 log = discord_logging.init_logging(
 	backup_count=20
@@ -79,6 +78,8 @@ if __name__ == "__main__":
 
 		actions = 0
 		errors = 0
+
+		counters.count_objects.set(database.get_count_all_subscriptions())
 
 		try:
 			actions += messages.process_messages(reddit_message, database, counters)

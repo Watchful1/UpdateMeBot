@@ -178,3 +178,11 @@ class _DatabaseSubscriptions:
 			self.delete_subscription(subscription)
 
 		return count_deleted
+
+	def get_count_all_subscriptions(self):
+		log.debug("Fetching count of all subscriptions")
+
+		count = self.session.query(Subscription).count()
+
+		log.debug(f"Count subscriptions: {count}")
+		return count
