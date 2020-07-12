@@ -6,6 +6,7 @@ import re
 log = discord_logging.get_logger()
 
 
+import counters
 from classes.subscription import Subscription
 from praw_wrapper import ReturnType
 import static
@@ -282,6 +283,8 @@ def process_message(message, reddit, database, count_string=""):
 	user = database.get_or_add_user(message.author.name)
 	body = message.body.lower().replace("\u00A0", " ")
 
+	counters.replies.labels(source='message').inc()
+
 	bldr = []
 	append_list = False
 	current_len = 0
@@ -343,13 +346,14 @@ def process_message(message, reddit, database, count_string=""):
 	database.commit()
 
 
-def process_messages(reddit, database, counters):
+def process_messages(reddit, database):
 	messages = reddit.get_messages()
 	if len(messages):
 		log.debug(f"Processing {len(messages)} messages")
 	i = 0
 	for message in messages[::-1]:
 		i += 1
+		mark_read = True
 		if reddit.is_message(message):
 			if message.author is None:
 				log.info(f"Message {message.id} is a system notification")
@@ -358,19 +362,23 @@ def process_messages(reddit, database, counters):
 			else:
 				try:
 					process_message(message, reddit, database, f"{i}/{len(messages)}")
-					counters.messages_replied.inc()
-				except Exception:
-					log.warning(f"Error processing message: {message.id} : u/{message.author.name}")
-					log.warning(traceback.format_exc())
+				except Exception as err:
+					mark_read = not utils.process_error(
+						f"Error processing message: {message.id} : u/{message.author.name}",
+						err, traceback.format_exc()
+					)
 				finally:
 					database.commit()
 		else:
 			log.info(f"Object not message, skipping: {message.id}")
 
-		try:
-			reddit.mark_read(message)
-		except Exception:
-			log.warning(f"Error marking message read: {message.id} : {message.author.name}")
-			log.warning(traceback.format_exc())
+		if mark_read:
+			try:
+				reddit.mark_read(message)
+			except Exception as err:
+				utils.process_error(
+					f"Error marking message read: {message.id} : {message.author.name}",
+					err, traceback.format_exc()
+				)
 
 	return len(messages)

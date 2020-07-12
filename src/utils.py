@@ -2,13 +2,28 @@ from datetime import datetime
 import discord_logging
 import re
 import urllib.parse
+import prawcore
 from datetime import timedelta
 
 
 log = discord_logging.get_logger()
 
 
+import counters
 import static
+
+
+def process_error(message, exception, traceback):
+	is_transient = isinstance(exception, prawcore.exceptions.ServerError)
+	log.warning(f"{message}: {exception}")
+	if is_transient:
+		log.info(traceback)
+		counters.errors.labels(type='api').inc()
+	else:
+		log.warning(traceback)
+		counters.errors.labels(type='other').inc()
+
+	return is_transient
 
 
 def extract_tag_from_title(title):

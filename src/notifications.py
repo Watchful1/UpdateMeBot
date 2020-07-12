@@ -2,14 +2,14 @@ import discord_logging
 
 log = discord_logging.get_logger()
 
+import counters
 from praw_wrapper import ReturnType
 import utils
 
 
-def send_queued_notifications(reddit, database, counters=None):
+def send_queued_notifications(reddit, database):
 	count_pending_notifications = database.get_count_pending_notifications()
-	if counters is not None:
-		counters.queue_size.set(count_pending_notifications)
+	counters.queue.set(count_pending_notifications)
 
 	notifications_sent = 0
 	if count_pending_notifications > 0:
@@ -17,9 +17,8 @@ def send_queued_notifications(reddit, database, counters=None):
 		notifications = database.get_pending_notifications(utils.requests_available(count_pending_notifications))
 		for notification in notifications:
 			notifications_sent += 1
-			if counters is not None:
-				counters.notifications_sent.inc()
-				counters.queue_size.dec()
+			counters.notifications.inc()
+			counters.queue.dec()
 			if notification.subscription is None:
 				log.warning(
 					f"Notification for u/{notification.submission.author.name} in r/"

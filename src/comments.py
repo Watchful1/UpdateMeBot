@@ -4,6 +4,7 @@ from datetime import datetime
 
 log = discord_logging.get_logger()
 
+import counters
 import utils
 import static
 from classes.subscription import Subscription
@@ -11,7 +12,7 @@ from classes.comment import DbComment
 from praw_wrapper import ReturnType, id_from_fullname
 
 
-def process_comment(comment, reddit, database, count_string="", counters=None):
+def process_comment(comment, reddit, database, count_string=""):
 	if comment['author'] == static.ACCOUNT_NAME:
 		log.info(f"{count_string}: Comment is from updatemebot")
 		return
@@ -19,9 +20,9 @@ def process_comment(comment, reddit, database, count_string="", counters=None):
 		log.info(f"{count_string}: Comment is from a blacklisted account")
 		return
 
+	counters.replies.labels(source='comment').inc()
+
 	log.info(f"{count_string}: Processing comment {comment['id']} from u/{comment['author']}")
-	if counters is not None:
-		counters.comments_replied.inc()
 	body = comment['body'].lower().strip()
 	use_tag = True
 	if static.TRIGGER_SUBSCRIBE_LOWER in body:
@@ -145,21 +146,27 @@ def process_comment(comment, reddit, database, count_string="", counters=None):
 			log.warning(f"Unable to send message: {result.name}")
 
 
-def process_comments(reddit, database, counters):
+def process_comments(reddit, database):
 	comments = reddit.get_keyword_comments(static.TRIGGER_COMBINED, database.get_or_init_datetime("comment_timestamp"))
 	if len(comments):
 		log.debug(f"Processing {len(comments)} comments")
 	i = 0
 	for comment in comments[::-1]:
 		i += 1
+		mark_read = True
 		try:
-			process_comment(comment, reddit, database, f"{i}/{len(comments)}", counters)
-		except Exception:
-			log.warning(f"Error processing comment: {comment['id']} : {comment['author']}")
-			log.warning(traceback.format_exc())
+			process_comment(comment, reddit, database, f"{i}/{len(comments)}")
+		except Exception as err:
+			mark_read = not utils.process_error(
+				f"Error processing comment: {comment['id']} : {comment['author']}",
+				err, traceback.format_exc()
+			)
 
-		reddit.mark_keyword_comment_processed(comment['id'])
-		database.save_datetime("comment_timestamp", datetime.utcfromtimestamp(comment['created_utc']))
+		if mark_read:
+			reddit.mark_keyword_comment_processed(comment['id'])
+			database.save_datetime("comment_timestamp", datetime.utcfromtimestamp(comment['created_utc']))
+		else:
+			return i
 
 	return len(comments)
 

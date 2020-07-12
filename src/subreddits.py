@@ -54,8 +54,10 @@ def profile_subreddits(database, reddit):
 			subreddit.last_profiled = utils.datetime_now()
 			changes_made = True
 		except Exception as err:
-			log.warning(f"Error profiling subreddit: {subreddit.name}")
-			log.warning(traceback.format_exc())
+			utils.process_error(
+				f"Error profiling subreddit: {subreddit.name}",
+				err, traceback.format_exc()
+			)
 
 	if changes_made:
 		database.commit()

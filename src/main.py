@@ -14,8 +14,8 @@ log = discord_logging.init_logging(
 )
 
 
+import counters
 from database import Database
-from classes.counters import Counters
 import static
 import messages
 import comments
@@ -54,8 +54,8 @@ if __name__ == "__main__":
 	parser.add_argument("--debug", help="Set the log level to debug", action='store_const', const=True, default=False)
 	args = parser.parse_args()
 
-	Counters.start_server(8000)
-	counters = Counters()
+	counters.init(8000)
+	counters.errors.labels(type="startup").inc()
 
 	if args.debug:
 		discord_logging.set_level(logging.DEBUG)
@@ -79,34 +79,30 @@ if __name__ == "__main__":
 		actions = 0
 		errors = 0
 
-		counters.count_objects.set(database.get_count_all_subscriptions())
+		counters.objects.set(database.get_count_all_subscriptions())
 
 		try:
-			actions += messages.process_messages(reddit_message, database, counters)
+			actions += messages.process_messages(reddit_message, database)
 		except Exception as err:
-			log.warning(f"Error processing messages: {err}")
-			log.warning(traceback.format_exc())
+			utils.process_error(f"Error processing messages", err, traceback.format_exc())
 			errors += 1
 
 		try:
 			subreddits.scan_subreddits(reddit_search, database)
 		except Exception as err:
-			log.warning(f"Error scanning subreddits: {err}")
-			log.warning(traceback.format_exc())
+			utils.process_error(f"Error scanning subreddits", err, traceback.format_exc())
 			errors += 1
 
 		try:
-			actions += comments.process_comments(reddit_message, database, counters)
+			actions += comments.process_comments(reddit_message, database)
 		except Exception as err:
-			log.warning(f"Error processing comments: {err}")
-			log.warning(traceback.format_exc())
+			utils.process_error(f"Error processing comments", err, traceback.format_exc())
 			errors += 1
 
 		try:
-			actions += notifications.send_queued_notifications(reddit_message, database, counters)
+			actions += notifications.send_queued_notifications(reddit_message, database)
 		except Exception as err:
-			log.warning(f"Error sending notifications: {err}")
-			log.warning(traceback.format_exc())
+			utils.process_error(f"Error sending notifications", err, traceback.format_exc())
 			errors += 1
 
 		if utils.time_offset(last_comments, minutes=30):
@@ -114,8 +110,7 @@ if __name__ == "__main__":
 				actions += comments.update_comments(reddit_message, database)
 				last_comments = utils.datetime_now()
 			except Exception as err:
-				log.warning(f"Error updating comments: {err}")
-				log.warning(traceback.format_exc())
+				utils.process_error(f"Error updating comments", err, traceback.format_exc())
 				errors += 1
 
 		latest_stats = database.get_datetime("stats_day", is_date=True)
@@ -134,8 +129,7 @@ if __name__ == "__main__":
 
 				database.clean()
 			except Exception as err:
-				log.warning(f"Error backing up database: {err}")
-				log.warning(traceback.format_exc())
+				utils.process_error(f"Error backing up database", err, traceback.format_exc())
 				errors += 1
 
 		log.debug(f"Run complete after: {int(time.perf_counter() - startTime)}")
