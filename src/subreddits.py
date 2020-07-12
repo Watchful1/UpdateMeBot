@@ -207,5 +207,5 @@ def scan_subreddits(reddit, database):
 	log.info(
 		f"{' '.join(submission_ids_scanned)} in {subreddits_scanned} subs across {groups_scanned} groups in "
 		f"{delta_time:.2f} seconds")
-	counters.scan_rate.observe(int(delta_time))
+	counters.scan_rate.observe(round(delta_time, 2))
 	counters.scan_items.inc(len(submission_ids_scanned))
