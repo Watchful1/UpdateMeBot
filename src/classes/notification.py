@@ -116,25 +116,4 @@ class Notification(Base):
 			bldr.append(utils.build_message_link(static.ACCOUNT_NAME, "Subscribe", message_text.format("SubscribeMe")))
 			bldr.append(") if you want to be messaged every time")
 
-		if self.subscription.subreddit.name in ("nosleep", "HFY"):
-			bldr.append("\n\n")
-			bldr.append("*****")
-			bldr.append("\n\n")
-
-			bldr.append(
-				"I'm consider adding a tagging system so if an author posts multiple series at the same time, you can "
-				"subscribe to get messages for only one of them. The downside would be that authors would have to "
-				"format their titles a certain way so the bot knows what series they are part of. If you would use "
-				"this, please answer this [quick poll](")
-			if self.subscription.subreddit.name == "nosleep":
-				bldr.append("https://www.strawpoll.me/20670548")
-			else:
-				bldr.append("https://www.strawpoll.me/20670549")
-			bldr.append(") or [comment here](")
-			if self.subscription.subreddit.name == "nosleep":
-				bldr.append("https://www.reddit.com/r/NoSleepOOC/comments/hyidmy/updatemebot_author_here_quick_poll/")
-			else:
-				bldr.append("https://www.reddit.com/r/HFY/comments/hyido5/updatemebot_author_here_quick_poll/")
-			bldr.append(").")
-
 		return bldr
