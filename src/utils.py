@@ -90,7 +90,7 @@ def html_encode(message):
 
 
 def build_message_link(recipient, subject, content=None):
-	base = "https://np.reddit.com/message/compose/?"
+	base = "https://www.reddit.com/message/compose/?"
 	bldr = str_bldr()
 	bldr.append(f"to={recipient}")
 	bldr.append(f"subject={html_encode(subject)}")
@@ -98,10 +98,6 @@ def build_message_link(recipient, subject, content=None):
 		bldr.append(f"message={html_encode(content)}")
 
 	return base + '&'.join(bldr)
-
-
-def replace_np(link):
-	return re.sub(r"(www|old|new)\.reddit\.com", "np.reddit.com", link)
 
 
 def requests_available(requests_pending):
@@ -127,7 +123,7 @@ def get_footer(bldr=None):
 	bldr.append("\n\n")
 
 	bldr.append("|[^(Info)](")
-	bldr.append(replace_np(static.INFO_POST))
+	bldr.append(static.INFO_POST)
 	bldr.append(")|[^(Request Update)](")
 	bldr.append(build_message_link(
 		static.ACCOUNT_NAME,
