@@ -31,7 +31,6 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 		return 1
 	except prawcore.exceptions.Forbidden:
 		log.warning(f"Subreddit r/{subreddit_name} forbidden when profiling, opting in")
-		reddit.quarantine_opt_in(subreddit_name)
 		return -1
 
 	if count == 0:

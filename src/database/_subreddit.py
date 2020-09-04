@@ -61,11 +61,13 @@ class _DatabaseSubreddit:
 			log.debug(f"Fetching subreddits to profile")
 		subreddits = self.session.query(Subreddit)\
 			.filter(Subreddit.is_enabled == True)\
+			.filter(Subreddit.is_blacklisted == False)\
 			.filter(Subreddit.last_profiled < datetime.utcnow() - timedelta(days=30))\
 			.all()
 		subreddits.extend(
 			self.session.query(Subreddit)
 			.filter(Subreddit.is_enabled == False)
+			.filter(Subreddit.is_blacklisted == False)\
 			.filter(Subreddit.last_profiled < datetime.utcnow() - timedelta(days=90))
 			.all()
 		)
