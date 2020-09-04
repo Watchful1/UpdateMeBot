@@ -53,7 +53,8 @@ class Subscription(Base):
 				f"Subreddit blacklisted r/{subreddit.name}, not adding not adding subscription")
 			result_message = \
 				f"u/UpdateMeBot is not suited for subreddits like r/{subreddit.name}. It only works well in subs where" \
-				f" the original poster of the thread will post a followup as a new thread"
+				f" the original poster of the thread will post a followup as a new thread. It's also possible this" \
+				f" subreddit doesn't exist"
 			return result_message, None
 
 		subscription = database.get_subscription_by_fields(subscriber, author, subreddit, tag)
