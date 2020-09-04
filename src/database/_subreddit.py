@@ -10,14 +10,17 @@ log = discord_logging.get_logger()
 class _DatabaseSubreddit:
 	def __init__(self):
 		self.session = self.session  # for pycharm linting
+		self.log_debug = self.log_debug
 
 	def get_or_add_subreddit(self, subreddit_name, case_is_user_supplied=False, enable_subreddit_if_new=False):
-		log.debug(f"Fetching subreddit by name: {subreddit_name}")
+		if self.log_debug:
+			log.debug(f"Fetching subreddit by name: {subreddit_name}")
 		subreddit = self.session.query(Subreddit)\
 			.filter_by(name=subreddit_name)\
 			.first()
 		if subreddit is None:
-			log.debug(f"Creating subreddit: {subreddit_name}")
+			if self.log_debug:
+				log.debug(f"Creating subreddit: {subreddit_name}")
 			subreddit = Subreddit(subreddit_name, enabled=enable_subreddit_if_new)
 			self.session.add(subreddit)
 		else:
@@ -27,7 +30,8 @@ class _DatabaseSubreddit:
 		return subreddit
 
 	def get_subreddit(self, subreddit_name):
-		log.debug(f"Fetching subreddit by name: {subreddit_name}")
+		if self.log_debug:
+			log.debug(f"Fetching subreddit by name: {subreddit_name}")
 		subreddit = self.session.query(Subreddit)\
 			.filter_by(name=subreddit_name)\
 			.first()
@@ -35,7 +39,8 @@ class _DatabaseSubreddit:
 		return subreddit
 
 	def get_active_subreddits(self):
-		log.debug(f"Fetching active subreddits")
+		if self.log_debug:
+			log.debug(f"Fetching active subreddits")
 		subreddits = self.session.query(Subreddit)\
 			.filter(Subreddit.is_enabled == True)\
 			.order_by(Subreddit.posts_per_hour)\
@@ -44,14 +49,16 @@ class _DatabaseSubreddit:
 		return subreddits
 
 	def get_all_subreddits(self):
-		log.debug(f"Fetching all subreddits")
+		if self.log_debug:
+			log.debug(f"Fetching all subreddits")
 		subreddits = self.session.query(Subreddit)\
 			.all()
 
 		return subreddits
 
 	def get_unprofiled_subreddits(self):
-		log.debug(f"Fetching subreddits to profile")
+		if self.log_debug:
+			log.debug(f"Fetching subreddits to profile")
 		subreddits = self.session.query(Subreddit)\
 			.filter(Subreddit.is_enabled == True)\
 			.filter(Subreddit.last_profiled < datetime.utcnow() - timedelta(days=30))\

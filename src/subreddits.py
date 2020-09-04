@@ -93,6 +93,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 				if submission_datetime < subreddit.date_enabled or \
 						submission_datetime + timedelta(hours=24) < subreddit.last_scanned:
 					skip = True
+					count_existing += 1
 
 			if not skip:
 				submissions_subreddits.append((submission, subreddit, submission_datetime))

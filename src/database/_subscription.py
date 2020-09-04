@@ -12,15 +12,18 @@ log = discord_logging.get_logger()
 class _DatabaseSubscriptions:
 	def __init__(self):
 		self.session = self.session  # for pycharm linting
+		self.log_debug = self.log_debug
 
 	def add_subscription(self, subscription):
-		log.debug("Saving new subscription")
+		if self.log_debug:
+			log.debug("Saving new subscription")
 		self.session.add(subscription)
 
 	def get_subscription_by_fields(self, subscriber, author, subreddit, tag=None):
-		log.debug(
-			f"Fetching subscription by fields: {subscriber.name} : {author.name if author is not None else '-all'} "
-			f": {subreddit.name}: {tag}")
+		if self.log_debug:
+			log.debug(
+				f"Fetching subscription by fields: {subscriber.name} : {author.name if author is not None else '-all'} "
+				f": {subreddit.name}: {tag}")
 
 		subscription = self.session.query(Subscription)\
 			.filter(Subscription.subscriber == subscriber)\
@@ -32,7 +35,8 @@ class _DatabaseSubscriptions:
 		return subscription
 
 	def get_count_tagged_subscriptions_by_fields(self, subscriber, author, subreddit):
-		log.debug(f"Fetching count of tagged subscription by fields: {subscriber.name} : {author.name} : {subreddit.name}")
+		if self.log_debug:
+			log.debug(f"Fetching count of tagged subscription by fields: {subscriber.name} : {author.name} : {subreddit.name}")
 
 		count_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.subscriber == subscriber)\
@@ -44,7 +48,8 @@ class _DatabaseSubscriptions:
 		return count_subscriptions
 
 	def get_count_subscriptions_for_author_subreddit(self, author, subreddit, tag=None):
-		log.debug(f"Fetching count subscriptions for author and subreddit: {author.name} : {subreddit.name}: {tag}")
+		if self.log_debug:
+			log.debug(f"Fetching count subscriptions for author and subreddit: {author.name} : {subreddit.name}: {tag}")
 
 		count_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.author == author)\
@@ -55,7 +60,8 @@ class _DatabaseSubscriptions:
 		return count_subscriptions
 
 	def get_count_subscriptions_for_subreddit(self, subreddit):
-		log.debug(f"Fetching count subscriptions for subreddit: {subreddit.name}")
+		if self.log_debug:
+			log.debug(f"Fetching count subscriptions for subreddit: {subreddit.name}")
 
 		count_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.subreddit == subreddit)\
@@ -64,7 +70,8 @@ class _DatabaseSubscriptions:
 		return count_subscriptions
 
 	def get_subscriptions_for_author_subreddit(self, author, subreddit, tag=None):
-		log.debug(f"Fetching subscriptions by author and subreddit: {author.name} : {subreddit.name} : {tag}")
+		if self.log_debug:
+			log.debug(f"Fetching subscriptions by author and subreddit: {author.name} : {subreddit.name} : {tag}")
 
 		subscriptions = self.session.query(Subscription)\
 			.join(
@@ -93,7 +100,8 @@ class _DatabaseSubscriptions:
 			return self.get_user_subscriptions(user, only_enabled)
 
 	def get_user_subscriptions(self, user, only_enabled=True):
-		log.debug(f"Fetching user subscriptions u/{user.name}")
+		if self.log_debug:
+			log.debug(f"Fetching user subscriptions u/{user.name}")
 
 		if only_enabled:
 			subscriptions = self.session.query(Subscription)\
@@ -116,13 +124,15 @@ class _DatabaseSubscriptions:
 		)
 
 	def get_count_subscriptions_for_author(self, user):
-		log.debug(f"Getting count subscriptions for u/{user}")
+		if self.log_debug:
+			log.debug(f"Getting count subscriptions for u/{user}")
 		return self.session.query(Subscription)\
 			.filter(Subscription.author == user)\
 			.count()
 
 	def delete_user_subscriptions(self, user):
-		log.debug(f"Deleting all subscriptions for u/{user.name}")
+		if self.log_debug:
+			log.debug(f"Deleting all subscriptions for u/{user.name}")
 
 		user_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.subscriber == user)\
@@ -135,7 +145,8 @@ class _DatabaseSubscriptions:
 		return count_deleted
 
 	def delete_tagged_subreddit_author_subscriptions(self, subscriber, author, subreddit):
-		log.debug(f"Deleting all tagged subscriptions for u/{subscriber.name} : {subscriber.name} : {author.name} : {subreddit.name}")
+		if self.log_debug:
+			log.debug(f"Deleting all tagged subscriptions for u/{subscriber.name} : {subscriber.name} : {author.name} : {subreddit.name}")
 
 		user_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.subscriber == subscriber)\
@@ -151,7 +162,8 @@ class _DatabaseSubscriptions:
 		return count_deleted
 
 	def delete_subscription(self, subscription):
-		log.debug(f"Deleting subscription by id: {subscription.id}")
+		if self.log_debug:
+			log.debug(f"Deleting subscription by id: {subscription.id}")
 
 		self.session.query(Notification) \
 			.filter(Notification.subscription == subscription) \
@@ -160,14 +172,16 @@ class _DatabaseSubscriptions:
 		self.session.delete(subscription)
 
 	def get_all_subscriptions(self):
-		log.debug("Fetching all author subreddit subscriptions")
+		if self.log_debug:
+			log.debug("Fetching all author subreddit subscriptions")
 		subscriptions = self.session.query(Subscription)\
 			.all()
 
 		return subscriptions
 
 	def delete_author_subscriptions(self, author):
-		log.debug(f"Deleting all subscriptions to u/{author.name}")
+		if self.log_debug:
+			log.debug(f"Deleting all subscriptions to u/{author.name}")
 
 		author_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.author == author)\
@@ -180,9 +194,11 @@ class _DatabaseSubscriptions:
 		return count_deleted
 
 	def get_count_all_subscriptions(self):
-		log.debug("Fetching count of all subscriptions")
+		if self.log_debug:
+			log.debug("Fetching count of all subscriptions")
 
 		count = self.session.query(Subscription).count()
 
-		log.debug(f"Count subscriptions: {count}")
+		if self.log_debug:
+			log.debug(f"Count subscriptions: {count}")
 		return count

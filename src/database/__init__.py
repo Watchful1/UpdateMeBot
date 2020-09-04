@@ -33,9 +33,10 @@ class Database(
 	_DatabaseNotification,
 	_DatabaseStats
 ):
-	def __init__(self, debug=False, publish=False):
+	def __init__(self, debug=False, publish=False, log_debug=True):
 		log.info(f"Initializing database class: debug={debug} publish={publish}")
 		self.debug = debug
+		self.log_debug = log_debug
 		self.engine = None
 		self.init(debug, publish)
 
