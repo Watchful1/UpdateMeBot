@@ -56,7 +56,7 @@ class _DatabaseSubreddit:
 
 		return subreddits
 
-	def get_unprofiled_subreddits(self):
+	def get_unprofiled_subreddits(self, limit=10):
 		if self.log_debug:
 			log.debug(f"Fetching subreddits to profile")
 		subreddits = self.session.query(Subreddit)\
@@ -70,4 +70,4 @@ class _DatabaseSubreddit:
 			.all()
 		)
 
-		return subreddits
+		return subreddits[:limit]

@@ -4,9 +4,9 @@ log = discord_logging.get_logger(init=True)
 
 from database import Database
 import subreddits
-import reddit_class
+import praw_wrapper
 
-reddit = reddit_class.Reddit('Watchful1BotTest', None, False)
-new_db = Database()
+reddit = praw_wrapper.Reddit('Watchful1BotTest', False)
+database = Database()
 
-subreddits.profile_subreddits(new_db, reddit)
+subreddits.profile_subreddits(reddit, database, limit=9999)

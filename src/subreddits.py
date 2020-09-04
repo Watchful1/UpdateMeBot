@@ -45,12 +45,13 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 	return posts_per_hour
 
 
-def profile_subreddits(database, reddit):
+def profile_subreddits(reddit, database, limit=10):
 	changes_made = False
-	for subreddit in database.get_unprofiled_subreddits():
+	for subreddit in database.get_unprofiled_subreddits(limit=limit):
 		try:
 			posts_per_hour = subreddit_posts_per_hour(reddit, subreddit.name)
-			log.info(f"Profiled subreddit {subreddit.name} from {subreddit.posts_per_hour} to {posts_per_hour}")
+			if subreddit.posts_per_hour != posts_per_hour:
+				log.info(f"Profiled subreddit {subreddit.name} from {subreddit.posts_per_hour} to {posts_per_hour}")
 			subreddit.posts_per_hour = posts_per_hour
 			subreddit.last_profiled = utils.datetime_now()
 			changes_made = True
