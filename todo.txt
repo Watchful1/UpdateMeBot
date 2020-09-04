@@ -121,3 +121,5 @@ multi user subscriptions
 multi subreddit subscriptions
 don't update comments more than a few days old
 look back farther for pushshift comments if the last seen timestamp is old
+https://www.reddit.com/r/HFY/comments/hyido5/updatemebot_author_here_quick_poll/fzfvzin/?context=3
+https://www.reddit.com/r/HFY/comments/hyido5/updatemebot_author_here_quick_poll/fzgfr4q/?context=3

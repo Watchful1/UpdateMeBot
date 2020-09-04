@@ -69,7 +69,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	for subreddit_name in subreddits:
 		subreddit_names.append(subreddit_name)
 
-	log.debug(f"Scanning subreddit group: {','.join(subreddit_names)}")
+	log.info(f"Scanning subreddit group: {','.join(subreddit_names)}")
 	submissions_subreddits = []
 	count_existing = 0
 	count_found = 0
@@ -106,6 +106,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 		if count_found > 500 and len(subreddits) > 1:
 			log.info("Found more than 500 posts in group, splitting")
 			return False
+	log.info(f"{int(reddit.reddit.auth.limits['remaining'])}:{int(reddit.reddit.auth.limits['used'])}:{int(reddit.reddit.auth.limits['reset_timestamp'] - datetime.now().timestamp())}")
 
 	for submission, subreddit, submission_datetime in reversed(submissions_subreddits):
 		submission_ids_scanned.append(submission.id)
