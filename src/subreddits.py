@@ -30,8 +30,9 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 		log.warning(f"Subreddit r/{subreddit_name} doesn't exist when profiling")
 		return 1
 	except prawcore.exceptions.Forbidden:
-		log.warning(f"Subreddit r/{subreddit_name} forbidden when profiling")
-		return 1
+		log.warning(f"Subreddit r/{subreddit_name} forbidden when profiling, opting in")
+		reddit.quarantine_opt_in(subreddit_name)
+		return -1
 
 	if count == 0:
 		return 1
@@ -50,6 +51,8 @@ def profile_subreddits(reddit, database, limit=10):
 	for subreddit in database.get_unprofiled_subreddits(limit=limit):
 		try:
 			posts_per_hour = subreddit_posts_per_hour(reddit, subreddit.name)
+			if posts_per_hour == -1:
+				continue
 			if subreddit.posts_per_hour != posts_per_hour:
 				log.info(f"Profiled subreddit {subreddit.name} from {subreddit.posts_per_hour} to {posts_per_hour}")
 			subreddit.posts_per_hour = posts_per_hour
