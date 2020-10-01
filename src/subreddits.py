@@ -24,7 +24,7 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 			count += 1
 			if not name_mismatch:
 				if submission.subreddit.display_name != subreddit_name:
-					log.warning(f"Subreddit name doesn't match when profiling: {subreddit_name}, {submission.subreddit.name}")
+					log.warning(f"Subreddit name doesn't match when profiling: {subreddit_name}, {submission.subreddit.display_name}")
 					name_mismatch = True
 			submission_created = datetime.utcfromtimestamp(submission.created_utc)
 			if submission_created < oldest_submission:
