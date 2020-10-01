@@ -19,8 +19,13 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 	count = 0
 	oldest_submission = utils.datetime_now()
 	try:
+		name_mismatch = False
 		for submission in reddit.get_subreddit_submissions(subreddit_name):
 			count += 1
+			if not name_mismatch:
+				if submission.subreddit.name != subreddit_name:
+					log.warning(f"Subreddit name doesn't match when profiling: {subreddit_name}, {submission.subreddit.name}")
+					name_mismatch = True
 			submission_created = datetime.utcfromtimestamp(submission.created_utc)
 			if submission_created < oldest_submission:
 				oldest_submission = submission_created
@@ -116,7 +121,6 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 		if count_found > 500 and len(subreddits) > 1:
 			log.info("Found more than 500 posts in group, splitting")
 			return False
-	#log.info(f"{int(reddit.reddit.auth.limits['remaining'])}:{int(reddit.reddit.auth.limits['used'])}:{int(reddit.reddit.auth.limits['reset_timestamp'] - datetime.now().timestamp())}")
 
 	for submission, subreddit, submission_datetime in reversed(submissions_subreddits):
 		submission_ids_scanned.append(submission.id)
