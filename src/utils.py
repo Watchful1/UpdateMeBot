@@ -3,6 +3,7 @@ import discord_logging
 import re
 import urllib.parse
 import prawcore
+import requests
 from datetime import timedelta
 
 
@@ -14,7 +15,9 @@ import static
 
 
 def process_error(message, exception, traceback):
-	is_transient = isinstance(exception, prawcore.exceptions.ServerError)
+	is_transient = \
+		isinstance(exception, prawcore.exceptions.ServerError) or \
+		isinstance(exception, requests.exceptions.Timeout)
 	log.warning(f"{message}: {exception}")
 	if is_transient:
 		log.info(traceback)

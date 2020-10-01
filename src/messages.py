@@ -14,8 +14,8 @@ import utils
 
 
 def line_update_subscribe(line, user, bldr, database, reddit):
-	authors = re.findall(r'(?: /?u/)([\w-]+)', line)
-	subreddits = re.findall(r'(?: /?r/)(\w+)', line)
+	authors = re.findall(r'(?:[ +]/?u/)([\w-]+)', line)
+	subreddits = re.findall(r'(?:[ +]/?r/)(\w+)', line)
 	tags = re.findall(r'(?:<)(.+)(?:>)', line)
 	is_all = "-all" in line
 
