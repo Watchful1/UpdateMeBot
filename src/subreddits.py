@@ -23,7 +23,7 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 		for submission in reddit.get_subreddit_submissions(subreddit_name):
 			count += 1
 			if not name_mismatch:
-				if submission.subreddit.name != subreddit_name:
+				if submission.subreddit.display_name != subreddit_name:
 					log.warning(f"Subreddit name doesn't match when profiling: {subreddit_name}, {submission.subreddit.name}")
 					name_mismatch = True
 			submission_created = datetime.utcfromtimestamp(submission.created_utc)
