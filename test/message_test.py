@@ -66,6 +66,24 @@ def test_add_update(database, reddit):
 	assert_subscription(subscriptions[0], username, author, subreddit_name, False)
 
 
+def test_add_update_plus(database, reddit):
+	username = "Watchful1"
+	author = "AuthorName"
+	subreddit_name = "SubredditName"
+	init_db(database, [author], [subreddit_name])
+	message = reddit_test.RedditObject(
+		body=f"UpdateMe!+u/{author}+r/{subreddit_name}",
+		author=username
+	)
+
+	messages.process_message(message, reddit, database)
+	assert_message(message.get_first_child().body, [author, subreddit_name, "next time"])
+
+	subscriptions = database.get_user_subscriptions_by_name(username)
+	assert len(subscriptions) == 1
+	assert_subscription(subscriptions[0], username, author, subreddit_name, False)
+
+
 def test_add_subscribe(database, reddit):
 	username = "Watchful1"
 	author = "AuthorName"

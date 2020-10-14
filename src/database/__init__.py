@@ -33,12 +33,13 @@ class Database(
 	_DatabaseNotification,
 	_DatabaseStats
 ):
-	def __init__(self, debug=False, publish=False, log_debug=True):
+	def __init__(self, debug=False, publish=False, log_debug=True, override_path=None):
 		log.info(f"Initializing database class: debug={debug} publish={publish}")
 		self.debug = debug
 		self.log_debug = log_debug
+		self.path = override_path if override_path is not None else static.DATABASE_NAME
 		self.engine = None
-		self.init(debug, publish)
+		self.init(debug, publish, self.path)
 
 		_DatabaseSubscriptions.__init__(self)
 		_DatabaseUsers.__init__(self)
@@ -49,11 +50,11 @@ class Database(
 		_DatabaseNotification.__init__(self)
 		_DatabaseStats.__init__(self)
 
-	def init(self, debug, publish):
+	def init(self, debug, publish, path):
 		if debug:
 			self.engine = create_engine(f'sqlite:///:memory:')
 		else:
-			self.engine = create_engine(f'sqlite:///{static.DATABASE_NAME}')
+			self.engine = create_engine(f'sqlite:///{path}')
 
 		Session = sessionmaker(bind=self.engine)
 		self.session = Session()
@@ -135,7 +136,7 @@ class Database(
 			static.DATABASE_NAME,
 			static.BACKUP_FOLDER_NAME + "/" + utils.datetime_now().strftime("%Y-%m-%d_%H-%M") + ".db")
 
-		self.init(self.debug, False)
+		self.init(self.debug, False, self.path)
 
 	def commit(self):
 		self.session.commit()
