@@ -8,6 +8,7 @@ import traceback
 import discord_logging
 import praw_wrapper
 import argparse
+from praw_wrapper import PushshiftType
 
 log = discord_logging.init_logging(
 	backup_count=20
@@ -52,7 +53,20 @@ if __name__ == "__main__":
 		"--reset_comment", help="Reset the last comment read timestamp", action='store_const', const=True,
 		default=False)
 	parser.add_argument("--debug", help="Set the log level to debug", action='store_const', const=True, default=False)
+	parser.add_argument(
+		"--pushshift", help="Select the pushshift client to use", action='store',
+		choices=["prod", "beta", "auto"], default="prod")
 	args = parser.parse_args()
+
+	if args.pushshift == "prod":
+		pushshift_client = PushshiftType.PROD
+	elif args.pushshift == "beta":
+		pushshift_client = PushshiftType.BETA
+	elif args.pushshift == "auto":
+		pushshift_client = PushshiftType.AUTO
+	else:
+		log.warning(f"Invalid pushshift client: {args.pushshift}")
+		sys.exit(1)
 
 	counters.init(8000)
 	counters.errors.labels(type="startup").inc()
@@ -62,7 +76,8 @@ if __name__ == "__main__":
 
 	discord_logging.init_discord_logging(args.user, logging.WARNING, 1)
 	static.ACCOUNT_NAME = args.user
-	reddit_message = praw_wrapper.Reddit(args.user, args.no_post, "message", static.USER_AGENT)
+	reddit_message = praw_wrapper.Reddit(
+		args.user, args.no_post, "message", static.USER_AGENT, pushshift_client=pushshift_client)
 	reddit_search = praw_wrapper.Reddit(args.user, args.no_post, "search", static.USER_AGENT)
 	static.ACCOUNT_NAME = reddit_message.username
 	database = Database(debug=args.debug_db)

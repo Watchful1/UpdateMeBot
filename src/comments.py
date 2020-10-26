@@ -9,7 +9,7 @@ import utils
 import static
 from classes.subscription import Subscription
 from classes.comment import DbComment
-from praw_wrapper import ReturnType, id_from_fullname
+from praw_wrapper import ReturnType, id_from_fullname, PushshiftType
 
 
 def process_comment(comment, reddit, database, count_string=""):
@@ -86,7 +86,7 @@ def process_comment(comment, reddit, database, count_string=""):
 
 		bldr = utils.get_footer(db_comment.render_comment(
 			count_subscriptions=count_subscriptions,
-			pushshift_minutes=reddit.pushshift_lag
+			pushshift_minutes=reddit.get_effective_pushshift_lag()
 		))
 
 		result_id, comment_result = reddit.reply_comment(reddit_comment, ''.join(bldr))
@@ -127,13 +127,14 @@ def process_comment(comment, reddit, database, count_string=""):
 			f"Subscription created: {subscription.id}, replying as message: {comment_result.name}")
 
 		bldr = utils.str_bldr()
-		if reddit.pushshift_lag > 15:
+		pushshift_lag = reddit.get_effective_pushshift_lag()
+		if pushshift_lag > 15:
 			bldr.append("There is a ")
-			if reddit.pushshift_lag > 60:
-				bldr.append(str(int(round(reddit.pushshift_lag / 60, 1))))
+			if pushshift_lag > 60:
+				bldr.append(str(int(round(pushshift_lag / 60, 1))))
 				bldr.append(" hour")
 			else:
-				bldr.append(str(reddit.pushshift_lag))
+				bldr.append(str(pushshift_lag))
 				bldr.append(" minute")
 			bldr.append(" delay fetching comments.")
 			bldr.append("\n\n")
@@ -148,6 +149,24 @@ def process_comment(comment, reddit, database, count_string=""):
 
 def process_comments(reddit, database):
 	comments = reddit.get_keyword_comments(static.TRIGGER_COMBINED, database.get_or_init_datetime("comment_timestamp"))
+
+	counters.pushshift_delay.labels(client="prod").set(reddit.pushshift_prod_client.lag_minutes())
+	counters.pushshift_delay.labels(client="beta").set(reddit.pushshift_beta_client.lag_minutes())
+	counters.pushshift_delay.labels(client="auto").set(reddit.get_effective_pushshift_lag())
+
+	if reddit.recent_pushshift_client == PushshiftType.PROD:
+		counters.pushshift_client.labels(client="prod").set(1)
+		counters.pushshift_client.labels(client="beta").set(0)
+	elif reddit.recent_pushshift_client == PushshiftType.BETA:
+		counters.pushshift_client.labels(client="prod").set(0)
+		counters.pushshift_client.labels(client="beta").set(1)
+	else:
+		counters.pushshift_client.labels(client="prod").set(0)
+		counters.pushshift_client.labels(client="beta").set(0)
+
+	counters.pushshift_failed.labels(client="prod").set(1 if reddit.pushshift_prod_client.failed else 0)
+	counters.pushshift_failed.labels(client="beta").set(1 if reddit.pushshift_beta_client.failed else 0)
+
 	if len(comments):
 		log.debug(f"Processing {len(comments)} comments")
 	i = 0

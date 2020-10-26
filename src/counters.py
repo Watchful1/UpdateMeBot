@@ -7,6 +7,9 @@ objects = prometheus_client.Gauge('bot_objects', "Total number of active subscri
 errors = prometheus_client.Counter('bot_errors', "Count of errors", ['type'])
 scan_rate = prometheus_client.Summary('bot_scan_seconds', "Count posts scanned")
 scan_items = prometheus_client.Counter('bot_scan_items', "Count posts scanned")
+pushshift_delay = prometheus_client.Gauge('bot_pushshift_minutes', "Pushshift delay in minutes", ['client'])
+pushshift_failed = prometheus_client.Gauge('bot_pushshift_failed', "Pushshift timeout status", ['client'])
+pushshift_client = prometheus_client.Gauge('bot_pushshift_client', "Which pushshift client is being used", ['client'])
 
 
 def init(port):
