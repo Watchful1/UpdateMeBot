@@ -18,6 +18,8 @@ import static
 def process_error(message, exception, traceback):
 	is_transient = \
 		isinstance(exception, prawcore.exceptions.ServerError) or \
+		isinstance(exception, prawcore.exceptions.ResponseException) or \
+		isinstance(exception, prawcore.exceptions.RequestException) or \
 		isinstance(exception, requests.exceptions.Timeout) or \
 		isinstance(exception, requests.exceptions.ReadTimeout) or \
 		isinstance(exception, requests.exceptions.RequestException) or \
