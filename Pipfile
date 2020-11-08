@@ -13,4 +13,4 @@ praw-wrapper = {git = "https://github.com/Watchful1/PrawWrapper.git"}
 prometheus-client = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.8"
