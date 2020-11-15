@@ -126,6 +126,9 @@ def recheck_submissions(reddit, database, limit=1000):
 				changes_made = True
 				if reddit_submission.removed_by_category is not None:
 					counters.rescan_count.labels(result="delete").inc()
+					comment = database.get_comment_by_thread(db_submission.submission_id)
+					if comment is not None:
+						database.delete_comment(comment)
 					database.delete_submission(db_submission)
 					deleted_ids.append(reddit_submission.id)
 				else:
