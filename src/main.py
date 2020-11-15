@@ -127,7 +127,7 @@ if __name__ == "__main__":
 			errors += 1
 
 		try:
-			subreddits.recheck_submissions(reddit_search, database)
+			actions += subreddits.recheck_submissions(reddit_search, database)
 		except Exception as err:
 			utils.process_error(f"Error rechecking submissions", err, traceback.format_exc())
 			errors += 1
@@ -159,7 +159,9 @@ if __name__ == "__main__":
 				utils.process_error(f"Error backing up database", err, traceback.format_exc())
 				errors += 1
 
-		log.debug(f"Run complete after: {int(time.perf_counter() - startTime)}")
+		run_time = time.perf_counter() - startTime
+		counters.run_time.observe(round(run_time, 2))
+		log.debug(f"Run complete after: {int(run_time)}")
 
 		discord_logging.flush_discord()
 		database.commit()
@@ -168,6 +170,7 @@ if __name__ == "__main__":
 			break
 
 		sleep_time = max(30 - actions, 0) + (30 * errors)
+		counters.sleet_time.observe(sleep_time)
 		log.debug(f"Sleeping {sleep_time}")
 
 		time.sleep(sleep_time)

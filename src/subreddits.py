@@ -153,6 +153,8 @@ def recheck_submissions(reddit, database, limit=1000):
 	if changes_made:
 		database.commit()
 
+	return len(ids) / 100
+
 
 def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	subreddit_names = []
