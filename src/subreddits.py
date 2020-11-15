@@ -78,7 +78,7 @@ def profile_subreddits(reddit, database, limit=10):
 		database.commit()
 
 
-def recheck_submissions(reddit, database, limit=1000):
+def recheck_submissions(reddit, database, limit=10000):
 	changes_made = False
 
 	notification_submissions = database.get_submissions_with_notifications()
