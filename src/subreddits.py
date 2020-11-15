@@ -126,6 +126,7 @@ def recheck_submissions(reddit, database, limit=100):
 				db_submission = rescan_dict[reddit_submission.id]
 				changes_made = True
 				if reddit_submission.removed_by_category is not None:
+					counters.rescan_count.labels(result="delete").inc()
 					database.delete_submission(db_submission)
 					deleted_ids.append(reddit_submission.id)
 				else:
@@ -139,7 +140,7 @@ def recheck_submissions(reddit, database, limit=100):
 
 		count_str = f"{len(notification_submissions)}/{len(rescan_submissions)}/{len(ids)}/{len(notification_submissions) + total_count_rescans}"
 		if len(updated_ids) and len(deleted_ids):
-			log.info(f"{count_str}: Rescans {' '.join(updated_ids)}, deleted {' '.join(deleted_ids)}")
+			log.info(f"{count_str}: Rescans {' '.join(updated_ids)}, Deleted {' '.join(deleted_ids)}")
 		elif len(updated_ids):
 			log.info(f"{count_str}: Rescans {' '.join(updated_ids)}")
 		elif len(deleted_ids):
