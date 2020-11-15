@@ -78,7 +78,7 @@ def profile_subreddits(reddit, database, limit=10):
 		database.commit()
 
 
-def recheck_submissions(reddit, database, limit=100):
+def recheck_submissions(reddit, database, limit=1000):
 	changes_made = False
 
 	notification_submissions = database.get_submissions_with_notifications()
@@ -122,7 +122,6 @@ def recheck_submissions(reddit, database, limit=100):
 					counters.rescan_count.labels(result="none").inc()
 
 			elif reddit_submission.id in rescan_dict:
-				counters.rescan_count.labels(result="update").inc()
 				db_submission = rescan_dict[reddit_submission.id]
 				changes_made = True
 				if reddit_submission.removed_by_category is not None:
@@ -131,7 +130,10 @@ def recheck_submissions(reddit, database, limit=100):
 					deleted_ids.append(reddit_submission.id)
 				else:
 					if db_submission.title is None:
+						counters.rescan_count.labels(result="update").inc()
 						db_submission.title = reddit_submission.title
+					else:
+						counters.rescan_count.labels(result="none").inc()
 					updated_ids.append(reddit_submission.id)
 					db_submission.rescanned = True
 
