@@ -78,7 +78,7 @@ def profile_subreddits(reddit, database, limit=10):
 		database.commit()
 
 
-def recheck_submissions(reddit, database, limit=10000):
+def recheck_submissions(reddit, database, limit=100):
 	changes_made = False
 
 	notification_submissions = database.get_submissions_with_notifications()
@@ -102,7 +102,12 @@ def recheck_submissions(reddit, database, limit=10000):
 	deleted_ids = []
 	updated_ids = []
 	if len(ids):
-		for reddit_submission in reddit.call_info(ids):
+		if len(ids) == 1:
+			reddit_submissions = [reddit.get_submission(ids[0][3:])]
+		else:
+			reddit_submissions = reddit.call_info(ids)
+
+		for reddit_submission in reddit_submissions:
 			counters.rescan_queue.dec()
 			if reddit_submission.id in notification_dict:
 				db_submission = notification_dict[reddit_submission.id]
