@@ -15,6 +15,6 @@ TRIGGER_COMBINED = "|".join([TRIGGER_UPDATE_LOWER, TRIGGER_SUBSCRIBE_LOWER, TRIG
 
 TRACKING_INFO_URL = "https://www.reddit.com/r/UpdateMeBot/comments/g86jrs/subreddit_tracking_info/"
 INFO_POST = "https://www.reddit.com/r/UpdateMeBot/comments/ggotgx/updatemebot_info_v20/"
-NEW_POST = "https://www.reddit.com/r/UpdateMeBot/comments/ggou3c/updatemebot_bot_updated_to_version_20/"
+NEW_POST = "https://www.reddit.com/r/UpdateMeBot/comments/juh0f8/new_features_title_in_message_subject_and_recent/"
 
 STAT_MINIMUM = 10

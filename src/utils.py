@@ -125,6 +125,7 @@ def time_offset(date_time, hours=0, minutes=0, seconds=0):
 
 
 def get_footer(bldr=None):
+	columns = 0
 	if bldr is None:
 		bldr = []
 	bldr.append("\n\n")
@@ -133,6 +134,7 @@ def get_footer(bldr=None):
 
 	bldr.append("|[^(Info)](")
 	bldr.append(static.INFO_POST)
+	columns += 1
 	bldr.append(")|[^(Request Update)](")
 	bldr.append(build_message_link(
 		static.ACCOUNT_NAME,
@@ -140,6 +142,7 @@ def get_footer(bldr=None):
 		"SubscribeMe! u/username r/subreddit"
 	))
 	bldr.append(")")
+	columns += 1
 	bldr.append("|[^(Your Updates)](")
 	bldr.append(build_message_link(
 		static.ACCOUNT_NAME,
@@ -147,13 +150,23 @@ def get_footer(bldr=None):
 		"MyUpdates"
 	))
 	bldr.append(")")
+	columns += 1
 	bldr.append("|[^(Feedback)](")
 	bldr.append(build_message_link(
 		static.OWNER,
 		"UpdateMeBot Feedback"
 	))
 	bldr.append(")")
-	bldr.append("|\n|-|-|-|-|")
+	columns += 1
+
+	# new post section
+	bldr.append("|[*^(New!)*](")
+	bldr.append(static.NEW_POST)
+	bldr.append(")")
+	columns += 1
+
+	bldr.append("|\n|")
+	bldr.append("-|" * columns)
 
 	return bldr
 
