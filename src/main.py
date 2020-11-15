@@ -127,9 +127,9 @@ if __name__ == "__main__":
 			errors += 1
 
 		try:
-			subreddits.profile_subreddits(reddit_search, database)
+			subreddits.recheck_submissions(reddit_search, database)
 		except Exception as err:
-			utils.process_error(f"Error scanning subreddits", err, traceback.format_exc())
+			utils.process_error(f"Error rechecking submissions", err, traceback.format_exc())
 			errors += 1
 
 		if utils.time_offset(last_comments, minutes=30):
