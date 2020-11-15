@@ -95,7 +95,7 @@ class Notification(Base):
 			bldr.append("*****")
 			bldr.append("\n\n")
 
-			bldr.append("Recent posts:  ")
+			bldr.append("Recent posts:  \n")
 			for submission in recent_submissions:
 				if submission.title is not None:
 					bldr.append("[")
