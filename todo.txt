@@ -111,15 +111,10 @@ edit fields for
 
 check that user or subreddit name is
 add readme
-r/hfy should prompt be stickied
-r/nosleep can I post prompt
 tags from new series should prompt whether to message everyone
-remove new from footer
 if a post is deleted, cancel pending notifications for it
 move tags to their own class
 multi user subscriptions
 multi subreddit subscriptions
 don't update comments more than a few days old
-look back farther for pushshift comments if the last seen timestamp is old
-https://www.reddit.com/r/HFY/comments/hyido5/updatemebot_author_here_quick_poll/fzfvzin/?context=3
-https://www.reddit.com/r/HFY/comments/hyido5/updatemebot_author_here_quick_poll/fzgfr4q/?context=3
+Post title in subject

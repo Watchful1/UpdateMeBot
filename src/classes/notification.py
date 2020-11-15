@@ -29,7 +29,26 @@ class Notification(Base):
 			f"u/{self.subscription.subscriber.name} to u/{self.submission.author.name} in " \
 			f"r/{self.subscription.subreddit.name} : u/{self.submission.id}"
 
-	def render_notification(self):
+	def render_subject(self):
+		bldr = utils.str_bldr()
+		bldr.append("UpdateMeBot Here! Post by u/")
+		bldr.append(self.submission.author.name)
+		bldr.append(" in r/")
+		bldr.append(self.submission.subreddit.name)
+
+		if self.submission.title is not None:
+			bldr.append(": ")
+
+			characters_available = 100 - utils.bldr_length(bldr)
+			if len(self.submission.title) > characters_available:
+				bldr.append(self.submission.title[:characters_available-3])
+				bldr.append("...")
+			else:
+				bldr.append(self.submission.title)
+
+		return bldr
+
+	def render_notification(self, recent_submissions=None):
 		bldr = utils.str_bldr()
 		bldr.append("UpdateMeBot here!")
 		bldr.append("\n\n")
@@ -61,9 +80,33 @@ class Notification(Base):
 			bldr.append(self.subscription.subreddit.name)
 			bldr.append("\n\n")
 
-			bldr.append("You can find it here: ")
-			bldr.append(self.submission.url)
+			if self.submission.title is not None:
+				bldr.append("[")
+				bldr.append(self.submission.title)
+				bldr.append("](")
+				bldr.append(self.submission.url)
+				bldr.append(")\n\n")
+			else:
+				bldr.append("You can find it here: ")
+				bldr.append(self.submission.url)
+				bldr.append("\n\n")
+
+		if recent_submissions is not None and len(recent_submissions):
+			bldr.append("*****")
 			bldr.append("\n\n")
+
+			bldr.append("Recent posts:  ")
+			for submission in recent_submissions:
+				if submission.title is not None:
+					bldr.append("[")
+					bldr.append(submission.title)
+					bldr.append("](")
+					bldr.append(submission.url)
+					bldr.append(")  \n")
+				else:
+					bldr.append(submission.url)
+					bldr.append("  \n")
+			bldr.append("\n")
 
 		bldr.append("*****")
 		bldr.append("\n\n")

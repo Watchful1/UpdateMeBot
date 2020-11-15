@@ -126,6 +126,12 @@ if __name__ == "__main__":
 			utils.process_error(f"Error scanning subreddits", err, traceback.format_exc())
 			errors += 1
 
+		try:
+			subreddits.profile_subreddits(reddit_search, database)
+		except Exception as err:
+			utils.process_error(f"Error scanning subreddits", err, traceback.format_exc())
+			errors += 1
+
 		if utils.time_offset(last_comments, minutes=30):
 			try:
 				actions += comments.update_comments(reddit_message, database)

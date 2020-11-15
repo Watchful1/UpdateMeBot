@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String,  DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String,  DateTime, ForeignKey, Boolean
 from database import Base
 from sqlalchemy.orm import relationship
 
@@ -16,6 +16,8 @@ class Submission(Base):
 	author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 	url = Column(String(200), nullable=False)
 	messages_sent = Column(Integer, nullable=False)
+	title = Column(String(300))
+	rescanned = Column(Boolean, nullable=False, default=False)
 	tag = Column(String(200, collation="NOCASE"))
 	subreddit_id = Column(Integer, ForeignKey('subreddits.id'), nullable=False)
 
@@ -30,6 +32,7 @@ class Submission(Base):
 		author,
 		subreddit,
 		permalink,
+		title=None,
 		tag=None,
 		messages_sent=0
 	):
@@ -39,8 +42,10 @@ class Submission(Base):
 		self.author = author
 		self.subreddit = subreddit
 		self.url = "https://www.reddit.com" + permalink
+		self.title = title
 		self.tag = tag
 		self.messages_sent = messages_sent
+		self.rescanned = False
 
 	def __str__(self):
 		return \

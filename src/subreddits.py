@@ -78,6 +78,79 @@ def profile_subreddits(reddit, database, limit=10):
 		database.commit()
 
 
+def recheck_submissions(reddit, database, limit=100):
+	changes_made = False
+
+	notification_submissions = database.get_submissions_with_notifications()
+
+	rescan_date = utils.datetime_now() - timedelta(hours=24)
+	total_count_rescans = database.get_count_submissions_for_rescan(rescan_date)
+	counters.rescan_queue.set(total_count_rescans)
+	rescan_submissions = database.get_submissions_for_rescan(rescan_date, max(limit - len(notification_submissions), 0))
+
+	ids = []
+	notification_dict = {}
+	for submission in notification_submissions:
+		notification_dict[submission.submission_id] = submission
+		ids.append(f"t3_{submission.submission_id}")
+
+	rescan_dict = {}
+	for submission in rescan_submissions:
+		rescan_dict[submission.submission_id] = submission
+		ids.append(f"t3_{submission.submission_id}")
+
+	deleted_ids = []
+	updated_ids = []
+	if len(ids):
+		for reddit_submission in reddit.call_info(ids):
+			counters.rescan_queue.dec()
+			if reddit_submission.id in notification_dict:
+				db_submission = notification_dict[reddit_submission.id]
+				if reddit_submission.removed_by_category is not None:
+					counters.rescan_count.labels(result="delete").inc()
+					changes_made = True
+					deleted_ids.append(reddit_submission.id)
+
+					count_notifications = database.get_count_notifications_for_submission(db_submission)
+					log.warning(f"Would have deleted {count_notifications} notifications for {db_submission.url}")
+
+					# count_notifications = database.delete_notifications_for_submission(db_submission)
+					# log.info(f"Deleted {count_notifications} notifications for {db_submission.url}")
+					#
+					# database.delete_submission(db_submission)
+				else:
+					counters.rescan_count.labels(result="none").inc()
+
+			elif reddit_submission.id in rescan_dict:
+				counters.rescan_count.labels(result="update").inc()
+				db_submission = rescan_dict[reddit_submission.id]
+				changes_made = True
+				if reddit_submission.removed_by_category is not None:
+					database.delete_submission(db_submission)
+					deleted_ids.append(reddit_submission.id)
+				else:
+					if db_submission.title is None:
+						db_submission.title = reddit_submission.title
+					updated_ids.append(reddit_submission.id)
+					db_submission.rescanned = True
+
+			else:
+				log.warning(f"Got {reddit_submission.id} from rescan call, but not in either dict")
+
+		count_str = f"{len(notification_submissions)}/{len(rescan_submissions)}/{len(ids)}/{len(notification_submissions) + total_count_rescans}"
+		if len(updated_ids) and len(deleted_ids):
+			log.info(f"{count_str}: Rescans {' '.join(updated_ids)}, deleted {' '.join(deleted_ids)}")
+		elif len(updated_ids):
+			log.info(f"{count_str}: Rescans {' '.join(updated_ids)}")
+		elif len(deleted_ids):
+			log.info(f"{count_str}: Deleted {' '.join(deleted_ids)}")
+		else:
+			log.warning(f"Something went wrong, requested {len(ids)} for rescan but didn't get any")
+
+	if changes_made:
+		database.commit()
+
+
 def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	subreddit_names = []
 	for subreddit_name in subreddits:
@@ -135,6 +208,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 			author=author,
 			subreddit=subreddit,
 			permalink=submission.permalink,
+			title=submission.title,
 			tag=tag
 		)
 		database.add_submission(db_submission)

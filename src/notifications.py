@@ -32,8 +32,15 @@ def send_queued_notifications(reddit, database):
 				f"{notification.subscription.subscriber.name} for u/{notification.submission.author.name} in r/"
 				f"{notification.subscription.subreddit.name} : {notification.submission.submission_id}")
 
-			bldr = utils.get_footer(notification.render_notification())
-			result = reddit.send_message(notification.subscription.subscriber.name, "UpdateMeBot Here!", ''.join(bldr))
+			submissions = database.get_recent_submissions_for_author(
+				notification.submission.author,
+				notification.submission.subreddit,
+				notification.submission.id,
+				3)
+
+			body_bldr = utils.get_footer(notification.render_notification(submissions))
+			subject_bldr = notification.render_subject()
+			result = reddit.send_message(notification.subscription.subscriber.name, ''.join(subject_bldr), ''.join(body_bldr))
 			notification.submission.messages_sent += 1
 			if result in [ReturnType.INVALID_USER, ReturnType.USER_DOESNT_EXIST]:
 				log.info(f"User doesn't exist: u/{notification.subscription.subscriber.name}")

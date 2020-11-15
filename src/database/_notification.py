@@ -37,6 +37,22 @@ class _DatabaseNotification:
 
 		return notifications
 
+	def get_count_notifications_for_submission(self, submission):
+		if self.log_debug:
+			log.debug(f"Fetching count of pending notifications for submission: {submission}")
+
+		return self.session.query(Notification)\
+			.filter(Notification.submission == submission)\
+			.count()
+
+	def delete_notifications_for_submission(self, submission):
+		if self.log_debug:
+			log.debug(f"Deleting notifications for {submission}")
+
+		return self.session.query(Notification)\
+			.filter(Notification.submission == submission)\
+			.delete(synchronize_session='fetch')
+
 	def clear_all_notifications(self):
 		if self.log_debug:
 			log.debug(f"Clearing all notifications in queue")

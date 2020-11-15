@@ -1,4 +1,5 @@
 import discord_logging
+from datetime import timedelta
 
 log = discord_logging.get_logger(init=True)
 
@@ -10,6 +11,25 @@ from praw_wrapper import reddit_test
 from classes.subscription import Subscription
 from classes.submission import Submission
 from classes.notification import Notification
+
+
+def get_submission(database, author, subreddit, submission_id, title=None, tag=None, time_created=None):
+	submission = database.get_submission_by_id(submission_id)
+	if submission is None:
+		if time_created is None:
+			time_created = utils.datetime_now()
+		submission = Submission(
+			submission_id=submission_id,
+			time_created=time_created,
+			author=author,
+			subreddit=subreddit,
+			permalink=f"/r/{subreddit.name}/comments/{submission_id}/",
+			title=title,
+			tag=tag
+		)
+		database.add_submission(submission)
+		database.commit()
+	return submission
 
 
 def queue_message(database, subscriber_name, author_name, subreddit_name, submission_id, recurring=True, tag=None):
@@ -28,17 +48,7 @@ def queue_message(database, subscriber_name, author_name, subreddit_name, submis
 			tag=tag
 		)
 		database.add_subscription(subscription)
-	submission = database.get_submission_by_id(submission_id)
-	if submission is None:
-		submission = Submission(
-			submission_id=submission_id,
-			time_created=utils.datetime_now(),
-			author=author,
-			subreddit=subreddit,
-			permalink=f"/r/{subreddit_name}/comments/{submission_id}/",
-			tag=tag
-		)
-		database.add_submission(submission)
+	submission = get_submission(database, author, subreddit, submission_id, tag=tag)
 	database.add_notification(Notification(subscription, submission))
 	database.commit()
 
@@ -111,6 +121,41 @@ def test_send_messages(database, reddit):
 		reddit.sent_messages[7], "Author1",
 		["r/Subreddit2", submission_id3, "finished sending out 3 notifications"]
 	)
+
+
+def test_recent_titles(database, reddit):
+	author = database.get_or_add_user("Author1")
+	subreddit = database.get_or_add_subreddit("Subreddit1", enable_subreddit_if_new=True)
+	submission1 = get_submission(
+		database, author, subreddit, reddit_test.random_id(), title="Title 1",
+		time_created=utils.datetime_now() - timedelta(hours=4))
+	submission2 = get_submission(
+		database, author, subreddit, reddit_test.random_id(), title="Title 2",
+		time_created=utils.datetime_now() - timedelta(hours=3))
+	submission3 = get_submission(
+		database, author, subreddit, reddit_test.random_id(), title="Title 3",
+		time_created=utils.datetime_now() - timedelta(hours=2))
+	submission4 = get_submission(
+		database, author, subreddit, reddit_test.random_id(), title="Title 4",
+		time_created=utils.datetime_now() - timedelta(hours=1))
+	submission5 = get_submission(
+		database, author, subreddit, reddit_test.random_id(), title="Title 5",
+		time_created=utils.datetime_now())
+
+	queue_message(database, "Subscriber1", "Author1", "Subreddit1", submission5.submission_id)
+	notifications.send_queued_notifications(reddit, database)
+
+	assert len(reddit.sent_messages) == 1
+	body = reddit.sent_messages[0].body
+	assert submission1.submission_id not in body
+	assert submission2.submission_id in body
+	assert submission3.submission_id in body
+	assert submission4.submission_id in body
+	assert "Title 1" not in body
+	assert "Title 2" in body
+	assert "Title 3" in body
+	assert "Title 4" in body
+	assert "Title 5" in body
 
 
 def test_send_message_tag(database, reddit):

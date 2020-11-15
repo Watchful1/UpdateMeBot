@@ -13,19 +13,19 @@ from classes.enums import SubredditPromptType
 from classes.notification import Notification
 
 
-def add_new_post_to_sub(subreddit, delta, author=None, flair=None, title=None):
-	subreddit.posts.append(
-		RedditObject(created=utils.datetime_now() - delta, subreddit=subreddit, author=author, flair=flair, title=title)
-	)
+def add_new_post_to_sub(reddit, subreddit, delta, author=None, flair=None, title=None):
+	submission = RedditObject(created=utils.datetime_now() - delta, subreddit=subreddit, author=author, flair=flair, title=title)
+	subreddit.posts.append(submission)
+	reddit.add_submission(submission)
 
 
 def create_sub_with_posts(database, reddit, subreddit_name, posts, last_scanned=None, posts_per_hour=1):
 	reddit_subreddit = Subreddit(subreddit_name)
 	for post in posts:
 		if len(post) == 2:
-			add_new_post_to_sub(reddit_subreddit, post[1], post[0])
+			add_new_post_to_sub(reddit, reddit_subreddit, post[1], post[0])
 		else:
-			add_new_post_to_sub(reddit_subreddit, post[1], post[0], title=post[2])
+			add_new_post_to_sub(reddit, reddit_subreddit, post[1], post[0], title=post[2])
 	reddit.add_subreddit(reddit_subreddit)
 	db_subreddit = database.get_or_add_subreddit(subreddit_name)
 	if last_scanned is None:
@@ -55,12 +55,12 @@ def bulk_sub_to(database, subreddit_name, author_name, subscriber_names, recurri
 
 def test_profile_subreddits(database, reddit):
 	reddit_subreddit = reddit_test.Subreddit("Subreddit1")
-	add_new_post_to_sub(reddit_subreddit, timedelta(minutes=5))
-	add_new_post_to_sub(reddit_subreddit, timedelta(minutes=6))
-	add_new_post_to_sub(reddit_subreddit, timedelta(hours=1, minutes=7))
-	add_new_post_to_sub(reddit_subreddit, timedelta(hours=1, minutes=8))
-	add_new_post_to_sub(reddit_subreddit, timedelta(hours=2, minutes=1))
-	add_new_post_to_sub(reddit_subreddit, timedelta(hours=3, minutes=2))
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=5))
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=6))
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=1, minutes=7))
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=1, minutes=8))
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=2, minutes=1))
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=3, minutes=2))
 	reddit.add_subreddit(reddit_subreddit)
 	assert subreddits.subreddit_posts_per_hour(reddit, reddit_subreddit.display_name) == 2
 
@@ -110,7 +110,7 @@ def test_scan_single_subreddit_multiple_times(database, reddit):
 	subreddits.scan_subreddits(reddit, database)
 	database.clear_all_notifications()
 
-	add_new_post_to_sub(reddit.subreddits["Subreddit1"], timedelta(minutes=2), "Author1")
+	add_new_post_to_sub(reddit, reddit.subreddits["Subreddit1"], timedelta(minutes=2), "Author1")
 	subreddits.scan_subreddits(reddit, database)
 
 	notifications = database.get_pending_notifications()
@@ -193,8 +193,8 @@ def test_scan_multiple_subreddits_split(database, reddit):
 
 def test_scan_subreddit_flair_blacklist(database, reddit):
 	reddit_subreddit = Subreddit("Subreddit1")
-	add_new_post_to_sub(reddit_subreddit, timedelta(minutes=5), "Author1", flair="meta")
-	add_new_post_to_sub(reddit_subreddit, timedelta(minutes=6), "Author2")
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=5), "Author1", flair="meta")
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=6), "Author2")
 	reddit.add_subreddit(reddit_subreddit)
 	db_subreddit = database.get_or_add_subreddit("Subreddit1")
 	db_subreddit.last_scanned = utils.datetime_now() - timedelta(minutes=30)
@@ -360,8 +360,82 @@ def test_scan_single_subreddit_multiple_times_same_author(database, reddit):
 	subreddits.scan_subreddits(reddit, database)
 	assert len(database.get_pending_notifications()) == 2
 
-	add_new_post_to_sub(reddit.subreddits["Subreddit1"], timedelta(minutes=2), "Author1")
+	add_new_post_to_sub(reddit, reddit.subreddits["Subreddit1"], timedelta(minutes=2), "Author1")
 	subreddits.scan_subreddits(reddit, database)
 
 	notifications = database.get_pending_notifications()
 	assert len(notifications) == 3
+
+
+def test_rescan_update_title(database, reddit):
+	create_sub_with_posts(
+		database, reddit, "Subreddit1",
+		[
+			("Author1", timedelta(minutes=5))
+		]
+	)
+	subreddits.scan_subreddits(reddit, database)
+	assert len(database.get_all_submissions()) == 1
+	db_submission = database.get_all_submissions()[0]
+	assert db_submission.rescanned is False
+	assert db_submission.title is None
+	db_submission.messages_sent = 1
+	db_submission.time_created = utils.datetime_now() - timedelta(hours=25)
+	database.commit()
+
+	reddit_submission = list(reddit.all_submissions.values())[0]
+	reddit_submission.set_title("Test title")
+	subreddits.recheck_submissions(reddit, database)
+
+	db_submission = database.get_all_submissions()[0]
+	assert db_submission.rescanned is True
+	assert db_submission.title == "Test title"
+
+
+def test_rescan_delete(database, reddit):
+	create_sub_with_posts(
+		database, reddit, "Subreddit1",
+		[
+			("Author1", timedelta(minutes=5))
+		]
+	)
+	subreddits.scan_subreddits(reddit, database)
+	assert len(database.get_all_submissions()) == 1
+	db_submission = database.get_all_submissions()[0]
+	db_submission.messages_sent = 1
+	db_submission.time_created = utils.datetime_now() - timedelta(hours=25)
+	database.commit()
+
+	reddit_submission = list(reddit.all_submissions.values())[0]
+	reddit_submission.set_removed_by_category("deleted")
+	subreddits.recheck_submissions(reddit, database)
+
+	assert len(database.get_all_submissions()) == 0
+
+
+def test_rescan_delete_notifications(database, reddit):
+	create_sub_with_posts(
+		database, reddit, "Subreddit1",
+		[
+			("Author1", timedelta(minutes=5))
+		]
+	)
+	users = []
+	for i in range(35):
+		users.append(f"User{i}")
+	bulk_sub_to(
+		database, "Subreddit1", "Author1",
+		users,
+		False
+	)
+	subreddits.scan_subreddits(reddit, database)
+	assert len(database.get_all_submissions()) == 1
+	assert len(database.get_pending_notifications()) == 35
+
+	reddit_submission = list(reddit.all_submissions.values())[0]
+	reddit_submission.set_removed_by_category("deleted")
+	subreddits.recheck_submissions(reddit, database)
+
+	# assert len(database.get_all_submissions()) == 0
+	# assert len(database.get_pending_notifications()) == 0
+

@@ -160,3 +160,10 @@ def get_footer(bldr=None):
 
 def str_bldr():
 	return []
+
+
+def bldr_length(bldr):
+	length = 0
+	for item in bldr:
+		length += len(item)
+	return length
