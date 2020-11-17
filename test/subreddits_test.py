@@ -10,22 +10,22 @@ from praw_wrapper.reddit_test import RedditObject, Subreddit
 import utils
 from classes.subscription import Subscription
 from classes.enums import SubredditPromptType
-from classes.notification import Notification
+from classes.comment import DbComment
 
 
-def add_new_post_to_sub(reddit, subreddit, delta, author=None, flair=None, title=None):
+def add_new_post_to_sub(reddit, subreddit, delta, author=None, flair=None, title=None, add_comment=False):
 	submission = RedditObject(created=utils.datetime_now() - delta, subreddit=subreddit, author=author, flair=flair, title=title)
 	subreddit.posts.append(submission)
 	reddit.add_submission(submission)
 
 
-def create_sub_with_posts(database, reddit, subreddit_name, posts, last_scanned=None, posts_per_hour=1):
+def create_sub_with_posts(database, reddit, subreddit_name, posts, last_scanned=None, posts_per_hour=1, add_comments=False):
 	reddit_subreddit = Subreddit(subreddit_name)
 	for post in posts:
 		if len(post) == 2:
-			add_new_post_to_sub(reddit, reddit_subreddit, post[1], post[0])
+			add_new_post_to_sub(reddit, reddit_subreddit, post[1], post[0], add_comment=add_comments)
 		else:
-			add_new_post_to_sub(reddit, reddit_subreddit, post[1], post[0], title=post[2])
+			add_new_post_to_sub(reddit, reddit_subreddit, post[1], post[0], title=post[2], add_comment=add_comments)
 	reddit.add_subreddit(reddit_subreddit)
 	db_subreddit = database.get_or_add_subreddit(subreddit_name)
 	if last_scanned is None:
@@ -417,8 +417,10 @@ def test_rescan_delete_notifications(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5))
-		]
+			("Author1", timedelta(minutes=5)),
+			("Author2", timedelta(minutes=5))
+		],
+		add_comments=True
 	)
 	users = []
 	for i in range(35):
@@ -429,13 +431,34 @@ def test_rescan_delete_notifications(database, reddit):
 		False
 	)
 	subreddits.scan_subreddits(reddit, database)
-	assert len(database.get_all_submissions()) == 1
+
+	for db_submission in database.get_all_submissions():
+		comment_author = "Commenter" + db_submission.author.name
+		reddit_comment = reddit_test.RedditObject(
+			author=comment_author,
+			link_id=db_submission.submission_id
+		)
+		database.add_comment(
+			DbComment(
+				comment_id=reddit_comment.id,
+				submission=db_submission,
+				subscriber=database.get_or_add_user(comment_author),
+				author=db_submission.author,
+				subreddit=db_submission.subreddit,
+				recurring=True
+			)
+		)
+	database.commit()
+
+	assert len(database.get_all_submissions()) == 2
 	assert len(database.get_pending_notifications()) == 35
+	assert len(database.get_all_comments()) == 2
 
 	reddit_submission = list(reddit.all_submissions.values())[0]
 	reddit_submission.set_removed_by_category("deleted")
 	subreddits.recheck_submissions(reddit, database)
 
-	# assert len(database.get_all_submissions()) == 0
+	# assert len(database.get_all_submissions()) == 1
 	# assert len(database.get_pending_notifications()) == 0
+	# assert len(database.get_all_comments()) == 1
 

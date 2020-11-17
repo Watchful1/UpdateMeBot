@@ -87,3 +87,6 @@ class _DatabaseComments:
 		return self.session.query(DbComment)\
 			.filter(DbComment.subscriber == user)\
 			.delete(synchronize_session='fetch')
+
+	def get_all_comments(self):
+		return self.session.query(DbComment).all()
