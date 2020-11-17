@@ -10,10 +10,9 @@ scan_items = prometheus_client.Counter('bot_scan_items', "Count posts scanned")
 pushshift_delay = prometheus_client.Gauge('bot_pushshift_minutes', "Pushshift delay in minutes", ['client'])
 pushshift_failed = prometheus_client.Gauge('bot_pushshift_failed', "Pushshift timeout status", ['client'])
 pushshift_client = prometheus_client.Gauge('bot_pushshift_client', "Which pushshift client is being used", ['client'])
-rescan_queue = prometheus_client.Gauge('bot_rescan_queue', "Current rescan queue size")
 rescan_count = prometheus_client.Counter('bot_rescan_count', "Count of submissions rescanned", ['result'])
 run_time = prometheus_client.Summary('bot_run_seconds', "How long a full loop takes")
-sleet_time = prometheus_client.Summary('bot_sleep_seconds', "How long we sleep between loops")
+sleep_time = prometheus_client.Summary('bot_sleep_seconds', "How long we sleep between loops")
 
 
 def init(port):

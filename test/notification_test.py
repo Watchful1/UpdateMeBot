@@ -169,3 +169,16 @@ def test_send_message_tag(database, reddit):
 		reddit.sent_messages[0], "Subscriber1",
 		["u/Author1", "r/Subreddit1", "with the tag <Story1>", "remove your subscription for the tag", submission_id]
 	)
+
+
+def test_short_notifications(database, reddit):
+	user = database.get_or_add_user("Subscriber1")
+	user.short_notifs = True
+	database.commit()
+	submission_id = reddit_test.random_id()
+	queue_message(database, "Subscriber1", "Author1", "Subreddit1", submission_id)
+
+	notifications.send_queued_notifications(reddit, database)
+
+	assert len(reddit.sent_messages) == 1
+	assert "New thread from" in reddit.sent_messages[0].body

@@ -246,6 +246,16 @@ def line_list(user, bldr, database):
 			bldr.append("  \n")
 
 
+def line_abbrev(line, user, bldr, database, reddit):
+	if line.startswith("short"):
+		user.short_notifs = True
+		bldr.append("You'll now get shortened notifications. Reply ""long"" to revert this")
+
+	elif line.startswith("long"):
+		user.short_notifs = False
+		bldr.append("You'll now get normal notifications. Reply ""short"" to revert this")
+
+
 def line_add_sub(line, bldr, database):
 	subs = re.findall(r'(?:/?r/)(\w+)', line)
 	if len(subs):
@@ -303,6 +313,8 @@ def process_message(message, reddit, database, count_string=""):
 			line_delete(line, user, bldr, database, reddit)
 		elif line.startswith("mysubscriptions") or line.startswith("myupdates"):
 			append_list = True
+		elif line.startswith("short") or line.startswith("long"):
+			line_abbrev(line, user, bldr, database, reddit)
 		elif user.name == static.OWNER:
 			if line.startswith("addsubreddit"):
 				line_add_sub(line, bldr, database)

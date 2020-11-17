@@ -7,6 +7,7 @@ class User(Base):
 
 	id = Column(Integer, primary_key=True)
 	name = Column(String(80, collation="NOCASE"), nullable=False, unique=True)
+	short_notifs = Column(Boolean, nullable=False, default=False)
 
 	def __init__(
 		self,

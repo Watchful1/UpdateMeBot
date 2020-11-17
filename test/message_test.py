@@ -791,3 +791,31 @@ def test_add_link_tagged(database, reddit):
 	subscriptions = database.get_user_subscriptions_by_name(username)
 	assert len(subscriptions) == 1
 	assert_subscription(subscriptions[0], username, author, subreddit_name, False)
+
+
+def test_short_notifs(database, reddit):
+	message = reddit_test.RedditObject(
+		body="Short",
+		author="User1"
+	)
+	messages.process_message(message, reddit, database)
+
+	response = message.get_first_child().body
+	assert "You'll now get shortened notifications" in response
+
+	user = database.get_or_add_user("User1")
+	assert user.short_notifs is True
+
+
+def test_long_notifs(database, reddit):
+	message = reddit_test.RedditObject(
+		body="Long",
+		author="User1"
+	)
+	messages.process_message(message, reddit, database)
+
+	response = message.get_first_child().body
+	assert "You'll now get normal notifications" in response
+
+	user = database.get_or_add_user("User1")
+	assert user.short_notifs is False

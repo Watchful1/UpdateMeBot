@@ -50,66 +50,91 @@ class Notification(Base):
 
 	def render_notification(self, recent_submissions=None):
 		bldr = utils.str_bldr()
-		bldr.append("UpdateMeBot here!")
-		bldr.append("\n\n")
-
-		if self.subscription.author is not None and self.subscription.author == self.subscription.subscriber:
-			bldr.append("I have finished sending out ")
-			if self.submission.messages_sent >= static.STAT_MINIMUM:
-				bldr.append(str(self.submission.messages_sent))
-				bldr.append(" ")
-			bldr.append("notifications for [your post](")
-			bldr.append(self.submission.url)
-			bldr.append(")")
-			if self.submission.tag is not None:
-				bldr.append(" with tag <")
-				bldr.append(self.submission.tag)
-				bldr.append(">")
-			bldr.append(".")
-			bldr.append("\n\n")
-
-		else:
-			bldr.append("u/")
+		target_is_author = self.subscription.author is not None and self.subscription.author == self.subscription.subscriber
+		if not target_is_author and self.subscription.subscriber.short_notifs:
+			bldr.append("New thread from u/")
 			bldr.append(self.submission.author.name)
-			bldr.append(" has posted a new thread")
 			if self.submission.tag is not None:
 				bldr.append(" with the tag <")
 				bldr.append(self.submission.tag)
 				bldr.append(">")
 			bldr.append(" in r/")
 			bldr.append(self.subscription.subreddit.name)
-			bldr.append("\n\n")
+			bldr.append(": ")
 
 			if self.submission.title is not None:
-				bldr.append("[")
+				bldr.append("[**")
 				bldr.append(self.submission.title)
-				bldr.append("](")
+				bldr.append("**](")
 				bldr.append(self.submission.url)
-				bldr.append(")\n\n")
+				bldr.append(")")
 			else:
-				bldr.append("You can find it here: ")
 				bldr.append(self.submission.url)
-				bldr.append("\n\n")
-
-		if recent_submissions is not None and len(recent_submissions):
-			bldr.append("*****")
 			bldr.append("\n\n")
 
-			bldr.append("Recent posts:  \n")
-			for submission in recent_submissions:
-				if submission.title is not None:
-					bldr.append("[")
-					bldr.append(submission.title)
-					bldr.append("](")
-					bldr.append(submission.url)
-					bldr.append(")  \n")
-				else:
-					bldr.append(submission.url)
-					bldr.append("  \n")
-			bldr.append("\n")
+		else:
+			bldr.append("UpdateMeBot here!")
+			bldr.append("\n\n")
 
-		bldr.append("*****")
-		bldr.append("\n\n")
+			if target_is_author:
+				bldr.append("I have finished sending out ")
+				if self.submission.messages_sent >= static.STAT_MINIMUM:
+					bldr.append(str(self.submission.messages_sent))
+					bldr.append(" ")
+				bldr.append("notifications for [your post](")
+				bldr.append(self.submission.url)
+				bldr.append(")")
+				if self.submission.tag is not None:
+					bldr.append(" with tag <")
+					bldr.append(self.submission.tag)
+					bldr.append(">")
+				bldr.append(".")
+
+			else:
+				bldr.append("u/")
+				bldr.append(self.submission.author.name)
+				bldr.append(" has posted a new thread")
+				if self.submission.tag is not None:
+					bldr.append(" with the tag <")
+					bldr.append(self.submission.tag)
+					bldr.append(">")
+				bldr.append(" in r/")
+				bldr.append(self.subscription.subreddit.name)
+				bldr.append("\n\n")
+
+				if self.submission.title is not None:
+					bldr.append("[**")
+					bldr.append(self.submission.title)
+					bldr.append("**](")
+					bldr.append(self.submission.url)
+					bldr.append(")")
+				else:
+					bldr.append("You can find it here: ")
+					bldr.append(self.submission.url)
+
+			bldr.append("\n\n")
+
+			if recent_submissions is not None and len(recent_submissions):
+				bldr.append("*****")
+				bldr.append("\n\n")
+
+				bldr.append("Recent posts:[*](")
+				bldr.append(static.ABBREV_POST)
+				bldr.append(")  \n")
+				for submission in recent_submissions:
+					if submission.title is not None:
+						bldr.append("[")
+						bldr.append(submission.title)
+						bldr.append("](")
+						bldr.append(submission.url)
+						bldr.append(")  \n")
+					else:
+						bldr.append(submission.url)
+						bldr.append("  \n")
+				bldr.append("\n")
+
+			bldr.append("*****")
+			bldr.append("\n\n")
 
 		if self.subscription.recurring:
 			if self.subscription.tag is not None:

@@ -109,12 +109,11 @@ edit fields for
 	subscription prompts
 
 
-check that user or subreddit name is
+check that user or subreddit name exists before adding it
 add readme
 tags from new series should prompt whether to message everyone
-if a post is deleted, cancel pending notifications for it
 move tags to their own class
 multi user subscriptions
 multi subreddit subscriptions
 don't update comments more than a few days old
-Post title in subject
+timers per section

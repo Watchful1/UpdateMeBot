@@ -170,7 +170,7 @@ if __name__ == "__main__":
 			break
 
 		sleep_time = max(30 - actions, 0) + (30 * errors)
-		counters.sleet_time.observe(sleep_time)
+		counters.sleep_time.observe(sleep_time)
 		log.debug(f"Sleeping {sleep_time}")
 
 		time.sleep(sleep_time)

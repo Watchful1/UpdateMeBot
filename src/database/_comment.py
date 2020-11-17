@@ -27,6 +27,13 @@ class _DatabaseComments:
 			.filter(Submission.submission_id == submission_id)\
 			.first()
 
+	def delete_comment_by_thread(self, submission_id):
+		log.debug(f"Deleting comment by thread id: {submission_id}")
+
+		return self.session.query(DbComment)\
+			.filter(DbComment.submission_id == submission_id)\
+			.delete(synchronize_session='fetch')
+
 	def delete_comment(self, db_comment):
 		log.debug(f"Deleting comment by id: {db_comment.id}")
 		self.session.delete(db_comment)

@@ -28,9 +28,11 @@ class _DatabaseSubmission:
 			log.debug("Saving new submission")
 		self.session.add(submission)
 
-	def delete_submission(self, submission):
+	def delete_submission(self, submission, delete_comment=False):
 		if self.log_debug:
 			log.debug(f"Deleting submission by id: {submission.id}")
+		if delete_comment:
+			self.delete_comment_by_thread(submission.id)
 		self.session.delete(submission)
 
 	def get_old_orphan_submissions(self, before_date):

@@ -85,7 +85,6 @@ def recheck_submissions(reddit, database, limit=100):
 
 	rescan_date = utils.datetime_now() - timedelta(hours=24)
 	total_count_rescans = database.get_count_submissions_for_rescan(rescan_date)
-	counters.rescan_queue.set(total_count_rescans)
 	rescan_submissions = database.get_submissions_for_rescan(rescan_date, max(limit - len(notification_submissions), 0))
 
 	ids = []
@@ -108,7 +107,6 @@ def recheck_submissions(reddit, database, limit=100):
 			reddit_submissions = reddit.call_info(ids)
 
 		for reddit_submission in reddit_submissions:
-			counters.rescan_queue.dec()
 			if reddit_submission.id in notification_dict:
 				db_submission = notification_dict[reddit_submission.id]
 				if reddit_submission.removed_by_category is not None:
@@ -122,8 +120,9 @@ def recheck_submissions(reddit, database, limit=100):
 					# count_notifications = database.delete_notifications_for_submission(db_submission)
 					# log.info(f"Deleted {count_notifications} notifications for {db_submission.url}")
 					#
-					# database.delete_submission(db_submission)
+					# database.delete_submission(db_submission, delete_comment=True)
 				else:
+					updated_ids.append(reddit_submission.id)
 					counters.rescan_count.labels(result="none").inc()
 
 			elif reddit_submission.id in rescan_dict:
@@ -131,10 +130,7 @@ def recheck_submissions(reddit, database, limit=100):
 				changes_made = True
 				if reddit_submission.removed_by_category is not None:
 					counters.rescan_count.labels(result="delete").inc()
-					comment = database.get_comment_by_thread(db_submission.submission_id)
-					if comment is not None:
-						database.delete_comment(comment)
-					database.delete_submission(db_submission)
+					database.delete_submission(db_submission, delete_comment=True)
 					deleted_ids.append(reddit_submission.id)
 				else:
 					if db_submission.title is None:
