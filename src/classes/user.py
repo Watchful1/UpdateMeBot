@@ -14,6 +14,7 @@ class User(Base):
 		name
 	):
 		self.name = name
+		self.short_notifs = False
 
 	def __str__(self):
 		return f"u/{self.name}"
