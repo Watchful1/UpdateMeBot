@@ -63,6 +63,7 @@ class _DatabaseUsers:
 			.filter(Subscription1.id == None) \
 			.filter(Subscription2.id == None) \
 			.filter(Stat.id == None) \
+			.filter(User.short_notifs is False) \
 			.all()
 
 		return users
