@@ -94,7 +94,12 @@ if __name__ == "__main__":
 		actions = 0
 		errors = 0
 
-		counters.objects.set(database.get_count_all_subscriptions())
+		counters.objects.labels(type="subscriptions").set(database.get_count_all_subscriptions())
+		counters.objects.labels(type="comments").set(database.get_count_all_comments())
+		counters.objects.labels(type="submissions").set(database.get_count_all_submissions())
+		counters.objects.labels(type="stats").set(database.get_count_all_stats())
+		counters.objects.labels(type="users").set(database.get_count_all_users())
+		counters.objects.labels(type="subreddits").set(database.get_count_all_subreddits())
 
 		try:
 			actions += messages.process_messages(reddit_message, database)

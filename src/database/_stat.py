@@ -63,3 +63,6 @@ class _DatabaseStats:
 		return self.session.query(Stat)\
 			.filter(Stat.author == user)\
 			.delete(synchronize_session='fetch')
+
+	def get_count_all_stats(self):
+		return self.session.query(Stat).count()

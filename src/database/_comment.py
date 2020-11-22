@@ -90,3 +90,6 @@ class _DatabaseComments:
 
 	def get_all_comments(self):
 		return self.session.query(DbComment).all()
+
+	def get_count_all_comments(self):
+		return self.session.query(DbComment).count()

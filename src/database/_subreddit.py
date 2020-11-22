@@ -73,3 +73,6 @@ class _DatabaseSubreddit:
 		)
 
 		return subreddits[:limit]
+
+	def get_count_all_subreddits(self):
+		return self.session.query(Subreddit).count()

@@ -67,3 +67,6 @@ class _DatabaseUsers:
 			.all()
 
 		return users
+
+	def get_count_all_users(self):
+		return self.session.query(User).count()
