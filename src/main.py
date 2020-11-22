@@ -154,7 +154,7 @@ if __name__ == "__main__":
 			stats.save_stats_for_day(database, latest_stats)
 			database.save_datetime("stats_day", current_day)
 
-		if not args.no_backup and utils.time_offset(last_backup, hours=4):
+		if not args.no_backup and utils.time_offset(last_backup, hours=8):
 			try:
 				database.backup()
 				last_backup = utils.datetime_now()
