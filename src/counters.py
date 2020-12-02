@@ -13,6 +13,7 @@ pushshift_client = prometheus_client.Gauge('bot_pushshift_client', "Which pushsh
 rescan_count = prometheus_client.Counter('bot_rescan_count', "Count of submissions rescanned", ['result'])
 run_time = prometheus_client.Summary('bot_run_seconds', "How long a full loop takes")
 sleep_time = prometheus_client.Summary('bot_sleep_seconds', "How long we sleep between loops")
+pushshift_seconds = prometheus_client.Summary('bot_pushshift_scan_seconds', "How many seconds pushshift takes to respond", ['service'])
 
 
 def init(port):
