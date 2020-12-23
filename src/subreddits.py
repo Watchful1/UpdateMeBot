@@ -18,13 +18,21 @@ from classes.enums import SubredditPromptType
 def subreddit_posts_per_hour(reddit, subreddit_name):
 	count = 0
 	oldest_submission = utils.datetime_now()
+	updated_name = None
 	try:
 		name_mismatch = False
 		for submission in reddit.get_subreddit_submissions(subreddit_name):
 			count += 1
 			if not name_mismatch:
 				if submission.subreddit.display_name != subreddit_name:
-					log.warning(f"Subreddit name doesn't match when profiling: {subreddit_name}, {submission.subreddit.display_name}")
+					if submission.subreddit.display_name.lower() == subreddit_name:
+						updated_name = submission.subreddit.display_name
+						log.warning(
+							f"Updated subreddit name from {subreddit_name} to {submission.subreddit.display_name}")
+					else:
+						log.warning(
+							f"Subreddit name doesn't match when profiling: {subreddit_name}, "
+							f"{submission.subreddit.display_name}")
 					name_mismatch = True
 			submission_created = datetime.utcfromtimestamp(submission.created_utc)
 			if submission_created < oldest_submission:
@@ -33,13 +41,13 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 				break
 	except (prawcore.exceptions.Redirect, prawcore.exceptions.NotFound):
 		log.warning(f"Subreddit r/{subreddit_name} doesn't exist when profiling")
-		return -1
+		return -1, updated_name
 	except prawcore.exceptions.Forbidden:
 		log.warning(f"Subreddit r/{subreddit_name} forbidden when profiling")
-		return -2
+		return -2, updated_name
 
 	if count == 0:
-		return 1
+		return 1, updated_name
 
 	hours = math.trunc((utils.datetime_now() - oldest_submission).total_seconds() / (60 * 60))
 	if hours == 0:
@@ -47,14 +55,16 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 	else:
 		posts_per_hour = int(math.ceil(count / hours))
 
-	return posts_per_hour
+	return posts_per_hour, updated_name
 
 
 def profile_subreddits(reddit, database, limit=10):
 	changes_made = False
 	for subreddit in database.get_unprofiled_subreddits(limit=limit):
 		try:
-			posts_per_hour = subreddit_posts_per_hour(reddit, subreddit.name)
+			posts_per_hour, updated_name = subreddit_posts_per_hour(reddit, subreddit.name)
+			if updated_name is not None:
+				subreddit.name = updated_name
 			if posts_per_hour == -2:
 				if not reddit.quarantine_opt_in(subreddit.name):
 					log.warning(f"Can't opt in to r/{subreddit.name}, blacklisting")
@@ -115,10 +125,10 @@ def recheck_submissions(reddit, database, limit=100):
 					deleted_ids.append(reddit_submission.id)
 
 					count_notifications = database.get_count_notifications_for_submission(db_submission)
-					log.warning(f"Would have deleted {count_notifications} notifications for {db_submission.url}")
+					log.warning(f"Would have deleted {count_notifications} notifications for <{db_submission.url}>")
 
 					# count_notifications = database.delete_notifications_for_submission(db_submission)
-					# log.info(f"Deleted {count_notifications} notifications for {db_submission.url}")
+					# log.info(f"Deleted {count_notifications} notifications for <{db_submission.url}>")
 					#
 					# database.delete_submission(db_submission, delete_comment=True)
 				else:

@@ -62,7 +62,8 @@ def test_profile_subreddits(database, reddit):
 	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=2, minutes=1))
 	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=3, minutes=2))
 	reddit.add_subreddit(reddit_subreddit)
-	assert subreddits.subreddit_posts_per_hour(reddit, reddit_subreddit.display_name) == 2
+	post_per_hour, updated_name = subreddits.subreddit_posts_per_hour(reddit, reddit_subreddit.display_name)
+	assert post_per_hour == 2
 
 
 def test_scan_single_subreddit(database, reddit):
