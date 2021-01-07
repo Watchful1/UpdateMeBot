@@ -180,39 +180,44 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	count_existing = 0
 	count_found = 0
 	newest_datetime = utils.datetime_now() - timedelta(minutes=30)
-	for submission in reddit.get_subreddit_submissions('+'.join(subreddit_names)):
-		if submission.author is None:
-			log.debug(f"Submission {submission.id} has no author")
-			continue
-		if database.get_submission_by_id(submission.id) is None:
-			if submission.subreddit.display_name not in subreddits:
-				log.warning(f"Subreddit not in dict during scan: {submission.subreddit.display_name}")
+	group_string = '+'.join(subreddit_names)
+	try:
+		for submission in reddit.get_subreddit_submissions(group_string):
+			if submission.author is None:
+				log.debug(f"Submission {submission.id} has no author")
 				continue
+			if database.get_submission_by_id(submission.id) is None:
+				if submission.subreddit.display_name not in subreddits:
+					log.warning(f"Subreddit not in dict during scan: {submission.subreddit.display_name}")
+					continue
 
-			subreddit = subreddits[submission.subreddit.display_name]
-			if subreddit.last_scanned is None:
-				log.warning(f"r/{subreddit.name} has a scan time of none, initializing")
-				subreddit.last_scanned = utils.datetime_now()
-			submission_datetime = datetime.utcfromtimestamp(submission.created_utc)
-			skip = False
-			if submission_datetime < subreddit.last_scanned:
-				if submission_datetime < subreddit.date_enabled or \
-						submission_datetime + timedelta(hours=24) < subreddit.last_scanned:
-					skip = True
-					count_existing += 1
+				subreddit = subreddits[submission.subreddit.display_name]
+				if subreddit.last_scanned is None:
+					log.warning(f"r/{subreddit.name} has a scan time of none, initializing")
+					subreddit.last_scanned = utils.datetime_now()
+				submission_datetime = datetime.utcfromtimestamp(submission.created_utc)
+				skip = False
+				if submission_datetime < subreddit.last_scanned:
+					if submission_datetime < subreddit.date_enabled or \
+							submission_datetime + timedelta(hours=24) < subreddit.last_scanned:
+						skip = True
+						count_existing += 1
 
-			if not skip:
-				submissions_subreddits.append((submission, subreddit, submission_datetime))
-				count_found += 1
-		else:
-			count_existing += 1
+				if not skip:
+					submissions_subreddits.append((submission, subreddit, submission_datetime))
+					count_found += 1
+			else:
+				count_existing += 1
 
-		if count_existing >= 10:
-			log.debug("Breaking due to hitting 10 existing")
-			break
-		if count_found > 500 and len(subreddits) > 1:
-			log.info("Found more than 500 posts in group, splitting")
-			return False
+			if count_existing >= 10:
+				log.debug("Breaking due to hitting 10 existing")
+				break
+			if count_found > 500 and len(subreddits) > 1:
+				log.info("Found more than 500 posts in group, splitting")
+				return False
+	except prawcore.exceptions.Forbidden:
+		log.warning(f"Got forbidden for subreddit group, splitting: {group_string}")
+		return False
 
 	for submission, subreddit, submission_datetime in reversed(submissions_subreddits):
 		submission_ids_scanned.append(submission.id)

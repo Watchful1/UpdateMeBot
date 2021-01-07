@@ -285,6 +285,20 @@ def line_add_sub(line, bldr, database):
 			subreddit.posts_per_hour = 50
 
 
+def line_remove_sub(line, bldr, database):
+	subs = re.findall(r'(?:/?r/)(\w+)', line)
+	if len(subs):
+		subreddit = database.get_subreddit(subs[0])
+		if subreddit is None:
+			bldr.append(f"Subreddit r/{subs[0]} not found")
+		elif subreddit.is_enabled:
+			subreddit.is_enabled = False
+			count_subscriptions = database.get_count_subscriptions_for_subreddit(subreddit)
+			bldr.append(f"Subreddit r/{subs[0]} with {count_subscriptions} subscriptions disabled")
+		else:
+			bldr.append(f"Subreddit r/{subs[0]} is already disabled")
+
+
 def line_purge_user(line, bldr, database):
 	users = re.findall(r'(?: /?u/)([\w-]+)', line)
 	if len(users):
@@ -320,6 +334,8 @@ def process_message(message, reddit, database, count_string=""):
 		elif user.name == static.OWNER:
 			if line.startswith("addsubreddit"):
 				line_add_sub(line, bldr, database)
+			elif line.startswith("removesubreddit"):
+				line_remove_sub(line, bldr, database)
 			elif line.startswith("purgeuser"):
 				line_purge_user(line, bldr, database)
 
