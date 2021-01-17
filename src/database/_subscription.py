@@ -36,7 +36,9 @@ class _DatabaseSubscriptions:
 
 	def get_count_tagged_subscriptions_by_fields(self, subscriber, author, subreddit):
 		if self.log_debug:
-			log.debug(f"Fetching count of tagged subscription by fields: {subscriber.name} : {author.name} : {subreddit.name}")
+			log.debug(
+				f"Fetching count of tagged subscription by fields: {subscriber.name} : "
+				f"{author.name if author is not None else 'None'} : {subreddit.name}")
 
 		count_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.subscriber == subscriber)\

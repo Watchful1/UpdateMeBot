@@ -137,17 +137,17 @@ def line_remove(line, user, bldr, database):
 					subscription = database.get_subscription_by_fields(user, None, subreddit, tag)
 					if subscription is None:
 						if tag is None and database.get_count_tagged_subscriptions_by_fields(user, None, subreddit):
-							log.info(f"Removed tagged subscriptions for u/{user.name} to in r/{subreddit.name}")
+							log.info(f"Removed tagged subscriptions for u/{user.name} in r/{subreddit.name}")
 							bldr.append(f"I've removed all your global tagged subscriptions in r/{subreddit.name}")
 							database.delete_tagged_subreddit_author_subscriptions(user, None, subreddit)
 
 						else:
 							log.info(
 								f"Could not find subscription for u/{user.name} "
-								f"{('with tag '+tag if tag is not None else '')}in r/{subreddit.name} to remove")
+								f"{('with tag '+tag+' ' if tag is not None else '')}in r/{subreddit.name} to remove")
 							bldr.append(
 								f"I couldn't find a subscription for you "
-								f"{('with tag <'+tag+'>' if tag is not None else '')}in r/{subreddit.name} to remove")
+								f"{('with tag <'+tag+'> ' if tag is not None else '')}in r/{subreddit.name} to remove")
 
 					else:
 						log.info(
