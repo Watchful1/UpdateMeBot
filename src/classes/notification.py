@@ -64,7 +64,7 @@ class Notification(Base):
 
 			if self.submission.title is not None:
 				bldr.append("[**")
-				bldr.append(self.submission.title.replace("]","\]"))
+				bldr.append(self.submission.title)
 				bldr.append("**](")
 				bldr.append(self.submission.url)
 				bldr.append(")")
