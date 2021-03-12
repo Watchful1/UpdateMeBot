@@ -117,3 +117,5 @@ multi user subscriptions
 multi subreddit subscriptions
 don't update comments more than a few days old
 timers per section
+
+daily/weekly summary message

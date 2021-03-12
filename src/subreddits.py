@@ -27,7 +27,7 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 				if submission.subreddit.display_name != subreddit_name:
 					if submission.subreddit.display_name.lower() == subreddit_name:
 						updated_name = submission.subreddit.display_name
-						log.warning(
+						log.info(
 							f"Updated subreddit name from {subreddit_name} to {submission.subreddit.display_name}")
 					else:
 						log.warning(
@@ -124,13 +124,13 @@ def recheck_submissions(reddit, database, limit=100):
 					changes_made = True
 					deleted_ids.append(reddit_submission.id)
 
-					count_notifications = database.get_count_notifications_for_submission(db_submission)
-					log.warning(f"Would have deleted {count_notifications} notifications for <{db_submission.url}>")
+					# count_notifications = database.get_count_notifications_for_submission(db_submission)
+					# log.warning(f"Would have deleted {count_notifications} notifications for <{db_submission.url}>")
 
-					# count_notifications = database.delete_notifications_for_submission(db_submission)
-					# log.info(f"Deleted {count_notifications} notifications for <{db_submission.url}>")
-					#
-					# database.delete_submission(db_submission, delete_comment=True)
+					count_notifications = database.delete_notifications_for_submission(db_submission)
+					log.info(f"Deleted {count_notifications} notifications for <{db_submission.url}>")
+
+					database.delete_submission(db_submission, delete_comment=True)
 				else:
 					updated_ids.append(reddit_submission.id)
 					counters.rescan_count.labels(result="none").inc()
