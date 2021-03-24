@@ -162,7 +162,7 @@ def recheck_submissions(reddit, database, limit=100):
 		elif len(deleted_ids):
 			log.info(f"{count_str}: Deleted {' '.join(deleted_ids)}")
 		else:
-			log.warning(f"Something went wrong, requested {len(ids)} for rescan but didn't get any")
+			log.warning(f"Something went wrong, requested {','.join(ids)} for rescan but didn't get any")
 
 	if changes_made:
 		database.commit()
