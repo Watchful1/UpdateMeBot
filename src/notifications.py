@@ -42,6 +42,9 @@ def send_queued_notifications(reddit, database):
 			subject_bldr = notification.render_subject()
 			result = reddit.send_message(notification.subscription.subscriber.name, ''.join(subject_bldr), ''.join(body_bldr))
 			notification.submission.messages_sent += 1
+			if result != ReturnType.SUCCESS:
+				counters.api_responses.labels(call='notif', type=result.name.lower()).inc()
+
 			if result in [ReturnType.INVALID_USER, ReturnType.USER_DOESNT_EXIST]:
 				log.info(f"User doesn't exist: u/{notification.subscription.subscriber.name}")
 				users_to_delete.add(notification.subscription.subscriber)

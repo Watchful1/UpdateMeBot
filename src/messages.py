@@ -378,6 +378,7 @@ def process_message(message, reddit, database, count_string=""):
 	for reply in replies:
 		result = reddit.reply_message(message, reply)
 		if result != ReturnType.SUCCESS:
+			counters.api_responses.labels(call='replmsg', type=result.name.lower()).inc()
 			if result == ReturnType.INVALID_USER:
 				log.info("User banned before reply could be sent")
 			else:

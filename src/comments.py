@@ -98,20 +98,24 @@ def process_comment(comment, reddit, database, count_string=""):
 				ReturnType.DELETED_COMMENT,
 				ReturnType.RATELIMIT):
 			log.info(f"Unable to reply as comment: {comment_result.name}")
+			counters.api_responses.labels(call='comment', type=comment_result.name.lower()).inc()
 
 		elif comment_result == ReturnType.FORBIDDEN:
 			log.warning(f"Banned in subreddit, saving: {subreddit.name}")
 			subreddit.is_banned = True
+			counters.api_responses.labels(call='comment', type=comment_result.name.lower()).inc()
 
 		else:
 			if comment_result == ReturnType.NOTHING_RETURNED:
 				result_id = "QUARANTINED"
 				log.warning(f"Opting in to quarantined subreddit: {subreddit.name}")
 				reddit.quarantine_opt_in(subreddit.name)
+				counters.api_responses.labels(call='comment', type=comment_result.name.lower()).inc()
 
 			if result_id is None:
 				log.warning(f"Got comment ID of None when replying to {comment['id']}")
 				comment_result = ReturnType.FORBIDDEN
+				counters.api_responses.labels(call='comment', type=comment_result.name.lower()).inc()
 
 			else:
 				log.info(
@@ -145,6 +149,7 @@ def process_comment(comment, reddit, database, count_string=""):
 		result = reddit.send_message(subscriber.name, "UpdateMeBot Confirmation", ''.join(bldr))
 		if result != ReturnType.SUCCESS:
 			log.warning(f"Unable to send message: {result.name}")
+			counters.api_responses.labels(call='confmsg', type=result.name.lower()).inc()
 
 
 def process_comments(reddit, database):

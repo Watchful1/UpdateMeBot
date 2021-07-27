@@ -14,6 +14,7 @@ rescan_count = prometheus_client.Counter('bot_rescan_count', "Count of submissio
 run_time = prometheus_client.Summary('bot_run_seconds', "How long a full loop takes")
 sleep_time = prometheus_client.Summary('bot_sleep_seconds', "How long we sleep between loops")
 pushshift_seconds = prometheus_client.Summary('bot_pushshift_scan_seconds', "How many seconds pushshift takes to respond", ['service'])
+api_responses = prometheus_client.Counter('bot_api_responses', "Count each type of api response", ['call', 'type'])
 
 
 def init(port):
