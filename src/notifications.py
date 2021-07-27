@@ -47,6 +47,8 @@ def send_queued_notifications(reddit, database):
 				users_to_delete.add(notification.subscription.subscriber)
 			if result in [ReturnType.NOT_WHITELISTED_BY_USER_MESSAGE]:
 				log.info(f"User blocked notification message: u/{notification.subscription.subscriber.name}")
+			if result in [ReturnType.PM_MODERATOR_RESTRICTION]:
+				log.warning(f"User moderator filter blocked notification message: u/{notification.subscription.subscriber.name}")
 
 			if not notification.subscription.recurring:
 				log.debug(f"{notification.subscription.id} deleted")
