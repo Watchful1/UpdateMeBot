@@ -339,7 +339,7 @@ def process_message(message, reddit, database, count_string=""):
 		elif user.name == static.OWNER:
 			if line.startswith("addsubreddit"):
 				line_add_sub(line, bldr, database)
-			elif line.startswith("removesubreddit"):
+			elif line.startswith("subredditremove"):
 				line_remove_sub(line, bldr, database)
 			elif line.startswith("purgeuser"):
 				line_purge_user(line, bldr, database)
