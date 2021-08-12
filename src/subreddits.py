@@ -218,9 +218,11 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	except prawcore.exceptions.Forbidden:
 		log.warning(f"Got forbidden for subreddit group, splitting: {group_string}")
 		return False
-
 	except prawcore.exceptions.NotFound:
 		log.warning(f"Got not found for subreddit group, splitting: {group_string}")
+		return False
+	except prawcore.exceptions.Redirect:
+		log.warning(f"Got redirect for subreddit group, splitting: {group_string}")
 		return False
 
 	for submission, subreddit, submission_datetime in reversed(submissions_subreddits):
