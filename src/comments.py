@@ -148,7 +148,10 @@ def process_comment(comment, reddit, database, count_string=""):
 
 		result = reddit.send_message(subscriber.name, "UpdateMeBot Confirmation", ''.join(bldr))
 		if result != ReturnType.SUCCESS:
-			log.warning(f"Unable to send message: {result.name}")
+			if result == ReturnType.NOT_WHITELISTED_BY_USER_MESSAGE:
+				log.info(f"Unable to send message: {result.name}")
+			else:
+				log.warning(f"Unable to send message: {result.name}")
 			counters.api_responses.labels(call='confmsg', type=result.name.lower()).inc()
 
 
