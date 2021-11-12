@@ -195,6 +195,20 @@ class _DatabaseSubscriptions:
 
 		return count_deleted
 
+	def delete_subreddit_subscriptions(self, subreddit):
+		if self.log_debug:
+			log.debug(f"Deleting all subscriptions to r/{subreddit.name}")
+
+		subreddit_subscriptions = self.session.query(Subscription)\
+			.filter(Subscription.subreddit == subreddit)\
+			.all()
+
+		count_deleted = len(subreddit_subscriptions)
+		for subscription in subreddit_subscriptions:
+			self.delete_subscription(subscription)
+
+		return count_deleted
+
 	def get_count_all_subscriptions(self):
 		if self.log_debug:
 			log.debug("Fetching count of all subscriptions")

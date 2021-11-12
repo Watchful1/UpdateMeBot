@@ -277,7 +277,7 @@ def line_add_sub(line, bldr, database):
 			bldr.append(f"Changed r/{subreddit.name} to ")
 			bldr.append('subscribe' if recurring else 'update')
 		else:
-			log.warning(
+			log.info(
 				f"Activating r/{subreddit.name} with {count_subscriptions} subscriptions as "
 				f"{'subscription' if recurring else 'update'}")
 			subreddit.is_enabled = True
@@ -302,6 +302,21 @@ def line_remove_sub(line, bldr, database):
 			bldr.append(f"Subreddit r/{subs[0]} with {count_subscriptions} subscriptions disabled")
 		else:
 			bldr.append(f"Subreddit r/{subs[0]} is already disabled")
+
+
+def line_blacklist_sub(line, bldr, database):
+	subs = re.findall(r'(?:/?r/)(\w+)', line)
+	if len(subs):
+		subreddit = database.get_subreddit(subs[0])
+		if subreddit is None:
+			bldr.append(f"Subreddit r/{subs[0]} not found")
+			return
+		if subreddit.is_enabled:
+			subreddit.is_enabled = False
+
+		subreddit.is_blacklisted = False
+		count_subscriptions = database.delete_subreddit_subscriptions(subreddit)
+		bldr.append(f"Subreddit r/{subs[0]} blacklisted and {count_subscriptions} subscriptions deleted")
 
 
 def line_purge_user(line, bldr, database):
@@ -341,6 +356,8 @@ def process_message(message, reddit, database, count_string=""):
 				line_add_sub(line, bldr, database)
 			elif line.startswith("subredditremove"):
 				line_remove_sub(line, bldr, database)
+			elif line.startswith("subredditblacklist"):
+				line_blacklist_sub(line, bldr, database)
 			elif line.startswith("purgeuser"):
 				line_purge_user(line, bldr, database)
 
