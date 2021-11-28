@@ -149,6 +149,10 @@ def recheck_submissions(reddit, database, limit=100):
 							counters.rescan_count.labels(result="none").inc()
 						updated_ids.append(reddit_submission.id)
 						db_submission.rescanned = True
+
+				else:
+					log.warning(f"Got {reddit_submission.id} from rescan call, but not in either dict")
+
 			except Exception as err:
 				if utils.process_error(f"Error rescanning submission {reddit_submission.id}", err, traceback.format_exc()):
 					pass
@@ -161,9 +165,6 @@ def recheck_submissions(reddit, database, limit=100):
 						database.delete_submission(db_submission, delete_comment=True)
 					pass
 				raise
-
-			else:
-				log.warning(f"Got {reddit_submission.id} from rescan call, but not in either dict")
 
 		count_str = f"{len(notification_submissions)}/{len(rescan_submissions)}/{len(ids)}/{len(notification_submissions) + total_count_rescans}"
 		if len(updated_ids) and len(deleted_ids):
