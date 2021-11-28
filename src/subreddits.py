@@ -117,39 +117,50 @@ def recheck_submissions(reddit, database, limit=100):
 			reddit_submissions = reddit.call_info(ids)
 
 		for reddit_submission in reddit_submissions:
-			if reddit_submission.id in notification_dict:
-				db_submission = notification_dict[reddit_submission.id]
-				if reddit_submission.removed_by_category is not None:
-					counters.rescan_count.labels(result="delete").inc()
-					changes_made = True
-					deleted_ids.append(reddit_submission.id)
+			db_submission = None
+			try:
+				if reddit_submission.id in notification_dict:
+					db_submission = notification_dict[reddit_submission.id]
+					if reddit_submission.removed_by_category is not None:
+						counters.rescan_count.labels(result="delete").inc()
+						changes_made = True
+						deleted_ids.append(reddit_submission.id)
 
-					# count_notifications = database.get_count_notifications_for_submission(db_submission)
-					# log.warning(f"Would have deleted {count_notifications} notifications for <{db_submission.url}>")
+						count_notifications = database.delete_notifications_for_submission(db_submission)
+						log.info(f"Deleted {count_notifications} notifications for <{db_submission.url}>")
 
-					count_notifications = database.delete_notifications_for_submission(db_submission)
-					log.info(f"Deleted {count_notifications} notifications for <{db_submission.url}>")
-
-					database.delete_submission(db_submission, delete_comment=True)
-				else:
-					updated_ids.append(reddit_submission.id)
-					counters.rescan_count.labels(result="none").inc()
-
-			elif reddit_submission.id in rescan_dict:
-				db_submission = rescan_dict[reddit_submission.id]
-				changes_made = True
-				if reddit_submission.removed_by_category is not None:
-					counters.rescan_count.labels(result="delete").inc()
-					database.delete_submission(db_submission, delete_comment=True)
-					deleted_ids.append(reddit_submission.id)
-				else:
-					if db_submission.title is None:
-						counters.rescan_count.labels(result="update").inc()
-						db_submission.title = reddit_submission.title
+						database.delete_submission(db_submission, delete_comment=True)
 					else:
+						updated_ids.append(reddit_submission.id)
 						counters.rescan_count.labels(result="none").inc()
-					updated_ids.append(reddit_submission.id)
-					db_submission.rescanned = True
+
+				elif reddit_submission.id in rescan_dict:
+					db_submission = rescan_dict[reddit_submission.id]
+					changes_made = True
+					if reddit_submission.removed_by_category is not None:
+						counters.rescan_count.labels(result="delete").inc()
+						database.delete_submission(db_submission, delete_comment=True)
+						deleted_ids.append(reddit_submission.id)
+					else:
+						if db_submission.title is None:
+							counters.rescan_count.labels(result="update").inc()
+							db_submission.title = reddit_submission.title
+						else:
+							counters.rescan_count.labels(result="none").inc()
+						updated_ids.append(reddit_submission.id)
+						db_submission.rescanned = True
+			except Exception as err:
+				if utils.process_error(f"Error rescanning submission {reddit_submission.id}", err, traceback.format_exc()):
+					pass
+				if isinstance(err, prawcore.exceptions.Forbidden):
+					log.warning(f"Got forbidding rescanning submission {reddit_submission.id}")
+					deleted_ids.append(reddit_submission.id)
+					if db_submission is not None:
+						count_notifications = database.delete_notifications_for_submission(db_submission)
+						log.info(f"Deleted {count_notifications} notifications for <{db_submission.url}>")
+						database.delete_submission(db_submission, delete_comment=True)
+					pass
+				raise
 
 			else:
 				log.warning(f"Got {reddit_submission.id} from rescan call, but not in either dict")
