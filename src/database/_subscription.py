@@ -116,6 +116,10 @@ class _DatabaseSubscriptions:
 				.filter(Subscription.subscriber == user)\
 				.all()
 
+		for subscription in subscriptions:
+			if subscription is None:
+				log.warning(f"Got none in subscriptions list for u/{user.name}")
+
 		return sorted(
 			subscriptions,
 			key=lambda subscription: (
