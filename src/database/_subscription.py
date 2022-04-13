@@ -126,14 +126,17 @@ class _DatabaseSubscriptions:
 			if subscription.tag is None:
 				log.warning(f"Got none for tag in subscriptions list for u/{user.name} : {subscription}")
 
-		return sorted(
-			subscriptions,
-			key=lambda subscription: (
-				subscription.subreddit.name,
-				subscription.author.name if subscription.author is not None else None,
-				subscription.tag
+		try:
+			return sorted(
+				subscriptions,
+				key=lambda subscription: (
+					subscription.subreddit.name,
+					subscription.author.name if subscription.author is not None else None,
+					subscription.tag
+				)
 			)
-		)
+		except TypeError:
+			return subscriptions
 
 	def get_count_subscriptions_for_author(self, user):
 		if self.log_debug:
