@@ -174,7 +174,14 @@ def recheck_submissions(reddit, database, limit=100):
 		elif len(deleted_ids):
 			log.info(f"{count_str}: Deleted {' '.join(deleted_ids)}")
 		else:
-			log.warning(f"Something went wrong, requested {','.join(ids)} for rescan but didn't get any")
+			log.warning(f"Something went wrong, requested {','.join(ids)} for rescan but didn't get any, deleting")
+			for submission_id in ids:
+				db_submission = notification_dict[submission_id]
+				counters.rescan_count.labels(result="delete").inc()
+				changes_made = True
+				count_notifications = database.delete_notifications_for_submission(db_submission)
+				log.warning(f"Deleted {count_notifications} notifications for <{db_submission.url}>")
+				database.delete_submission(db_submission, delete_comment=True)
 
 	if changes_made:
 		database.commit()
