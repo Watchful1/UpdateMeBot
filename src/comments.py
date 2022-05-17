@@ -113,7 +113,8 @@ def process_comment(comment, reddit, database, count_string=""):
 				counters.api_responses.labels(call='comment', type=comment_result.name.lower()).inc()
 
 			if result_id is None:
-				log.warning(f"Got comment ID of None when replying to {comment['id']}")
+				log.warning(f"Got comment ID of None when replying in subreddit, saving: {subreddit.name}")
+				subreddit.is_banned = True
 				comment_result = ReturnType.FORBIDDEN
 				counters.api_responses.labels(call='comment', type=comment_result.name.lower()).inc()
 
