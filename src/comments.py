@@ -119,8 +119,10 @@ def process_comment(comment, reddit, database, count_string=""):
 				counters.api_responses.labels(call='comment', type=comment_result.name.lower()).inc()
 
 			else:
-				log.info(
-					f"Subscription created: {subscription.id}, replied as comment: {result_id}")
+				if subscription is None:
+					log.info(f"Subscription not created: replied as comment: {result_id}")
+				else:
+					log.info(f"Subscription created: {subscription.id}, replied as comment: {result_id}")
 
 				if comment_result != ReturnType.QUARANTINED:
 					db_comment.comment_id = result_id
@@ -128,8 +130,10 @@ def process_comment(comment, reddit, database, count_string=""):
 				commented = True
 
 	if not commented:
-		log.info(
-			f"Subscription created: {subscription.id}, replying as message: {comment_result.name}")
+		if subscription is None:
+			log.info(f"Subscription not created: replying as message: {comment_result.name}")
+		else:
+			log.info(f"Subscription created: {subscription.id}, replying as message: {comment_result.name}")
 
 		bldr = utils.str_bldr()
 		pushshift_lag = reddit.get_effective_pushshift_lag()
