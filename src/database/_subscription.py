@@ -121,10 +121,8 @@ class _DatabaseSubscriptions:
 				log.info(f"Got none in subscriptions list for u/{user.name}")
 			if subscription.subreddit.name is None:
 				log.info(f"Got none for subreddit name in subscriptions list for u/{user.name} : {subscription}")
-			if subscription.author is None or subscription.author.name:
+			if subscription.author is None or subscription.author.name is None:
 				log.info(f"Got none for author name in subscriptions list for u/{user.name} : {subscription}")
-			if subscription.tag is None:
-				log.info(f"Got none for tag in subscriptions list for u/{user.name} : {subscription}")
 
 		try:
 			return sorted(
