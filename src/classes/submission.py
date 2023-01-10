@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String,  DateTime, ForeignKey, Boolean
 from database import Base
+import requests.utils
 from sqlalchemy.orm import relationship
 
 import utils
@@ -51,6 +52,9 @@ class Submission(Base):
 		return \
 			f"u/{self.author.name} to r/{self.subreddit.name} : " \
 			f"u/{self.submission_id}{(' <'+self.tag+'>' if self.tag is not None else '')}"
+
+	def get_safe_url(self):
+		return requests.utils.requote_uri(self.url)
 
 	def render_prompt(self):
 		bldr = utils.str_bldr()

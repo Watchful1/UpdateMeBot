@@ -66,10 +66,10 @@ class Notification(Base):
 				bldr.append("[**")
 				bldr.append(self.submission.title)
 				bldr.append("**](")
-				bldr.append(self.submission.url)
+				bldr.append(self.submission.get_safe_url())
 				bldr.append(")")
 			else:
-				bldr.append(self.submission.url)
+				bldr.append(self.submission.get_safe_url())
 			bldr.append("\n\n")
 
 		else:
@@ -82,7 +82,7 @@ class Notification(Base):
 					bldr.append(str(self.submission.messages_sent))
 					bldr.append(" ")
 				bldr.append("notifications for [your post](")
-				bldr.append(self.submission.url)
+				bldr.append(self.submission.get_safe_url())
 				bldr.append(")")
 				if self.submission.tag is not None:
 					bldr.append(" with tag <")
@@ -106,11 +106,11 @@ class Notification(Base):
 					bldr.append("[**")
 					bldr.append(self.submission.title)
 					bldr.append("**](")
-					bldr.append(self.submission.url)
+					bldr.append(self.submission.get_safe_url())
 					bldr.append(")")
 				else:
 					bldr.append("You can find it here: ")
-					bldr.append(self.submission.url)
+					bldr.append(self.submission.get_safe_url())
 
 			bldr.append("\n\n")
 
@@ -126,10 +126,10 @@ class Notification(Base):
 						bldr.append("[")
 						bldr.append(submission.title)
 						bldr.append("](")
-						bldr.append(submission.url)
+						bldr.append(submission.get_safe_url())
 						bldr.append(")  \n")
 					else:
-						bldr.append(submission.url)
+						bldr.append(submission.get_safe_url())
 						bldr.append("  \n")
 				bldr.append("\n")
 
