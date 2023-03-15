@@ -9,6 +9,7 @@ log = discord_logging.get_logger()
 
 import counters
 import utils
+import static
 from classes.submission import Submission
 from classes.notification import Notification
 from praw_wrapper import ReturnType
@@ -204,6 +205,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	count_found = 0
 	newest_datetime = utils.datetime_now() - timedelta(minutes=30)
 	group_string = '+'.join(subreddit_names)
+	error_string = None
 	try:
 		for submission in reddit.get_subreddit_submissions(group_string):
 			if submission.author is None:
@@ -239,14 +241,21 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 				log.info("Found more than 500 posts in group, splitting")
 				return False
 	except prawcore.exceptions.Forbidden:
-		log.warning(f"Got forbidden for subreddit group, splitting: {group_string}")
-		return False
+		error_string = "forbidden"
 	except prawcore.exceptions.NotFound:
-		log.warning(f"Got not found for subreddit group, splitting: {group_string}")
-		return False
+		error_string = "not found"
 	except prawcore.exceptions.Redirect:
-		log.warning(f"Got redirect for subreddit group, splitting: {group_string}")
-		return False
+		error_string = "redirect"
+	if error_string is not None:
+		if len(subreddit_names) == 1:
+			blacklist_message_link = utils.build_message_link(
+				static.ACCOUNT_NAME, 'Add sub', f'SubredditBlacklist r/{group_string}'
+			)
+			log.warning(f"Got {error_string} for subreddit: r/{group_string} : [Blacklist](<{blacklist_message_link}>)")
+			return True
+		else:
+			log.warning(f"Got {error_string} for subreddit group, splitting: {group_string}")
+			return False
 
 	for submission, subreddit, submission_datetime in reversed(submissions_subreddits):
 		submission_ids_scanned.append(submission.id)
