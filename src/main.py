@@ -145,14 +145,14 @@ if __name__ == "__main__":
 				utils.process_error(f"Error updating comments", err, traceback.format_exc())
 				errors += 1
 
-		latest_stats = database.get_datetime("stats_day", is_date=True)
-		current_day = utils.date_now()
-		if latest_stats is None:
-			database.save_datetime("stats_day", current_day)
-		elif latest_stats != current_day:
-			log.info(f"Saving stats for day {current_day.strftime('%Y-%m-%d')}")
-			stats.save_stats_for_day(database, latest_stats)
-			database.save_datetime("stats_day", current_day)
+		# latest_stats = database.get_datetime("stats_day", is_date=True)
+		# current_day = utils.date_now()
+		# if latest_stats is None:
+		# 	database.save_datetime("stats_day", current_day)
+		# elif latest_stats != current_day:
+		# 	log.info(f"Saving stats for day {current_day.strftime('%Y-%m-%d')}")
+		# 	stats.save_stats_for_day(database, latest_stats)
+		# 	database.save_datetime("stats_day", current_day)
 
 		if not args.no_backup and utils.time_offset(last_backup, hours=8):
 			try:
