@@ -314,7 +314,7 @@ def line_blacklist_sub(line, bldr, database):
 		if subreddit.is_enabled:
 			subreddit.is_enabled = False
 
-		subreddit.is_blacklisted = False
+		subreddit.is_blacklisted = True
 		count_subscriptions = database.delete_subreddit_subscriptions(subreddit)
 		bldr.append(f"Subreddit r/{subs[0]} blacklisted and {count_subscriptions} subscriptions deleted")
 
