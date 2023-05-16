@@ -171,11 +171,11 @@ def get_footer(bldr=None):
 	bldr.append(")")
 	columns += 1
 
-	# new post section
-	bldr.append("|[*^(New!)*](")
-	bldr.append(static.NEW_POST)
-	bldr.append(")")
-	columns += 1
+	# # new post section
+	# bldr.append("|[*^(New!)*](")
+	# bldr.append(static.NEW_POST)
+	# bldr.append(")")
+	# columns += 1
 
 	bldr.append("|\n|")
 	bldr.append("-|" * columns)
