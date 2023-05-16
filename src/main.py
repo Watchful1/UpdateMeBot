@@ -26,11 +26,13 @@ import stats
 
 
 database = None
+ingest_database = None
 
 
 def signal_handler(signal, frame):
 	log.info("Handling interrupt")
 	database.close()
+	ingest_database.close()
 	discord_logging.flush_discord()
 	sys.exit(0)
 
