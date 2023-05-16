@@ -180,6 +180,8 @@ def process_comments(reddit, database, ingest_database):
 			database.save_datetime("comment_timestamp", datetime.utcfromtimestamp(comment.created_utc))
 		else:
 			return i
+	if i > 0:
+		ingest_database.commit()
 
 	return len(comments)
 
