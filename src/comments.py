@@ -9,21 +9,21 @@ import utils
 import static
 from classes.subscription import Subscription
 from classes.comment import DbComment
-from praw_wrapper import ReturnType, id_from_fullname, PushshiftType
+from praw_wrapper.reddit import ReturnType, id_from_fullname
 
 
 def process_comment(comment, reddit, database, count_string=""):
-	if comment['author'] == static.ACCOUNT_NAME:
+	if comment.author == static.ACCOUNT_NAME:
 		log.info(f"{count_string}: Comment is from updatemebot")
 		return
-	if comment['author'] in static.BLACKLISTED_ACCOUNTS:
+	if comment.author in static.BLACKLISTED_ACCOUNTS:
 		log.info(f"{count_string}: Comment is from a blacklisted account")
 		return
 
 	counters.replies.labels(source='comment').inc()
 
-	log.info(f"{count_string}: Processing comment {comment['id']} from u/{comment['author']}")
-	body = comment['body'].lower().strip()
+	log.info(f"{count_string}: Processing comment {comment.id} from u/{comment.author}")
+	body = comment.body.lower().strip()
 	use_tag = True
 	if static.TRIGGER_SUBSCRIBE_LOWER in body:
 		log.debug("Subscription comment")
@@ -40,9 +40,9 @@ def process_comment(comment, reddit, database, count_string=""):
 		return
 
 	comment_result = None
-	thread_id = id_from_fullname(comment['link_id'])
-	subscriber = database.get_or_add_user(comment['author'])
-	subreddit = database.get_or_add_subreddit(comment['subreddit'])
+	thread_id = id_from_fullname(comment.link_id)
+	subscriber = database.get_or_add_user(comment.author)
+	subreddit = database.get_or_add_subreddit(comment.subreddit)
 	db_submission = database.get_submission_by_id(thread_id)
 	tag = None
 	if db_submission is not None:
@@ -71,7 +71,7 @@ def process_comment(comment, reddit, database, count_string=""):
 	elif not subreddit.is_enabled:
 		comment_result = ReturnType.SUBREDDIT_NOT_ENABLED
 	if comment_result is None:
-		reddit_comment = reddit.get_comment(comment['id'])
+		reddit_comment = reddit.get_comment(comment.id)
 		count_subscriptions = database.get_count_subscriptions_for_author_subreddit(author, subreddit, tag)
 		db_comment = DbComment(
 			comment_id=None,
@@ -86,7 +86,7 @@ def process_comment(comment, reddit, database, count_string=""):
 
 		bldr = utils.get_footer(db_comment.render_comment(
 			count_subscriptions=count_subscriptions,
-			pushshift_minutes=reddit.get_effective_pushshift_lag()
+			comment_age_seconds=(utils.datetime_now() - datetime.utcfromtimestamp(comment.created_utc)).total_seconds()
 		))
 
 		result_id, comment_result = reddit.reply_comment(reddit_comment, ''.join(bldr))
@@ -160,29 +160,11 @@ def process_comment(comment, reddit, database, count_string=""):
 			counters.api_responses.labels(call='confmsg', type=result.name.lower()).inc()
 
 
-def process_comments(reddit, database):
-	# comments = reddit.get_keyword_comments(static.TRIGGER_COMBINED, database.get_or_init_datetime("comment_timestamp"))
-	comments = []
-
-	counters.pushshift_delay.labels(client="prod").set(reddit.pushshift_prod_client.lag_minutes())
-	counters.pushshift_delay.labels(client="beta").set(reddit.pushshift_beta_client.lag_minutes())
-	counters.pushshift_delay.labels(client="auto").set(reddit.get_effective_pushshift_lag())
-
-	if reddit.recent_pushshift_client == PushshiftType.PROD:
-		counters.pushshift_client.labels(client="prod").set(1)
-		counters.pushshift_client.labels(client="beta").set(0)
-	elif reddit.recent_pushshift_client == PushshiftType.BETA:
-		counters.pushshift_client.labels(client="prod").set(0)
-		counters.pushshift_client.labels(client="beta").set(1)
-	else:
-		counters.pushshift_client.labels(client="prod").set(0)
-		counters.pushshift_client.labels(client="beta").set(0)
-
-	counters.pushshift_failed.labels(client="prod").set(1 if reddit.pushshift_prod_client.failed() else 0)
-	counters.pushshift_failed.labels(client="beta").set(1 if reddit.pushshift_beta_client.failed() else 0)
-
-	counters.pushshift_seconds.labels("prod").observe(reddit.pushshift_prod_client.request_seconds if reddit.pushshift_prod_client.request_seconds is not None else 0)
-	counters.pushshift_seconds.labels("beta").observe(reddit.pushshift_beta_client.request_seconds if reddit.pushshift_beta_client.request_seconds is not None else 0)
+def process_comments(reddit, database, ingest_database):
+	if ingest_database is None:
+		log.debug("No ingest database passed, skipping comment search")
+		return 0
+	comments = ingest_database.get_comments()
 
 	if len(comments):
 		log.debug(f"Processing {len(comments)} comments")
@@ -194,13 +176,13 @@ def process_comments(reddit, database):
 			process_comment(comment, reddit, database, f"{i}/{len(comments)}")
 		except Exception as err:
 			mark_read = not utils.process_error(
-				f"Error processing comment: {comment['id']} : {comment['author']}",
+				f"Error processing comment: {comment.id} : {comment.author}",
 				err, traceback.format_exc()
 			)
 
 		if mark_read:
-			reddit.mark_keyword_comment_processed(comment['id'])
-			database.save_datetime("comment_timestamp", datetime.utcfromtimestamp(comment['created_utc']))
+			ingest_database.delete_comment(comment)
+			database.save_datetime("comment_timestamp", datetime.utcfromtimestamp(comment.created_utc))
 		else:
 			return i
 

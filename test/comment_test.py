@@ -5,13 +5,73 @@ log = discord_logging.get_logger(init=True)
 import comments
 import utils
 import static
-from praw_wrapper import reddit_test
+from praw_wrapper import reddit_test, IngestDatabase, IngestComment
 from praw_wrapper.reddit_test import RedditObject
 from classes.submission import Submission
 from classes.subscription import Subscription
 from classes.subreddit import Subreddit
 from classes.comment import DbComment
 from classes.user import User
+
+
+def test_process_comments_ingest(database, reddit):
+	ingest_database = IngestDatabase(debug=True)
+	ingest_database.set_default_client("updateme")
+
+	subscriber_name = "Subscriber1"
+	author = database.get_or_add_user("Author1")
+	db_subreddit = database.get_or_add_subreddit("TestSub", enable_subreddit_if_new=True)
+	comment_id = reddit_test.random_id()
+	submission_id = reddit_test.random_id()
+	comment = RedditObject(
+		body=f"{static.TRIGGER_UPDATE}!",
+		author=subscriber_name,
+		id=comment_id,
+		link_id="t3_"+submission_id,
+		permalink=f"/r/test/comments/{submission_id}/_/{comment_id}/",
+		subreddit=db_subreddit.name
+	)
+	db_submission = Submission(
+		submission_id=submission_id,
+		time_created=utils.datetime_now(),
+		author=author,
+		subreddit=db_subreddit,
+		permalink=f"/r/{db_subreddit.name}/comments/{submission_id}/"
+	)
+	database.add_submission(db_submission)
+	database.commit()
+
+	ingest_database.add_comment(
+		IngestComment(
+			id=comment.id,
+			author=comment.author.name,
+			subreddit=comment.subreddit.display_name,
+			created_utc=comment.created_utc,
+			permalink=comment.permalink,
+			link_id=comment.link_id,
+			body=comment.body,
+			client_id=ingest_database.default_client_id,
+		)
+	)
+
+	reddit.add_comment(comment)
+
+	comments.process_comments(reddit, database, ingest_database)
+	result = comment.get_first_child().body
+
+	assert "I will message you next time" in result
+	assert author.name in result
+	assert db_subreddit.name in result
+	assert "Click this link" in result
+
+	subscriptions = database.get_user_subscriptions_by_name(subscriber_name)
+	assert len(subscriptions) == 1
+	assert subscriptions[0].subscriber.name == subscriber_name
+	assert subscriptions[0].author.name == author.name
+	assert subscriptions[0].subreddit.name == db_subreddit.name
+	assert subscriptions[0].recurring is False
+
+	assert ingest_database.get_count_comments(None) == 0
 
 
 def test_process_comment_update(database, reddit):
@@ -40,7 +100,7 @@ def test_process_comment_update(database, reddit):
 
 	reddit.add_comment(comment)
 
-	comments.process_comment(comment.get_pushshift_dict(), reddit, database)
+	comments.process_comment(comment.get_ingest_comment(), reddit, database)
 	result = comment.get_first_child().body
 
 	assert "I will message you next time" in result
@@ -82,7 +142,7 @@ def test_process_comment_subscribe(database, reddit):
 
 	reddit.add_comment(comment)
 
-	comments.process_comment(comment.get_pushshift_dict(), reddit, database)
+	comments.process_comment(comment.get_ingest_comment(), reddit, database)
 	result = comment.get_first_child().body
 
 	assert "I will message you each time" in result
@@ -125,7 +185,7 @@ def test_process_comment_subscribe_tag(database, reddit):
 
 	reddit.add_comment(comment)
 
-	comments.process_comment(comment.get_pushshift_dict(), reddit, database)
+	comments.process_comment(comment.get_ingest_comment(), reddit, database)
 	result = comment.get_first_child().body
 
 	assert "I will message you each time" in result
@@ -170,7 +230,7 @@ def test_process_comment_subscribe_all(database, reddit):
 
 	reddit.add_comment(comment)
 
-	comments.process_comment(comment.get_pushshift_dict(), reddit, database)
+	comments.process_comment(comment.get_ingest_comment(), reddit, database)
 	result = comment.get_first_child().body
 
 	assert "I will message you each time" in result
@@ -205,7 +265,7 @@ def test_process_comment_subreddit_not_enabled(database, reddit):
 	reddit.add_comment(comment)
 	reddit.add_submission(RedditObject(id=submission_id, subreddit=subreddit_name, author=author.name))
 
-	comments.process_comment(comment.get_pushshift_dict(), reddit, database)
+	comments.process_comment(comment.get_ingest_comment(), reddit, database)
 
 	assert len(comment.children) == 0
 
@@ -255,7 +315,7 @@ def test_process_comment_thread_replied(database, reddit):
 	database.add_comment(previous_comment)
 	database.commit()
 
-	comments.process_comment(comment.get_pushshift_dict(), reddit, database)
+	comments.process_comment(comment.get_ingest_comment(), reddit, database)
 
 	assert len(comment.children) == 0
 
@@ -297,7 +357,7 @@ def test_process_comment_already_subscribed(database, reddit):
 		)
 	)
 
-	comments.process_comment(comment.get_pushshift_dict(), reddit, database)
+	comments.process_comment(comment.get_ingest_comment(), reddit, database)
 
 	assert len(comment.children) == 0
 
@@ -334,7 +394,7 @@ def test_process_comment_update_subscription(database, reddit):
 		)
 	)
 
-	comments.process_comment(comment.get_pushshift_dict(), reddit, database)
+	comments.process_comment(comment.get_ingest_comment(), reddit, database)
 
 	assert len(comment.children) == 0
 

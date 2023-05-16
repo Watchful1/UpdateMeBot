@@ -50,11 +50,17 @@ class Subscription(Base):
 	):
 		if subreddit.is_blacklisted:
 			log.info(
-				f"Subreddit blacklisted r/{subreddit.name}, not adding not adding subscription")
+				f"Subreddit blacklisted r/{subreddit.name}, not adding subscription")
 			result_message = \
 				f"u/UpdateMeBot is not suited for subreddits like r/{subreddit.name}. It only works well in subs where" \
 				f" the original poster of the thread will post a followup as a new thread. It's also possible this" \
 				f" subreddit doesn't exist"
+			return result_message, None
+		if author is not None and author.name == "username":
+			log.info(
+				f"User blacklisted r/{author.name}, not adding subscription")
+			result_message = \
+				f"You have to set the username you want to reply to, it was left as u/username. Please try again"
 			return result_message, None
 
 		subscription = database.get_subscription_by_fields(subscriber, author, subreddit, tag)

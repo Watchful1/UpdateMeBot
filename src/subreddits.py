@@ -12,7 +12,6 @@ import utils
 import static
 from classes.submission import Submission
 from classes.notification import Notification
-from praw_wrapper import ReturnType
 from classes.enums import SubredditPromptType
 
 

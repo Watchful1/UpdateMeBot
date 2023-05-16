@@ -8,7 +8,7 @@ log = discord_logging.get_logger()
 
 import counters
 from classes.subscription import Subscription
-from praw_wrapper import ReturnType
+from praw_wrapper.reddit import ReturnType
 import static
 import utils
 

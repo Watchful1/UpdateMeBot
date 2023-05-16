@@ -3,7 +3,7 @@ import discord_logging
 log = discord_logging.get_logger()
 
 import counters
-from praw_wrapper import ReturnType
+from praw_wrapper.reddit import ReturnType
 import utils
 
 

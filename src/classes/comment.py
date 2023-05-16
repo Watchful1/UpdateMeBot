@@ -49,17 +49,12 @@ class DbComment(Base):
 	def __str__(self):
 		return f"{self.comment_id} : u/{self.subscriber.name}"
 
-	def render_comment(self, count_subscriptions=1, pushshift_minutes=0):
+	def render_comment(self, count_subscriptions=1, comment_age_seconds=0):
 		bldr = utils.str_bldr()
-		if pushshift_minutes > 15:
-			bldr.append("There is a ")
-			if pushshift_minutes > 60:
-				bldr.append(str(int(round(pushshift_minutes / 60, 1))))
-				bldr.append(" hour")
-			else:
-				bldr.append(str(pushshift_minutes))
-				bldr.append(" minute")
-			bldr.append(" delay fetching comments.")
+		if comment_age_seconds > (60 * 60):
+			bldr.append("I'm really sorry about replying to this so late. There's a [detailed post about why I did here](")
+			bldr.append("https://www.reddit.com/r/UpdateMeBot/comments/13isv2q/updatemebot_is_now_replying_to_comments_again/")
+			bldr.append(").")
 			bldr.append("\n\n")
 
 		bldr.append("I will message you ")
