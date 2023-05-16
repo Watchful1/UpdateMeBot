@@ -159,7 +159,7 @@ def process_comments(reddit, database, ingest_database):
 	if ingest_database is None:
 		log.debug("No ingest database passed, skipping comment search")
 		return 0
-	comments = ingest_database.get_comments()
+	comments = ingest_database.get_comments(limit=10)
 
 	if len(comments):
 		log.debug(f"Processing {len(comments)} comments")
@@ -177,11 +177,10 @@ def process_comments(reddit, database, ingest_database):
 
 		if mark_read:
 			ingest_database.delete_comment(comment)
+			ingest_database.commit()
 			database.save_datetime("comment_timestamp", datetime.utcfromtimestamp(comment.created_utc))
 		else:
 			return i
-	if i > 0:
-		ingest_database.commit()
 
 	return len(comments)
 
