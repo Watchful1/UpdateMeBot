@@ -54,8 +54,8 @@ def process_comment(comment, reddit, database, count_string=""):
 		reddit_submission = reddit.get_submission(thread_id)
 		try:
 			author_name = reddit_submission.author.name
-		except Exception:
-			log.warning(f"Unable to fetch parent submission for comment: {thread_id}")
+		except Exception as err:
+			log.info(f"Unable to fetch parent submission for comment, likely deleted: {thread_id} : {err}")
 			return
 		author = database.get_or_add_user(author_name)
 
