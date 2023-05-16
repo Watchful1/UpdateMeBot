@@ -70,6 +70,7 @@ def process_comment(comment, reddit, database, count_string=""):
 		comment_result = ReturnType.FORBIDDEN
 	elif not subreddit.is_enabled:
 		comment_result = ReturnType.SUBREDDIT_NOT_ENABLED
+	comment_age_seconds = (utils.datetime_now() - datetime.utcfromtimestamp(comment.created_utc)).total_seconds()
 	if comment_result is None:
 		reddit_comment = reddit.get_comment(comment.id)
 		count_subscriptions = database.get_count_subscriptions_for_author_subreddit(author, subreddit, tag)
@@ -86,7 +87,7 @@ def process_comment(comment, reddit, database, count_string=""):
 
 		bldr = utils.get_footer(db_comment.render_comment(
 			count_subscriptions=count_subscriptions,
-			comment_age_seconds=(utils.datetime_now() - datetime.utcfromtimestamp(comment.created_utc)).total_seconds()
+			comment_age_seconds=comment_age_seconds
 		))
 
 		result_id, comment_result = reddit.reply_comment(reddit_comment, ''.join(bldr))
@@ -136,16 +137,10 @@ def process_comment(comment, reddit, database, count_string=""):
 			log.info(f"Subscription created: {subscription.id}, replying as message: {comment_result.name}")
 
 		bldr = utils.str_bldr()
-		pushshift_lag = reddit.get_effective_pushshift_lag()
-		if pushshift_lag > 15:
-			bldr.append("There is a ")
-			if pushshift_lag > 60:
-				bldr.append(str(int(round(pushshift_lag / 60, 1))))
-				bldr.append(" hour")
-			else:
-				bldr.append(str(pushshift_lag))
-				bldr.append(" minute")
-			bldr.append(" delay fetching comments.")
+		if comment_age_seconds > (60 * 60):
+			bldr.append("I'm really sorry about replying to this so late. There's a [detailed post about why I did here](")
+			bldr.append("https://www.reddit.com/r/UpdateMeBot/comments/13isv2q/updatemebot_is_now_replying_to_comments_again/")
+			bldr.append(").")
 			bldr.append("\n\n")
 
 		bldr.append(result_message)
