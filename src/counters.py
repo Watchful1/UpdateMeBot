@@ -3,6 +3,7 @@ import prometheus_client
 replies = prometheus_client.Counter('bot_replies', "Count of objects replied to", ['source'])
 notifications = prometheus_client.Counter('bot_sent', "Count of notifications sent")
 queue = prometheus_client.Gauge('bot_queue', "Current queue size")
+queue_age = prometheus_client.Gauge('bot_queue_age', "Age of oldest object in queue")
 objects = prometheus_client.Gauge('bot_objects', "Total number of objects by type", ['type'])
 errors = prometheus_client.Counter('bot_errors', "Count of errors", ['type'])
 scan_rate = prometheus_client.Summary('bot_scan_seconds', "How long it takes to scan for posts")

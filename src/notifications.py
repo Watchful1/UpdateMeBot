@@ -19,6 +19,7 @@ def send_queued_notifications(reddit, database):
 			notifications_sent += 1
 			counters.notifications.inc()
 			counters.queue.dec()
+			counters.queue_age.set((utils.datetime_now() - notification.submission.time_created).total_seconds())
 			if notification.subscription is None:
 				log.warning(
 					f"Notification for u/{notification.submission.author.name} in r/"

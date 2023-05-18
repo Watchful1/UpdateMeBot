@@ -159,7 +159,7 @@ def process_comments(reddit, database, ingest_database):
 	if ingest_database is None:
 		log.debug("No ingest database passed, skipping comment search")
 		return 0
-	comments = ingest_database.get_comments(limit=30)
+	comments = ingest_database.get_comments(limit=100)
 
 	if len(comments):
 		log.debug(f"Processing {len(comments)} comments")
