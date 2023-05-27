@@ -119,7 +119,7 @@ def line_remove(line, user, bldr, database):
 
 	else:
 		users = re.findall(r'(?:/?u/)([\w-]+)', line)
-		subs = re.findall(r'(?:/?r/)(\w+)', line)
+		subs = re.findall(r'(?:/?r/)([\w-]+)', line)
 		tags = re.findall(r'(?:<)(.+)(?:>)', line)
 		is_all = "-all" in line
 
@@ -264,7 +264,7 @@ def line_abbrev(line, user, bldr, database, reddit):
 
 
 def line_add_sub(line, bldr, database):
-	subs = re.findall(r'(?:/?r/)(\w+)', line)
+	subs = re.findall(r'(?:/?r/)([\w-]+)', line)
 	if len(subs):
 		subreddit = database.get_or_add_subreddit(subs[0])
 		count_subscriptions = database.get_count_subscriptions_for_subreddit(subreddit)
@@ -291,7 +291,7 @@ def line_add_sub(line, bldr, database):
 
 
 def line_remove_sub(line, bldr, database):
-	subs = re.findall(r'(?:/?r/)(\w+)', line)
+	subs = re.findall(r'(?:/?r/)([\w-]+)', line)
 	if len(subs):
 		subreddit = database.get_subreddit(subs[0])
 		if subreddit is None:
@@ -305,7 +305,7 @@ def line_remove_sub(line, bldr, database):
 
 
 def line_blacklist_sub(line, bldr, database):
-	subs = re.findall(r'(?:/?r/)(\w+)', line)
+	subs = re.findall(r'(?:/?r/)([\w-]+)', line)
 	if len(subs):
 		subreddit = database.get_subreddit(subs[0])
 		if subreddit is None:
