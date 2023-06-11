@@ -55,6 +55,8 @@ if __name__ == "__main__":
 		default=False)
 	parser.add_argument("--debug", help="Set the log level to debug", action='store_const', const=True, default=False)
 	parser.add_argument("--ingest_db", help="The location of the ingest database file", default=None)
+	parser.add_argument(
+		"--no_profile", help="Don't run the profile process", action='store_const', const=True, default=False)
 	args = parser.parse_args()
 
 	counters.init(8000)
@@ -123,11 +125,12 @@ if __name__ == "__main__":
 			utils.process_error(f"Error sending notifications", err, traceback.format_exc())
 			errors += 1
 
-		try:
-			subreddits.profile_subreddits(reddit_search, database)
-		except Exception as err:
-			utils.process_error(f"Error profiling subreddits", err, traceback.format_exc())
-			errors += 1
+		if not args.no_profile:
+			try:
+				subreddits.profile_subreddits(reddit_search, database)
+			except Exception as err:
+				utils.process_error(f"Error profiling subreddits", err, traceback.format_exc())
+				errors += 1
 
 		try:
 			actions += subreddits.recheck_submissions(reddit_search, database)
