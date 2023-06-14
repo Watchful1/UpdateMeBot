@@ -317,6 +317,7 @@ def line_blacklist_sub(line, bldr, database):
 		subreddit.is_blacklisted = True
 		count_subscriptions = database.delete_subreddit_subscriptions(subreddit)
 		bldr.append(f"Subreddit r/{subs[0]} blacklisted and {count_subscriptions} subscriptions deleted")
+		log.info(f"Subreddit blacklisted: r/{subs[0]}")
 
 
 def line_mute_sub(line, bldr, database):
@@ -338,6 +339,7 @@ def line_mute_sub(line, bldr, database):
 		subreddit.muted_until = muted_datetime
 
 		bldr.append(f"Subreddit r/{subs[0]} muted until {utils.get_datetime_string(muted_datetime)}")
+		log.info(f"Subreddit muted: r/{subs[0]} : {utils.get_datetime_string(muted_datetime)}")
 
 
 def line_purge_user(line, bldr, database):
