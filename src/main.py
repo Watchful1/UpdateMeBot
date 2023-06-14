@@ -133,6 +133,12 @@ if __name__ == "__main__":
 				errors += 1
 
 		try:
+			subreddits.unmute_subreddits(database)
+		except Exception as err:
+			utils.process_error(f"Error profiling subreddits", err, traceback.format_exc())
+			errors += 1
+
+		try:
 			actions += subreddits.recheck_submissions(reddit_search, database)
 		except Exception as err:
 			utils.process_error(f"Error rechecking submissions", err, traceback.format_exc())

@@ -88,6 +88,14 @@ def profile_subreddits(reddit, database, limit=10):
 		database.commit()
 
 
+def unmute_subreddits(database):
+	for subreddit in database.get_unmute_subreddits():
+		log.warning(f"Unmuting r/{subreddit.name}")
+		subreddit.muted_until = None
+		subreddit.is_enabled = True
+		database.commit()
+
+
 def recheck_submissions(reddit, database, limit=100):
 	changes_made = False
 
@@ -248,9 +256,12 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	if error_string is not None:
 		if len(subreddit_names) == 1:
 			blacklist_message_link = utils.build_message_link(
-				static.ACCOUNT_NAME, 'Add sub', f'SubredditBlacklist r/{group_string}'
+				static.ACCOUNT_NAME, 'Blacklist sub', f'SubredditBlacklist r/{group_string}'
 			)
-			log.warning(f"Got {error_string} for subreddit: r/{group_string} : [Blacklist](<{blacklist_message_link}>)")
+			mute_message_link = utils.build_message_link(
+				static.ACCOUNT_NAME, 'Mute sub', f'SubredditMute r/{group_string} {utils.get_datetime_string(utils.time_offset(utils.datetime_now(), hours=48))}'
+			)
+			log.warning(f"Got {error_string} for subreddit: r/{group_string} : [Blacklist](<{blacklist_message_link}>) : [Mute](<{mute_message_link}>)")
 			return True
 		else:
 			log.warning(f"Got {error_string} for subreddit group, splitting: {group_string}")

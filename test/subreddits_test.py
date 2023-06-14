@@ -66,6 +66,25 @@ def test_profile_subreddits(database, reddit):
 	assert post_per_hour == 2
 
 
+def test_unmute_subreddits(database, reddit):
+	db_subreddit = database.get_or_add_subreddit("Subreddit1")
+	db_subreddit.is_enabled = False
+	db_subreddit.muted_until = utils.datetime_now() - timedelta(hours=1)
+	db_subreddit = database.get_or_add_subreddit("Subreddit2")
+	db_subreddit.is_enabled = False
+	db_subreddit.muted_until = utils.datetime_now() + timedelta(hours=1)
+	database.commit()
+
+	subreddits.unmute_subreddits(database)
+
+	db_subreddit = database.get_or_add_subreddit("Subreddit1")
+	assert db_subreddit.is_enabled is True
+	assert db_subreddit.muted_until is None
+	db_subreddit = database.get_or_add_subreddit("Subreddit2")
+	assert db_subreddit.is_enabled is False
+	assert db_subreddit.muted_until is not None
+
+
 def test_scan_single_subreddit(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",

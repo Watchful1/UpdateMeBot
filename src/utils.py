@@ -102,7 +102,10 @@ def get_datetime_string(date_time, format_string="%Y-%m-%d %H:%M:%S"):
 def parse_datetime_string(date_time_string, format_string="%Y-%m-%d %H:%M:%S"):
 	if date_time_string is None or date_time_string == "None" or date_time_string == "":
 		return None
-	date_time = datetime.strptime(date_time_string, format_string)
+	try:
+		date_time = datetime.strptime(date_time_string, format_string)
+	except ValueError:
+		return None
 	return date_time
 
 

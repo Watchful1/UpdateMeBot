@@ -319,6 +319,27 @@ def line_blacklist_sub(line, bldr, database):
 		bldr.append(f"Subreddit r/{subs[0]} blacklisted and {count_subscriptions} subscriptions deleted")
 
 
+def line_mute_sub(line, bldr, database):
+	subs = re.findall(r'(?:/?r/)([\w-]+)', line)
+	muted_date = re.findall(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', line)
+	if len(subs) and len(muted_date):
+		subreddit = database.get_subreddit(subs[0])
+		if subreddit is None:
+			bldr.append(f"Subreddit r/{subs[0]} not found")
+			return
+
+		muted_datetime = utils.parse_datetime_string(muted_date[0])
+		if muted_datetime is None:
+			bldr.append(f"Unable to parse date {muted_date[0]}")
+			return
+
+		if subreddit.is_enabled:
+			subreddit.is_enabled = False
+		subreddit.muted_until = muted_datetime
+
+		bldr.append(f"Subreddit r/{subs[0]} muted until {utils.get_datetime_string(muted_datetime)}")
+
+
 def line_purge_user(line, bldr, database):
 	users = re.findall(r'(?: /?u/)([\w-]+)', line)
 	if len(users):
@@ -358,6 +379,8 @@ def process_message(message, reddit, database, count_string=""):
 				line_remove_sub(line, bldr, database)
 			elif line.startswith("subredditblacklist"):
 				line_blacklist_sub(line, bldr, database)
+			elif line.startswith("subredditmute"):
+				line_mute_sub(line, bldr, database)
 			elif line.startswith("purgeuser"):
 				line_purge_user(line, bldr, database)
 

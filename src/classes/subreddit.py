@@ -29,6 +29,7 @@ class Subreddit(Base):
 	no_comment = Column(Boolean, nullable=False)
 	is_banned = Column(Boolean, nullable=False)
 	is_blacklisted = Column(Boolean, nullable=False)
+	muted_until = Column(DateTime())
 
 	notice_threshold = Column(Integer, nullable=False)
 	flair_blacklist = Column(String(300))

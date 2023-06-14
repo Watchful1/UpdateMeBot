@@ -74,5 +74,15 @@ class _DatabaseSubreddit:
 
 		return subreddits[:limit]
 
+	def get_unmute_subreddits(self):
+		if self.log_debug:
+			log.debug(f"Fetching subreddits to unmute")
+		subreddits = self.session.query(Subreddit)\
+			.filter(Subreddit.muted_until != None)\
+			.filter(Subreddit.muted_until < datetime.utcnow())\
+			.all()
+
+		return subreddits
+
 	def get_count_all_subreddits(self):
 		return self.session.query(Subreddit).count()

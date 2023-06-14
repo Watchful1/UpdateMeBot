@@ -685,6 +685,25 @@ def test_add_sub(database, reddit):
 	assert subreddit.default_recurring is True
 
 
+def test_mute_sub(database, reddit):
+	date_time = utils.datetime_now()
+	database.get_or_add_subreddit("Subreddit1")
+	database.commit()
+	message = reddit_test.RedditObject(
+		body=f"SubredditMute r/Subreddit1 {utils.get_datetime_string(date_time)}",
+		author=static.OWNER
+	)
+	messages.process_message(message, reddit, database)
+
+	response = message.get_first_child().body
+	assert "Subreddit r/subreddit1 muted" in response
+	assert utils.get_datetime_string(date_time) in response
+
+	subreddit = database.get_or_add_subreddit("Subreddit1")
+	assert subreddit.is_enabled is False
+	assert subreddit.muted_until == date_time
+
+
 def test_add_update_tagged(database, reddit):
 	username = "Watchful1"
 	author = "AuthorName"
