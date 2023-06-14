@@ -259,7 +259,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 				static.ACCOUNT_NAME, 'Blacklist sub', f'SubredditBlacklist r/{group_string}'
 			)
 			mute_message_link = utils.build_message_link(
-				static.ACCOUNT_NAME, 'Mute sub', f'SubredditMute r/{group_string} {utils.get_datetime_string(utils.time_offset(utils.datetime_now(), hours=48))}'
+				static.ACCOUNT_NAME, 'Mute sub', f'SubredditMute r/{group_string} {utils.get_datetime_string(utils.datetime_now() + timedelta(days=2))}'
 			)
 			log.warning(f"Got {error_string} for subreddit: r/{group_string} : [Blacklist](<{blacklist_message_link}>) : [Mute](<{mute_message_link}>)")
 			return True
