@@ -15,6 +15,16 @@ from classes.notification import Notification
 from classes.enums import SubredditPromptType
 
 
+def get_blacklist_mute_message(subreddit_name):
+	blacklist_message_link = utils.build_message_link(
+		static.ACCOUNT_NAME, 'Blacklist sub', f'SubredditBlacklist r/{subreddit_name}'
+	)
+	mute_message_link = utils.build_message_link(
+		static.ACCOUNT_NAME, 'Mute sub',
+		f'SubredditMute r/{subreddit_name} {utils.get_datetime_string(utils.datetime_now() + timedelta(days=2))}'
+	)
+	return f"[Blacklist](<{blacklist_message_link}>) : [Mute](<{mute_message_link}>)"
+
 def subreddit_posts_per_hour(reddit, subreddit_name):
 	count = 0
 	oldest_submission = utils.datetime_now()
@@ -67,8 +77,12 @@ def profile_subreddits(reddit, database, limit=10):
 				subreddit.name = updated_name
 			if posts_per_hour == -2:
 				if not reddit.quarantine_opt_in(subreddit.name):
-					log.warning(f"Can't opt in to r/{subreddit.name}, blacklisting")
-					subreddit.is_blacklisted = True
+					if subreddit.last_profiled is None or subreddit.last_profiled - timedelta(days=120) > utils.datetime_now():
+						if subreddit.is_enabled:
+							log.warning(f"Unable to opt in to enabled subreddit: r/{subreddit.name} : {get_blacklist_mute_message(subreddit.name)}")
+						else:
+							log.warning(f"Can't opt in to r/{subreddit.name}, blacklisting")
+							subreddit.is_blacklisted = True
 				continue
 			if posts_per_hour == -1:
 				log.warning(f"r/{subreddit.name} doesn't exist, blacklisting")
@@ -255,13 +269,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 		error_string = "redirect"
 	if error_string is not None:
 		if len(subreddit_names) == 1:
-			blacklist_message_link = utils.build_message_link(
-				static.ACCOUNT_NAME, 'Blacklist sub', f'SubredditBlacklist r/{group_string}'
-			)
-			mute_message_link = utils.build_message_link(
-				static.ACCOUNT_NAME, 'Mute sub', f'SubredditMute r/{group_string} {utils.get_datetime_string(utils.datetime_now() + timedelta(days=2))}'
-			)
-			log.warning(f"Got {error_string} for subreddit: r/{group_string} : [Blacklist](<{blacklist_message_link}>) : [Mute](<{mute_message_link}>)")
+			log.warning(f"Got {error_string} for subreddit: r/{group_string} : {get_blacklist_mute_message(group_string)}")
 			return True
 		else:
 			log.warning(f"Got {error_string} for subreddit group, splitting: {group_string}")
