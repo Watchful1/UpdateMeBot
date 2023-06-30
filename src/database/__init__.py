@@ -99,10 +99,12 @@ class Database(
 		count_subscriptions_as_author = self.get_count_subscriptions_for_author(user)
 		count_submissions_as_author = self.get_count_submissions_for_author(user)
 		if not force and (count_stats >= 10 or count_subscriptions_as_author >= 10 or count_submissions_as_author >= 10):
+			if user.first_failure is None:
+				user.first_failure = utils.datetime_now()
 			log.warning(
 				f"Unable to purge user u/{user.name}: {count_stats} | {count_subscriptions_as_author} "
-				f"| {count_submissions_as_author} "
-				f"<{utils.build_message_link(static.ACCOUNT_NAME, 'Purge User', 'purgeuser u/'+user.name)}>"
+				f"| {count_submissions_as_author} | {utils.get_datetime_string(user.first_failure)} "
+				f"[Purge](<{utils.build_message_link(static.ACCOUNT_NAME, 'Purge User', 'purgeuser u/'+user.name)}>)"
 			)
 			return False
 

@@ -355,6 +355,8 @@ def line_purge_user(line, bldr, database):
 def process_message(message, reddit, database, count_string=""):
 	log.info(f"{count_string}: Message u/{message.author.name} : {message.id}")
 	user = database.get_or_add_user(message.author.name)
+	if user.first_failure is not None:
+		user.first_failure = None
 	body = message.body.lower().replace("\u00A0", " ")
 
 	counters.replies.labels(source='message').inc()
