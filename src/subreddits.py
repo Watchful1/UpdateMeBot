@@ -25,6 +25,7 @@ def get_blacklist_mute_message(subreddit_name):
 	)
 	return f"[Blacklist](<{blacklist_message_link}>) : [Mute](<{mute_message_link}>)"
 
+
 def subreddit_posts_per_hour(reddit, subreddit_name):
 	count = 0
 	oldest_submission = utils.datetime_now()
@@ -53,7 +54,7 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 		log.warning(f"Subreddit r/{subreddit_name} doesn't exist when profiling")
 		return -1, updated_name
 	except prawcore.exceptions.Forbidden:
-		log.warning(f"Subreddit r/{subreddit_name} forbidden when profiling")
+		log.info(f"Subreddit r/{subreddit_name} forbidden when profiling")
 		return -2, updated_name
 
 	if count == 0:
