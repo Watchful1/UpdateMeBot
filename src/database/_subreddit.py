@@ -62,12 +62,14 @@ class _DatabaseSubreddit:
 		subreddits = self.session.query(Subreddit)\
 			.filter(Subreddit.is_enabled == True)\
 			.filter(Subreddit.is_blacklisted == False)\
+			.filter(Subreddit.muted_until == None)\
 			.filter(Subreddit.last_profiled < datetime.utcnow() - timedelta(days=30))\
 			.all()
 		subreddits.extend(
 			self.session.query(Subreddit)
 			.filter(Subreddit.is_enabled == False)
 			.filter(Subreddit.is_blacklisted == False)\
+			.filter(Subreddit.muted_until == None)\
 			.filter(Subreddit.last_profiled < datetime.utcnow() - timedelta(days=90))
 			.all()
 		)

@@ -84,6 +84,9 @@ def profile_subreddits(reddit, database, limit=10):
 						else:
 							log.warning(f"Can't opt in to r/{subreddit.name}, blacklisting")
 							subreddit.is_blacklisted = True
+					else:
+						subreddit.muted_until = utils.datetime_now() + timedelta(days=1)
+						log.info(f"Muting until: {utils.get_datetime_string(subreddit.muted_until)}")
 				continue
 			if posts_per_hour == -1:
 				log.warning(f"r/{subreddit.name} doesn't exist, blacklisting")
