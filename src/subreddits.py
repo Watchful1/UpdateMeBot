@@ -343,7 +343,7 @@ def scan_subreddits(reddit, database):
 	groups_scanned = 0
 	start_time = time.perf_counter()
 	for subreddit in database.get_active_subreddits():
-		if subreddit.last_scanned < utils.datetime_now() - timedelta(hours=1):
+		if subreddit.last_scanned is None or subreddit.last_scanned < utils.datetime_now() - timedelta(hours=1):
 			log.info(f"r/{subreddit.name} hasn't been scanned since {subreddit.last_scanned}, splitting")
 			single_subreddits.append(subreddit)
 			continue
