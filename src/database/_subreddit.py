@@ -43,6 +43,7 @@ class _DatabaseSubreddit:
 			log.debug(f"Fetching active subreddits")
 		subreddits = self.session.query(Subreddit)\
 			.filter(Subreddit.is_enabled == True)\
+			.filter(Subreddit.muted_until == None)\
 			.order_by(Subreddit.posts_per_hour)\
 			.all()
 

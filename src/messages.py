@@ -334,8 +334,6 @@ def line_mute_sub(line, bldr, database):
 			bldr.append(f"Unable to parse date {muted_date[0]}")
 			return
 
-		if subreddit.is_enabled:
-			subreddit.is_enabled = False
 		subreddit.muted_until = muted_datetime
 
 		bldr.append(f"Subreddit r/{subs[0]} muted until {utils.get_datetime_string(muted_datetime)}")

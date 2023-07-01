@@ -110,7 +110,6 @@ def unmute_subreddits(database):
 	for subreddit in database.get_unmute_subreddits():
 		log.warning(f"Unmuting r/{subreddit.name}")
 		subreddit.muted_until = None
-		subreddit.is_enabled = True
 		database.commit()
 
 
