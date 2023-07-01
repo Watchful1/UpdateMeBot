@@ -68,7 +68,7 @@ def test_profile_subreddits(database, reddit):
 
 def test_unmute_subreddits(database, reddit):
 	db_subreddit = database.get_or_add_subreddit("Subreddit1")
-	db_subreddit.is_enabled = False
+	db_subreddit.is_enabled = True
 	db_subreddit.muted_until = utils.datetime_now() - timedelta(hours=1)
 	db_subreddit = database.get_or_add_subreddit("Subreddit2")
 	db_subreddit.is_enabled = False
