@@ -247,7 +247,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 				submission_datetime = datetime.utcfromtimestamp(submission.created_utc)
 				skip = False
 				if submission_datetime < subreddit.last_scanned:
-					if submission_datetime < subreddit.date_enabled or \
+					if (subreddit.date_enabled is not None and submission_datetime < subreddit.date_enabled) or \
 							submission_datetime + timedelta(hours=24) < subreddit.last_scanned:
 						skip = True
 						count_existing += 1
