@@ -12,7 +12,6 @@ sqlalchemy = "*"
 praw-wrapper = {git = "https://github.com/Watchful1/PrawWrapper.git"}
 prometheus-client = "*"
 requests = "*"
-prawcore = {editable = true, git = "https://github.com/praw-dev/prawcore"}
 
 [requires]
 python_version = "3.9"
