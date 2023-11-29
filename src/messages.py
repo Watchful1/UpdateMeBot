@@ -440,7 +440,7 @@ def process_messages(reddit, database):
 		if reddit.is_message(message):
 			if message.author is None:
 				log.info(f"Message {message.id} is a system notification")
-			elif message.author.name == "reddit":
+			elif message.author.name.lower() in {"reddit", "remindmebot"}:
 				log.info(f"Message {message.id} is from reddit, skipping")
 			else:
 				try:
