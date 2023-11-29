@@ -67,10 +67,8 @@ if __name__ == "__main__":
 
 	discord_logging.init_discord_logging(args.user, logging.WARNING, 1)
 	static.ACCOUNT_NAME = args.user
-	reddit_message = praw_wrapper.Reddit(
-		args.user, args.no_post, "message", static.USER_AGENT)
-	reddit_search = praw_wrapper.Reddit(args.user, args.no_post, "search", static.USER_AGENT)
-	static.ACCOUNT_NAME = reddit_message.username
+	reddit = praw_wrapper.Reddit(args.user, args.no_post, user_agent=static.USER_AGENT)
+	static.ACCOUNT_NAME = reddit.username
 	database = Database(debug=args.debug_db)
 
 	ingest_database = None
@@ -102,32 +100,32 @@ if __name__ == "__main__":
 		counters.objects.labels(type="subreddits").set(database.get_count_all_subreddits())
 
 		try:
-			actions += messages.process_messages(reddit_message, database)
+			actions += messages.process_messages(reddit, database)
 		except Exception as err:
 			utils.process_error(f"Error processing messages", err, traceback.format_exc())
 			errors += 1
 
 		try:
-			subreddits.scan_subreddits(reddit_search, database)
+			subreddits.scan_subreddits(reddit, database)
 		except Exception as err:
 			utils.process_error(f"Error scanning subreddits", err, traceback.format_exc())
 			errors += 1
 
 		try:
-			actions += comments.process_comments(reddit_message, database, ingest_database)
+			actions += comments.process_comments(reddit, database, ingest_database)
 		except Exception as err:
 			utils.process_error(f"Error processing comments", err, traceback.format_exc())
 			errors += 1
 
 		try:
-			actions += notifications.send_queued_notifications(reddit_message, database)
+			actions += notifications.send_queued_notifications(reddit, database)
 		except Exception as err:
 			utils.process_error(f"Error sending notifications", err, traceback.format_exc())
 			errors += 1
 
 		if not args.no_profile:
 			try:
-				subreddits.profile_subreddits(reddit_search, database)
+				subreddits.profile_subreddits(reddit, database)
 			except Exception as err:
 				utils.process_error(f"Error profiling subreddits", err, traceback.format_exc())
 				errors += 1
@@ -139,14 +137,14 @@ if __name__ == "__main__":
 			errors += 1
 
 		try:
-			actions += subreddits.recheck_submissions(reddit_search, database)
+			actions += subreddits.recheck_submissions(reddit, database)
 		except Exception as err:
 			utils.process_error(f"Error rechecking submissions", err, traceback.format_exc())
 			errors += 1
 
 		if utils.time_offset(last_comments, minutes=30):
 			try:
-				actions += comments.update_comments(reddit_message, database)
+				actions += comments.update_comments(reddit, database)
 				last_comments = utils.datetime_now()
 			except Exception as err:
 				utils.process_error(f"Error updating comments", err, traceback.format_exc())
