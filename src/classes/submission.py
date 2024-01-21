@@ -56,6 +56,9 @@ class Submission(Base):
 	def get_safe_url(self):
 		return requests.utils.requote_uri(self.url)
 
+	def get_link_safe_title(self):
+		return self.title.replace("[", "\[").replace("]", "\]")
+
 	def render_prompt(self):
 		bldr = utils.str_bldr()
 		if self.tag is not None:

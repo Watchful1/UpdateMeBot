@@ -64,7 +64,7 @@ class Notification(Base):
 
 			if self.submission.title is not None:
 				bldr.append("[**")
-				bldr.append(self.submission.title)
+				bldr.append(self.submission.get_link_safe_title())
 				bldr.append("**](")
 				bldr.append(self.submission.get_safe_url())
 				bldr.append(")")
@@ -104,7 +104,7 @@ class Notification(Base):
 
 				if self.submission.title is not None:
 					bldr.append("[**")
-					bldr.append(self.submission.title)
+					bldr.append(self.submission.get_link_safe_title())
 					bldr.append("**](")
 					bldr.append(self.submission.get_safe_url())
 					bldr.append(")")
@@ -124,7 +124,7 @@ class Notification(Base):
 				for submission in recent_submissions:
 					if submission.title is not None:
 						bldr.append("[")
-						bldr.append(submission.title)
+						bldr.append(submission.get_link_safe_title())
 						bldr.append("](")
 						bldr.append(submission.get_safe_url())
 						bldr.append(")  \n")
