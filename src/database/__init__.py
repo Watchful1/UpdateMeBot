@@ -105,7 +105,7 @@ class Database(
 			elif (utils.datetime_now() - user.first_failure).days < 60:
 				return False
 
-			if count_stats >= 10 or count_subscriptions_as_author >= 10 or count_submissions_as_author >= 10:
+			if count_stats >= 50 or count_subscriptions_as_author >= 50 or count_submissions_as_author >= 50:
 				log.warning(
 					f"Purging user u/{user.name}: {count_stats} | {count_subscriptions_as_author} "
 					f"| {count_submissions_as_author} | {utils.get_datetime_string(user.first_failure)} | {(utils.datetime_now() - user.first_failure).days} days"

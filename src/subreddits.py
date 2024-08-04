@@ -51,7 +51,7 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 			if count >= 50:
 				break
 	except (prawcore.exceptions.Redirect, prawcore.exceptions.NotFound):
-		log.warning(f"Subreddit r/{subreddit_name} doesn't exist when profiling")
+		log.info(f"Subreddit r/{subreddit_name} doesn't exist when profiling")
 		return -1, updated_name
 	except prawcore.exceptions.Forbidden:
 		log.info(f"Subreddit r/{subreddit_name} forbidden when profiling")
@@ -89,7 +89,10 @@ def profile_subreddits(reddit, database, limit=10):
 						log.info(f"Muting until: {utils.get_datetime_string(subreddit.muted_until)}")
 				continue
 			if posts_per_hour == -1:
-				log.warning(f"r/{subreddit.name} doesn't exist, blacklisting")
+				if subreddit.is_enabled:
+					log.warning(f"r/{subreddit.name} doesn't exist, blacklisting")
+				else:
+					log.warning(f"r/{subreddit.name} doesn't exist, blacklisting")
 				subreddit.is_blacklisted = True
 			if subreddit.posts_per_hour != posts_per_hour:
 				log.info(f"Profiled subreddit {subreddit.name} from {subreddit.posts_per_hour} to {posts_per_hour}")

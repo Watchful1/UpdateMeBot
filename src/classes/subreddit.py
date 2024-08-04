@@ -48,7 +48,7 @@ class Subreddit(Base):
 		self.default_recurring = default_recurring
 		self.last_profiled = datetime(2010, 1, 1)
 		self.tag_enabled = False
-		self.notice_threshold = 5
+		self.notice_threshold = 20
 
 		self.no_comment = False
 		self.is_banned = False
