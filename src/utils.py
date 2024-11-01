@@ -113,7 +113,7 @@ def html_encode(message):
 	return urllib.parse.quote(message, safe='')
 
 
-def build_message_link(recipient, subject, content=None):
+def build_message_link(recipient, subject, content=None, label=None):
 	base = "https://www.reddit.com/message/compose/?"
 	bldr = str_bldr()
 	bldr.append(f"to={recipient}")
@@ -121,7 +121,11 @@ def build_message_link(recipient, subject, content=None):
 	if content is not None:
 		bldr.append(f"message={html_encode(content)}")
 
-	return base + '&'.join(bldr)
+	url = base + '&'.join(bldr)
+	if label is not None:
+		return f"[{label}]({url})"
+	else:
+		return url
 
 
 def requests_available(requests_pending):

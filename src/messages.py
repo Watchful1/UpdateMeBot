@@ -1,6 +1,7 @@
 import discord_logging
 import traceback
 import re
+from collections import defaultdict
 
 
 log = discord_logging.get_logger()
@@ -350,6 +351,70 @@ def line_purge_user(line, bldr, database):
 		bldr.append(f"Force purged user u/{user_name}")
 
 
+def line_info(line, bldr, database):
+	users = re.findall(r'(?: /?u/)([\w-]+)', line)
+	if len(users):
+		user_name = users[0]
+		user = database.get_user(user_name)
+		if user is None:
+			bldr.append(f"User {user_name} not found")
+			return
+
+		subscriptions = database.get_user_subscriptions(user, only_enabled=False)
+		if len(subscriptions):
+			count_subreddits = defaultdict(int)
+			for subscription in subscriptions:
+				count_subreddits[subscription.subreddit] += 1
+
+			bldr.append(f"User has {len(subscriptions)} subscriptions across {len(count_subreddits)} subreddits")
+		else:
+			bldr.append(f"User has no subscriptions")
+
+		author_subscriptions = database.get_count_subscriptions_for_author(user)
+		if author_subscriptions:
+			bldr.append(f"User has {author_subscriptions} subscribers")
+		else:
+			bldr.append(f"User has no subscribers")
+		return
+
+	subs = re.findall(r'(?:/?r/)([\w-]+)', line)
+	if len(subs):
+		subreddit_name = subs[0]
+		subreddit = database.get_subreddit(subreddit_name)
+		if subreddit is None:
+			bldr.append(f"Subreddit {subreddit_name} not found")
+			return
+
+		count_subscriptions = database.get_count_subscriptions_for_subreddit(subreddit)
+		bldr.append(f"count_subscriptions: {count_subscriptions}")
+
+		bldr.append(f"is_enabled: {subreddit.is_enabled}")
+		bldr.append(f"posts_per_hour: {subreddit.posts_per_hour}")
+		bldr.append(f"last_scanned: {subreddit.last_scanned}")
+		bldr.append(f"date_enabled: {subreddit.date_enabled}")
+		bldr.append(f"tag_enabled: {subreddit.tag_enabled}")
+		bldr.append(f"no_comment: {subreddit.no_comment}")
+		bldr.append(f"is_banned: {subreddit.is_banned}")
+		bldr.append(f"is_blacklisted: {subreddit.is_blacklisted}")
+		bldr.append(f"muted_until: {subreddit.muted_until}")
+		bldr.append(f"notice_threshold: {subreddit.notice_threshold}")
+		bldr.append(f"Subreddit: {subreddit.subreddit}")
+		bldr.append(f"Subreddit: {subreddit.subreddit}")
+
+		bldr.append(utils.build_message_link(
+			static.ACCOUNT_NAME, 'Add sub', f'addsubreddit r/{subreddit.name} subscribe', "Add subreddit"
+		))
+		bldr.append(utils.build_message_link(
+			static.ACCOUNT_NAME, 'Remove sub', f'subredditremove r/{subreddit.name}', "Remove subreddit"
+		))
+		bldr.append(utils.build_message_link(
+			static.ACCOUNT_NAME, 'Blacklist sub', f'subredditblacklist r/{subreddit.name}', "Blacklist subreddit"
+		))
+		bldr.append(utils.build_message_link(
+			static.ACCOUNT_NAME, 'Mute sub', f'subredditmute r/{subreddit.name}', "Mute subreddit"
+		))
+
+
 def process_message(message, reddit, database, count_string=""):
 	log.info(f"{count_string}: Message u/{message.author.name} : {message.id}")
 	user = database.get_or_add_user(message.author.name)
@@ -385,6 +450,8 @@ def process_message(message, reddit, database, count_string=""):
 				line_mute_sub(line, bldr, database)
 			elif line.startswith("purgeuser"):
 				line_purge_user(line, bldr, database)
+			elif line.startswith("info"):
+				line_info(line, bldr, database)
 
 		if len(bldr) > current_len:
 			current_len = len(bldr)
