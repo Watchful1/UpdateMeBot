@@ -398,8 +398,6 @@ def line_info(line, bldr, database):
 		bldr.append(f"is_blacklisted: {subreddit.is_blacklisted}")
 		bldr.append(f"muted_until: {subreddit.muted_until}")
 		bldr.append(f"notice_threshold: {subreddit.notice_threshold}")
-		bldr.append(f"Subreddit: {subreddit.subreddit}")
-		bldr.append(f"Subreddit: {subreddit.subreddit}")
 
 		bldr.append(utils.build_message_link(
 			static.ACCOUNT_NAME, 'Add sub', f'addsubreddit r/{subreddit.name} subscribe', "Add subreddit"
