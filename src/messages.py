@@ -357,7 +357,7 @@ def line_info(line, bldr, database):
 		user_name = users[0]
 		user = database.get_user(user_name)
 		if user is None:
-			bldr.append(f"User {user_name} not found")
+			bldr.append(f"User {user_name} not found  \n")
 			return
 
 		subscriptions = database.get_user_subscriptions(user, only_enabled=False)
@@ -366,15 +366,15 @@ def line_info(line, bldr, database):
 			for subscription in subscriptions:
 				count_subreddits[subscription.subreddit] += 1
 
-			bldr.append(f"User has {len(subscriptions)} subscriptions across {len(count_subreddits)} subreddits")
+			bldr.append(f"User has {len(subscriptions)} subscriptions across {len(count_subreddits)} subreddits  \n")
 		else:
-			bldr.append(f"User has no subscriptions")
+			bldr.append(f"User has no subscriptions  \n")
 
 		author_subscriptions = database.get_count_subscriptions_for_author(user)
 		if author_subscriptions:
-			bldr.append(f"User has {author_subscriptions} subscribers")
+			bldr.append(f"User has {author_subscriptions} subscribers  \n")
 		else:
-			bldr.append(f"User has no subscribers")
+			bldr.append(f"User has no subscribers  \n")
 		return
 
 	subs = re.findall(r'(?:/?r/)([\w-]+)', line)
@@ -382,32 +382,35 @@ def line_info(line, bldr, database):
 		subreddit_name = subs[0]
 		subreddit = database.get_subreddit(subreddit_name)
 		if subreddit is None:
-			bldr.append(f"Subreddit {subreddit_name} not found")
+			bldr.append(f"Subreddit {subreddit_name} not found  \n")
 			return
 
 		count_subscriptions = database.get_count_subscriptions_for_subreddit(subreddit)
-		bldr.append(f"count_subscriptions: {count_subscriptions}")
+		bldr.append(f"count_subscriptions: {count_subscriptions}  \n")
 
-		bldr.append(f"is_enabled: {subreddit.is_enabled}")
-		bldr.append(f"posts_per_hour: {subreddit.posts_per_hour}")
-		bldr.append(f"last_scanned: {subreddit.last_scanned}")
-		bldr.append(f"date_enabled: {subreddit.date_enabled}")
-		bldr.append(f"tag_enabled: {subreddit.tag_enabled}")
-		bldr.append(f"no_comment: {subreddit.no_comment}")
-		bldr.append(f"is_banned: {subreddit.is_banned}")
-		bldr.append(f"is_blacklisted: {subreddit.is_blacklisted}")
-		bldr.append(f"muted_until: {subreddit.muted_until}")
-		bldr.append(f"notice_threshold: {subreddit.notice_threshold}")
+		bldr.append(f"is_enabled: {subreddit.is_enabled}  \n")
+		bldr.append(f"posts_per_hour: {subreddit.posts_per_hour}  \n")
+		bldr.append(f"last_scanned: {subreddit.last_scanned}  \n")
+		bldr.append(f"date_enabled: {subreddit.date_enabled}  \n")
+		bldr.append(f"tag_enabled: {subreddit.tag_enabled}  \n")
+		bldr.append(f"no_comment: {subreddit.no_comment}  \n")
+		bldr.append(f"is_banned: {subreddit.is_banned}  \n")
+		bldr.append(f"is_blacklisted: {subreddit.is_blacklisted}  \n")
+		bldr.append(f"muted_until: {subreddit.muted_until}  \n")
+		bldr.append(f"notice_threshold: {subreddit.notice_threshold}  \n\n")
 
 		bldr.append(utils.build_message_link(
 			static.ACCOUNT_NAME, 'Add sub', f'addsubreddit r/{subreddit.name} subscribe', "Add subreddit"
 		))
+		bldr.append(f"  \n")
 		bldr.append(utils.build_message_link(
 			static.ACCOUNT_NAME, 'Remove sub', f'subredditremove r/{subreddit.name}', "Remove subreddit"
 		))
+		bldr.append(f"  \n")
 		bldr.append(utils.build_message_link(
 			static.ACCOUNT_NAME, 'Blacklist sub', f'subredditblacklist r/{subreddit.name}', "Blacklist subreddit"
 		))
+		bldr.append(f"  \n")
 		bldr.append(utils.build_message_link(
 			static.ACCOUNT_NAME, 'Mute sub', f'subredditmute r/{subreddit.name}', "Mute subreddit"
 		))
