@@ -284,8 +284,9 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	for submission, subreddit, submission_datetime in reversed(submissions_subreddits):
 		submission_ids_scanned.append(submission.id)
 		tag = None
+		submission_title = submission.title.replace("\n", "")
 		if subreddit.tag_enabled:
-			tag = utils.extract_tag_from_title(submission.title)
+			tag = utils.extract_tag_from_title(submission_title)
 
 		author = database.get_or_add_user(submission.author.name)
 		db_submission = Submission(
@@ -294,7 +295,7 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 			author=author,
 			subreddit=subreddit,
 			permalink=submission.permalink,
-			title=submission.title,
+			title=submission_title,
 			tag=tag
 		)
 		database.add_submission(db_submission)
