@@ -284,7 +284,9 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 	for submission, subreddit, submission_datetime in reversed(submissions_subreddits):
 		submission_ids_scanned.append(submission.id)
 		tag = None
-		submission_title = submission.title.replace("\n", "")
+		submission_title = None
+		if submission.title is not None:
+			submission_title = submission.title.replace("\n", "")
 		if subreddit.tag_enabled:
 			tag = utils.extract_tag_from_title(submission_title)
 

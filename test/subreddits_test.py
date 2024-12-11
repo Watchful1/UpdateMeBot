@@ -55,12 +55,12 @@ def bulk_sub_to(database, subreddit_name, author_name, subscriber_names, recurri
 
 def test_profile_subreddits(database, reddit):
 	reddit_subreddit = reddit_test.Subreddit("Subreddit1")
-	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=5))
-	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=6))
-	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=1, minutes=7))
-	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=1, minutes=8))
-	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=2, minutes=1))
-	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=3, minutes=2))
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=5), title="title1")
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=6), title="title2")
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=1, minutes=7), title="title3")
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=1, minutes=8), title="title4")
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=2, minutes=1), title="title5")
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(hours=3, minutes=2), title="title6")
 	reddit.add_subreddit(reddit_subreddit)
 	post_per_hour, updated_name = subreddits.subreddit_posts_per_hour(reddit, reddit_subreddit.display_name)
 	assert post_per_hour == 2
@@ -89,8 +89,8 @@ def test_scan_single_subreddit(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5)),
-			("Author2", timedelta(minutes=6))
+			("Author1", timedelta(minutes=5), "title1"),
+			("Author2", timedelta(minutes=6), "title2")
 		]
 	)
 	bulk_sub_to(
@@ -115,8 +115,8 @@ def test_scan_single_subreddit_multiple_times(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5)),
-			("Author2", timedelta(minutes=6))
+			("Author1", timedelta(minutes=5), "title1"),
+			("Author2", timedelta(minutes=6), "title2")
 		]
 	)
 	bulk_sub_to(
@@ -130,7 +130,7 @@ def test_scan_single_subreddit_multiple_times(database, reddit):
 	subreddits.scan_subreddits(reddit, database)
 	database.clear_all_notifications()
 
-	add_new_post_to_sub(reddit, reddit.subreddits["Subreddit1"], timedelta(minutes=2), "Author1")
+	add_new_post_to_sub(reddit, reddit.subreddits["Subreddit1"], timedelta(minutes=2), "Author1", title="title1")
 	subreddits.scan_subreddits(reddit, database)
 
 	notifications = database.get_pending_notifications()
@@ -143,15 +143,15 @@ def test_scan_multiple_subreddits(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5)),
-			("Author2", timedelta(minutes=7))
+			("Author1", timedelta(minutes=5), "title1"),
+			("Author2", timedelta(minutes=7), "title2")
 		]
 	)
 	create_sub_with_posts(
 		database, reddit, "Subreddit2",
 		[
-			("Author2", timedelta(minutes=6)),
-			("Author3", timedelta(minutes=8))
+			("Author2", timedelta(minutes=6), "title3"),
+			("Author3", timedelta(minutes=8), "title4")
 		]
 	)
 	bulk_sub_to(database, "Subreddit1", "Author1", ["User1"])
@@ -166,16 +166,16 @@ def test_scan_multiple_subreddit_groups(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5)),
-			("Author2", timedelta(minutes=7))
+			("Author1", timedelta(minutes=5), "title1"),
+			("Author2", timedelta(minutes=7), "title2")
 		],
 		posts_per_hour=30
 	)
 	create_sub_with_posts(
 		database, reddit, "Subreddit2",
 		[
-			("Author2", timedelta(minutes=6)),
-			("Author3", timedelta(minutes=8))
+			("Author2", timedelta(minutes=6), "title3"),
+			("Author3", timedelta(minutes=8), "title4")
 		],
 		posts_per_hour=30
 	)
@@ -191,15 +191,15 @@ def test_scan_multiple_subreddits_split(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5)),
-			("Author2", timedelta(minutes=7))
+			("Author1", timedelta(minutes=5), "title1"),
+			("Author2", timedelta(minutes=7), "title2")
 		]
 	)
 	create_sub_with_posts(
 		database, reddit, "Subreddit2",
 		[
-			("Author2", timedelta(minutes=6)),
-			("Author3", timedelta(minutes=8))
+			("Author2", timedelta(minutes=6), "title3"),
+			("Author3", timedelta(minutes=8), "title4")
 		],
 		last_scanned=utils.datetime_now() - timedelta(hours=2)
 	)
@@ -213,8 +213,8 @@ def test_scan_multiple_subreddits_split(database, reddit):
 
 def test_scan_subreddit_flair_blacklist(database, reddit):
 	reddit_subreddit = Subreddit("Subreddit1")
-	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=5), "Author1", flair="meta")
-	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=6), "Author2")
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=5), "Author1", flair="meta", title="title1")
+	add_new_post_to_sub(reddit, reddit_subreddit, timedelta(minutes=6), "Author2", title="title2")
 	reddit.add_subreddit(reddit_subreddit)
 	db_subreddit = database.get_or_add_subreddit("Subreddit1")
 	db_subreddit.last_scanned = utils.datetime_now() - timedelta(minutes=30)
@@ -237,8 +237,8 @@ def test_scan_subreddit_post_prompt_all(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5)),
-			("Author2", timedelta(minutes=7))
+			("Author1", timedelta(minutes=5), "title1"),
+			("Author2", timedelta(minutes=7), "title2")
 		]
 	)
 	db_subreddit = database.get_or_add_subreddit("Subreddit1")
@@ -260,8 +260,8 @@ def test_scan_subreddit_post_prompt_specific_author(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5)),
-			("Author2", timedelta(minutes=7))
+			("Author1", timedelta(minutes=5), "title1"),
+			("Author2", timedelta(minutes=7), "title2")
 		]
 	)
 	author1 = database.get_or_add_user("Author1")
@@ -283,7 +283,7 @@ def test_scan_subreddit_tag(database, reddit):
 		database, reddit, "Subreddit1",
 		[
 			("Author1", timedelta(minutes=5), "[Story1] part 7"),
-			("Author2", timedelta(minutes=7))
+			("Author2", timedelta(minutes=7), "title2")
 		]
 	)
 	subreddit = database.get_subreddit("Subreddit1")
@@ -328,8 +328,8 @@ def test_scan_single_all_subscription_subreddit(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5)),
-			("Author2", timedelta(minutes=6))
+			("Author1", timedelta(minutes=5), "title1"),
+			("Author2", timedelta(minutes=6), "title2")
 		]
 	)
 	bulk_sub_to(
@@ -365,7 +365,7 @@ def test_scan_single_subreddit_multiple_times_same_author(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5))
+			("Author1", timedelta(minutes=5), "title1")
 		]
 	)
 	bulk_sub_to(
@@ -380,7 +380,7 @@ def test_scan_single_subreddit_multiple_times_same_author(database, reddit):
 	subreddits.scan_subreddits(reddit, database)
 	assert len(database.get_pending_notifications()) == 2
 
-	add_new_post_to_sub(reddit, reddit.subreddits["Subreddit1"], timedelta(minutes=2), "Author1")
+	add_new_post_to_sub(reddit, reddit.subreddits["Subreddit1"], timedelta(minutes=2), "Author1", title="title1")
 	subreddits.scan_subreddits(reddit, database)
 
 	notifications = database.get_pending_notifications()
@@ -416,7 +416,7 @@ def test_rescan_delete(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5))
+			("Author1", timedelta(minutes=5), "title1")
 		]
 	)
 	subreddits.scan_subreddits(reddit, database)
@@ -437,8 +437,8 @@ def test_rescan_delete_notifications(database, reddit):
 	create_sub_with_posts(
 		database, reddit, "Subreddit1",
 		[
-			("Author1", timedelta(minutes=5)),
-			("Author2", timedelta(minutes=5))
+			("Author1", timedelta(minutes=5), "title1"),
+			("Author2", timedelta(minutes=5), "title2")
 		],
 		add_comments=True
 	)
