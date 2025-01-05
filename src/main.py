@@ -142,7 +142,7 @@ if __name__ == "__main__":
 			utils.process_error(f"Error rechecking submissions", err, traceback.format_exc())
 			errors += 1
 
-		if utils.time_offset(last_comments, minutes=30):
+		if (actions < 10 and utils.time_offset(last_comments, minutes=10)) or utils.time_offset(last_comments, minutes=30):
 			try:
 				actions += comments.update_comments(reddit, database)
 				last_comments = utils.datetime_now()
