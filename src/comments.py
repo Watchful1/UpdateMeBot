@@ -1,5 +1,6 @@
 import discord_logging
 import traceback
+import re
 from datetime import datetime
 
 log = discord_logging.get_logger()
@@ -25,6 +26,7 @@ def process_comment(comment, reddit, database, count_string=""):
 	log.info(f"{count_string}: Processing comment {comment.id} from u/{comment.author}")
 	body = comment.body.lower().strip()
 	use_tag = True
+
 	if static.TRIGGER_SUBSCRIBE_LOWER in body:
 		log.debug("Subscription comment")
 		recurring = True
@@ -38,6 +40,21 @@ def process_comment(comment, reddit, database, count_string=""):
 	else:
 		log.debug("Command not in comment")
 		return
+
+	subscribe_regex_match = static.REGEX_TRIGGER_SUBSCRIBE.search(body) is not None
+	update_regex_match = static.REGEX_TRIGGER_UPDATE.search(body) is not None
+
+	mismatch = False
+	if recurring and not subscribe_regex_match:
+		mismatch = True
+	elif not recurring and subscribe_regex_match:
+		mismatch = True
+	elif recurring and update_regex_match:
+		mismatch = True
+	elif not recurring and not update_regex_match:
+		mismatch = True
+	if mismatch:
+		log.warning(f"Trigger in comment doesn't match regex result: <https://www.reddit.com{comment.permalink}>")
 
 	comment_result = None
 	thread_id = id_from_fullname(comment.link_id)
