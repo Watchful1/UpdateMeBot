@@ -16,7 +16,7 @@ TRIGGER_SUBSCRIBE_ALL_LOWER = TRIGGER_SUBSCRIBE_ALL.lower()
 TRIGGER_COMBINED = "|".join([TRIGGER_UPDATE_LOWER, TRIGGER_SUBSCRIBE_LOWER, TRIGGER_SUBSCRIBE_ALL_LOWER])
 
 REGEX_TRIGGER_SUBSCRIBE = re.compile(r"\bsubscribeme\b", re.IGNORECASE)
-REGEX_TRIGGER_UPDATE = re.compile(r"\b(updateme)(bot)?\b", re.IGNORECASE)
+REGEX_TRIGGER_UPDATE = re.compile(r"\b(please)?(updateme)(bot)?\b", re.IGNORECASE)
 
 TRACKING_INFO_URL = "https://www.reddit.com/r/UpdateMeBot/comments/g86jrs/subreddit_tracking_info/"
 INFO_POST = "https://www.reddit.com/r/UpdateMeBot/comments/ggotgx/updatemebot_info_v20/"
