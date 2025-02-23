@@ -50,7 +50,10 @@ def process_comment(comment, reddit, database, count_string=""):
 	elif not recurring and subscribe_regex_match:
 		mismatch = True
 	elif recurring and update_regex_match:
-		mismatch = True
+		if static.TRIGGER_UPDATE_LOWER in body:
+			log.info("Both triggers in comment")
+		else:
+			mismatch = True
 	elif not recurring and not update_regex_match:
 		mismatch = True
 	if mismatch:
