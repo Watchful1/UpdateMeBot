@@ -57,7 +57,7 @@ def process_comment(comment, reddit, database, count_string=""):
 	elif not recurring and not update_regex_match:
 		mismatch = True
 	if mismatch:
-		log.warning(f"Trigger in comment doesn't match regex result: <https://www.reddit.com{comment.permalink}>")
+		log.info(f"Trigger in comment doesn't match regex result: <https://www.reddit.com{comment.permalink}>")
 
 	comment_result = None
 	thread_id = id_from_fullname(comment.link_id)
