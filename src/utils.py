@@ -199,3 +199,16 @@ def bldr_length(bldr):
 	for item in bldr:
 		length += len(item)
 	return length
+
+
+def reddit_link(subreddit, submission, comment=None, title=None, discord_escape=False):
+	result = ""
+	if comment is not None:
+		result = f"https://www.reddit.com/r/{subreddit}/comments/{submission}/_/{comment}"
+	else:
+		result = f"https://www.reddit.com/r/{subreddit}/comments/{submission}/_/"
+	if discord_escape:
+		result = f"<{result}>"
+	if title is not None:
+		result = f"[{title}]({result})"
+	return result

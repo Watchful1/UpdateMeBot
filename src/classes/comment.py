@@ -49,6 +49,9 @@ class DbComment(Base):
 	def __str__(self):
 		return f"{self.comment_id} : u/{self.subscriber.name}"
 
+	def get_link(self, title=None, discord_escape=False):
+		return utils.reddit_link(self.subreddit.name, self.submission.submission_id, self.comment_id, title, discord_escape)
+
 	def render_comment(self, count_subscriptions=1, comment_age_seconds=0):
 		bldr = utils.str_bldr()
 		if comment_age_seconds > (60 * 60):

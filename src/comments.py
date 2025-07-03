@@ -221,7 +221,7 @@ def update_comments(reddit, database):
 			try:
 				reddit.edit_comment(''.join(bldr), comment_id=db_comment.comment_id)
 			except Exception as err:
-				utils.process_error(f"Error updating comment: {db_comment.comment_id} : {err}", err, traceback.format_exc())
+				utils.process_error(f"Error updating comment: {db_comment.get_link(True)} : {err}", err, traceback.format_exc())
 				continue
 			db_comment.current_count = new_count
 
