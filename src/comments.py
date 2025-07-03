@@ -218,7 +218,11 @@ def update_comments(reddit, database):
 				f"{db_comment.comment_id} : {db_comment.current_count}/{new_count}")
 
 			bldr = utils.get_footer(db_comment.render_comment(count_subscriptions=new_count))
-			reddit.edit_comment(''.join(bldr), comment_id=db_comment.comment_id)
+			try:
+				reddit.edit_comment(''.join(bldr), comment_id=db_comment.comment_id)
+			except Exception as err:
+				utils.process_error(f"Error updating comment: {db_comment.comment_id} : {err}", err, traceback.format_exc())
+				continue
 			db_comment.current_count = new_count
 
 	else:
