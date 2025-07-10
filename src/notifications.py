@@ -51,9 +51,8 @@ def send_queued_notifications(reddit, database):
 				log.warning(f"Failure sending notification message to u/{notification.subscription.subscriber.name}")
 				log.info(f"Subject: {''.join(subject_bldr)}")
 				log.info(f"Body: {''.join(body_bldr)}")
-				counters.api_responses.labels(call='notif', type="ServerError").inc()
 				counters.errors.labels(type='api').inc()
-				continue
+				result = ReturnType.SERVER_ERROR
 			notification.submission.messages_sent += 1
 			if result != ReturnType.SUCCESS:
 				counters.api_responses.labels(call='notif', type=result.name.lower()).inc()

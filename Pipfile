@@ -9,9 +9,9 @@ pytest = "*"
 [packages]
 discord-logging = {git = "https://github.com/Watchful1/DiscordLogging.git"}
 sqlalchemy = "*"
-praw-wrapper = {git = "https://github.com/Watchful1/PrawWrapper.git"}
 prometheus-client = "*"
 requests = "*"
+praw-wrapper = {editable = true, git = "https://github.com/Watchful1/PrawWrapper.git"}
 
 [requires]
 python_version = "3.9"
