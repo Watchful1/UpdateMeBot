@@ -1,4 +1,5 @@
 import discord_logging
+import prawcore.exceptions
 
 log = discord_logging.get_logger()
 
@@ -44,7 +45,13 @@ def send_queued_notifications(reddit, database):
 
 			body_bldr = utils.get_footer(notification.render_notification(submissions))
 			subject_bldr = notification.render_subject()
-			result = reddit.send_message(notification.subscription.subscriber.name, ''.join(subject_bldr), ''.join(body_bldr))
+			try:
+				result = reddit.send_message(notification.subscription.subscriber.name, ''.join(subject_bldr), ''.join(body_bldr))
+			except prawcore.exceptions.ServerError:
+				log.warning(f"Failure sending notification message to u/{notification.subscription.subscriber.name}")
+				log.warning(f"Subject: {''.join(subject_bldr)}")
+				log.warning(f"Body: {''.join(body_bldr)}")
+				raise
 			notification.submission.messages_sent += 1
 			if result != ReturnType.SUCCESS:
 				counters.api_responses.labels(call='notif', type=result.name.lower()).inc()
