@@ -1,6 +1,6 @@
 import re
 
-USER_AGENT = "RemindMeBot (by /u/Watchful1)"
+USER_AGENT = "UpdateMeBot (by /u/Watchful1)"
 OWNER = "Watchful1"
 ACCOUNT_NAME = "Watchful1BotTest"
 DATABASE_NAME = "database.db"
