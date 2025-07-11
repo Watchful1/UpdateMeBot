@@ -166,7 +166,7 @@ def process_comment(comment, reddit, database, count_string=""):
 		bldr.append(result_message)
 		bldr = utils.get_footer(bldr)
 
-		result = reddit.send_message(subscriber.name, "UpdateMeBot Confirmation", ''.join(bldr))
+		result = reddit.send_message(subscriber.name, "UpdateMeBot Confirmation", ''.join(bldr), retry_seconds=300)
 		if result != ReturnType.SUCCESS:
 			if result == ReturnType.NOT_WHITELISTED_BY_USER_MESSAGE:
 				log.info(f"Unable to send message: {result.name}")

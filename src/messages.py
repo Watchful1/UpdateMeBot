@@ -486,7 +486,7 @@ def process_message(message, reddit, database, count_string=""):
 		replies.append(full_message)
 
 	for reply in replies:
-		result = reddit.reply_message(message, reply)
+		result = reddit.reply_message(message, reply, retry_seconds=300)
 		if result != ReturnType.SUCCESS:
 			counters.api_responses.labels(call='replmsg', type=result.name.lower()).inc()
 			if result == ReturnType.INVALID_USER:
