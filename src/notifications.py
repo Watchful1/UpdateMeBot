@@ -47,8 +47,8 @@ def send_queued_notifications(reddit, database):
 			subject_bldr = notification.render_subject()
 			try:
 				result = reddit.send_message(notification.subscription.subscriber.name, ''.join(subject_bldr), ''.join(body_bldr), retry_seconds=300)
-			except prawcore.exceptions.ServerError:
-				log.warning(f"Failure sending notification message to u/{notification.subscription.subscriber.name}")
+			except prawcore.exceptions.ServerError as err:
+				log.warning(f"Failure sending notification message to u/{notification.subscription.subscriber.name} : {err}")
 				log.info(f"Subject: {''.join(subject_bldr)}")
 				log.info(f"Body: {''.join(body_bldr)}")
 				counters.errors.labels(type='api').inc()
