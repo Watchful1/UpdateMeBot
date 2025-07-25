@@ -470,14 +470,14 @@ def process_message(message, reddit, database, count_string=""):
 	bldr.extend(utils.get_footer())
 	full_message = ''.join(bldr)
 	replies = []
-	if len(full_message) > 9500:
+	if len(full_message) > 8000:
 		partial_message = []
 		partial_length = 0
 		for line in full_message.split("\n"):
 			partial_message.append(line)
 			partial_message.append("\n")
 			partial_length += len(line) + 1
-			if partial_length > 9500:
+			if partial_length > 8000:
 				replies.append(''.join(partial_message))
 				partial_message = []
 				partial_length = 0
