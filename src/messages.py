@@ -495,6 +495,7 @@ def process_message(message, reddit, database, count_string=""):
 				log.info("User banned before reply could be sent")
 			elif result == ReturnType.SERVER_ERROR:
 				log.warning(f"Server error sending message. Sleeping in case it's transient. u/{message.author.name} : {message.id}")
+				log.info(reply)
 				time.sleep(60)
 			else:
 				raise ValueError(f"Error sending message: {result.name}")
