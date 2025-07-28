@@ -8,10 +8,11 @@ from praw_wrapper.reddit import ReturnType
 import utils
 
 
-def send_queued_notifications(reddit, database):
+def send_queued_notifications(reddit, database, disable_notifications=False):
 	count_pending_notifications = database.get_count_pending_notifications()
 	counters.queue.set(count_pending_notifications)
-	return 0
+	if disable_notifications:
+		return 0
 
 	notifications_sent = 0
 	if count_pending_notifications > 0:

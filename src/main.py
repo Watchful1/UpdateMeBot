@@ -57,6 +57,8 @@ if __name__ == "__main__":
 	parser.add_argument("--ingest_db", help="The location of the ingest database file", default=None)
 	parser.add_argument(
 		"--no_profile", help="Don't run the profile process", action='store_const', const=True, default=False)
+	parser.add_argument(
+		"--disable_notifications", help="Don't send notifications", action='store_const', const=True, default=False)
 	args = parser.parse_args()
 
 	counters.init(8000)
@@ -118,7 +120,7 @@ if __name__ == "__main__":
 			errors += 1
 
 		try:
-			actions += notifications.send_queued_notifications(reddit, database)
+			actions += notifications.send_queued_notifications(reddit, database, args.disable_notifications)
 		except Exception as err:
 			utils.process_error(f"Error sending notifications", err, traceback.format_exc())
 			errors += 1
