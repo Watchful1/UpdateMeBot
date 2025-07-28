@@ -11,6 +11,7 @@ import utils
 def send_queued_notifications(reddit, database):
 	count_pending_notifications = database.get_count_pending_notifications()
 	counters.queue.set(count_pending_notifications)
+	return 0
 
 	notifications_sent = 0
 	if count_pending_notifications > 0:

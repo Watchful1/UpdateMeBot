@@ -117,11 +117,11 @@ if __name__ == "__main__":
 			utils.process_error(f"Error processing comments", err, traceback.format_exc())
 			errors += 1
 
-		# try:
-		# 	actions += notifications.send_queued_notifications(reddit, database)
-		# except Exception as err:
-		# 	utils.process_error(f"Error sending notifications", err, traceback.format_exc())
-		# 	errors += 1
+		try:
+			actions += notifications.send_queued_notifications(reddit, database)
+		except Exception as err:
+			utils.process_error(f"Error sending notifications", err, traceback.format_exc())
+			errors += 1
 
 		if not args.no_profile:
 			try:
