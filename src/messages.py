@@ -418,6 +418,18 @@ def line_info(line, bldr, database):
 		))
 
 
+def line_hello(line, user, bldr, database, reddit):
+	if line.startswith("short"):
+		user.short_notifs = True
+		log.info("Change to short notifs")
+		bldr.append("You'll now get shortened notifications. Reply `long` to revert this")
+
+	elif line.startswith("long"):
+		user.short_notifs = False
+		log.info("Change to long notifs")
+		bldr.append("You'll now get normal notifications. Reply `short` to revert this")
+
+
 def process_message(message, reddit, database, count_string=""):
 	log.info(f"{count_string}: Message u/{message.author.name} : {message.id}")
 	user = database.get_or_add_user(message.author.name)
@@ -442,6 +454,8 @@ def process_message(message, reddit, database, count_string=""):
 			append_list = True
 		elif line.startswith("short") or line.startswith("long"):
 			line_abbrev(line, user, bldr, database, reddit)
+		elif line.startswith("hello"):
+			bldr.append("Hello back!")
 		elif user.name == static.OWNER:
 			if line.startswith("addsubreddit"):
 				line_add_sub(line, bldr, database)
