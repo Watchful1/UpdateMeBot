@@ -31,7 +31,9 @@ class Notification(Base):
 
 	def render_subject(self):
 		bldr = utils.str_bldr()
-		bldr.append("UpdateMeBot Here! Post by u/")
+		if not self.subscription.subscriber.short_notifs:
+			bldr.append("UpdateMeBot Here! ")
+		bldr.append("Post by u/")
 		bldr.append(self.submission.author.name)
 		bldr.append(" in r/")
 		bldr.append(self.submission.subreddit.name)
