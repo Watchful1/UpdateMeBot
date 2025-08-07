@@ -33,8 +33,9 @@ class Database(
 	_DatabaseNotification,
 	_DatabaseStats
 ):
-	def __init__(self, debug=False, publish=False, log_debug=True, override_path=None):
-		log.info(f"Initializing database class: debug={debug} publish={publish}")
+	def __init__(self, debug=False, publish=False, log_debug=True, override_path=None, quiet=False):
+		if not quiet:
+			log.info(f"Initializing database class: debug={debug} publish={publish}")
 		self.debug = debug
 		self.log_debug = log_debug
 		self.path = override_path if override_path is not None else static.DATABASE_NAME

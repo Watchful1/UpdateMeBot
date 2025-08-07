@@ -1,3 +1,5 @@
+import time
+
 import discord_logging
 import traceback
 import re
@@ -416,6 +418,18 @@ def line_info(line, bldr, database):
 		))
 
 
+def line_hello(line, user, bldr, database, reddit):
+	if line.startswith("short"):
+		user.short_notifs = True
+		log.info("Change to short notifs")
+		bldr.append("You'll now get shortened notifications. Reply `long` to revert this")
+
+	elif line.startswith("long"):
+		user.short_notifs = False
+		log.info("Change to long notifs")
+		bldr.append("You'll now get normal notifications. Reply `short` to revert this")
+
+
 def process_message(message, reddit, database, count_string=""):
 	log.info(f"{count_string}: Message u/{message.author.name} : {message.id}")
 	user = database.get_or_add_user(message.author.name)
@@ -440,6 +454,8 @@ def process_message(message, reddit, database, count_string=""):
 			append_list = True
 		elif line.startswith("short") or line.startswith("long"):
 			line_abbrev(line, user, bldr, database, reddit)
+		elif line.startswith("hello"):
+			bldr.append("Hello back!")
 		elif user.name == static.OWNER:
 			if line.startswith("addsubreddit"):
 				line_add_sub(line, bldr, database)
@@ -468,14 +484,14 @@ def process_message(message, reddit, database, count_string=""):
 	bldr.extend(utils.get_footer())
 	full_message = ''.join(bldr)
 	replies = []
-	if len(full_message) > 9500:
+	if len(full_message) > 8000:
 		partial_message = []
 		partial_length = 0
 		for line in full_message.split("\n"):
 			partial_message.append(line)
 			partial_message.append("\n")
 			partial_length += len(line) + 1
-			if partial_length > 9500:
+			if partial_length > 8000:
 				replies.append(''.join(partial_message))
 				partial_message = []
 				partial_length = 0
@@ -491,6 +507,10 @@ def process_message(message, reddit, database, count_string=""):
 			counters.api_responses.labels(call='replmsg', type=result.name.lower()).inc()
 			if result == ReturnType.INVALID_USER:
 				log.info("User banned before reply could be sent")
+			elif result == ReturnType.SERVER_ERROR:
+				log.warning(f"Server error sending message. Sleeping in case it's transient. u/{message.author.name} : {message.id}")
+				log.info(reply)
+				time.sleep(60)
 			else:
 				raise ValueError(f"Error sending message: {result.name}")
 

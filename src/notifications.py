@@ -8,9 +8,11 @@ from praw_wrapper.reddit import ReturnType
 import utils
 
 
-def send_queued_notifications(reddit, database):
+def send_queued_notifications(reddit, database, disable_notifications=False):
 	count_pending_notifications = database.get_count_pending_notifications()
 	counters.queue.set(count_pending_notifications)
+	if disable_notifications:
+		return 0
 
 	notifications_sent = 0
 	if count_pending_notifications > 0:
@@ -45,14 +47,7 @@ def send_queued_notifications(reddit, database):
 
 			body_bldr = utils.get_footer(notification.render_notification(submissions))
 			subject_bldr = notification.render_subject()
-			try:
-				result = reddit.send_message(notification.subscription.subscriber.name, ''.join(subject_bldr), ''.join(body_bldr), retry_seconds=300)
-			except prawcore.exceptions.ServerError as err:
-				log.warning(f"Failure sending notification message to u/{notification.subscription.subscriber.name} : {err}")
-				log.info(f"Subject: {''.join(subject_bldr)}")
-				log.info(f"Body: {''.join(body_bldr)}")
-				counters.errors.labels(type='api').inc()
-				result = ReturnType.SERVER_ERROR
+			result = reddit.send_message(notification.subscription.subscriber.name, ''.join(subject_bldr), ''.join(body_bldr), retry_seconds=300)
 			notification.submission.messages_sent += 1
 			if result != ReturnType.SUCCESS:
 				counters.api_responses.labels(call='notif', type=result.name.lower()).inc()
@@ -64,6 +59,9 @@ def send_queued_notifications(reddit, database):
 				log.info(f"User blocked notification message: u/{notification.subscription.subscriber.name}")
 			elif result in [ReturnType.PM_MODERATOR_RESTRICTION]:
 				log.warning(f"User moderator filter blocked notification message: u/{notification.subscription.subscriber.name}")
+			elif result in [ReturnType.SERVER_ERROR]:
+				log.warning(f"Failure sending notification message to u/{notification.subscription.subscriber.name}")
+				counters.errors.labels(type='api').inc()
 			else:
 				if notification.subscription.subscriber.first_failure is not None:
 					notification.subscription.subscriber.first_failure = None
