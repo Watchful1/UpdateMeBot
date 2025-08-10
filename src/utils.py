@@ -212,3 +212,9 @@ def reddit_link(subreddit, submission, comment=None, title=None, discord_escape=
 	if title is not None:
 		result = f"[{title}]({result})"
 	return result
+
+
+def escape_username(username):
+	if username is None:
+		return None
+	return username.replace("_", "\_")

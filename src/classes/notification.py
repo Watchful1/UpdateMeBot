@@ -55,7 +55,7 @@ class Notification(Base):
 		target_is_author = self.subscription.author is not None and self.subscription.author == self.subscription.subscriber
 		if not target_is_author and self.subscription.subscriber.short_notifs:
 			bldr.append("New thread from u/")
-			bldr.append(self.submission.author.name)
+			bldr.append(utils.escape_username(self.submission.author.name))
 			if self.submission.tag is not None:
 				bldr.append(" with the tag <")
 				bldr.append(self.submission.tag)
