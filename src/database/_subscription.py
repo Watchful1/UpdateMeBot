@@ -63,7 +63,7 @@ class _DatabaseSubscriptions:
 
 	def get_count_subscriptions_for_subreddit(self, subreddit):
 		if self.log_debug:
-			log.debug(f"Fetching count subscriptions for subreddit: {subreddit}")
+			log.debug(f"Fetching count subscriptions for subreddit: {subreddit.name}")
 
 		count_subscriptions = self.session.query(Subscription)\
 			.filter(Subscription.subreddit == subreddit)\

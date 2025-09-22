@@ -275,7 +275,8 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 		error_string = "redirect"
 	if error_string is not None:
 		if len(subreddit_names) == 1:
-			count_subs = database.get_count_subscriptions_for_subreddit(group_string)
+			db_subreddit = database.get_subreddit(group_string)
+			count_subs = database.get_count_subscriptions_for_subreddit(db_subreddit)
 			log.warning(f"Got {error_string} for subreddit {count_subs}: r/{group_string} : {get_blacklist_mute_message(group_string)}")
 			return True
 		else:
