@@ -56,6 +56,9 @@ def subreddit_posts_per_hour(reddit, subreddit_name):
 	except prawcore.exceptions.Forbidden:
 		log.info(f"Subreddit r/{subreddit_name} forbidden when profiling")
 		return -2, updated_name
+	except prawcore.exceptions.ServerError:
+		log.info(f"Subreddit r/{subreddit_name} server error when profiling")
+		return -3, updated_name
 
 	if count == 0:
 		return 1, updated_name
@@ -76,6 +79,15 @@ def profile_subreddits(reddit, database, limit=10):
 			posts_per_hour, updated_name = subreddit_posts_per_hour(reddit, subreddit.name)
 			if updated_name is not None:
 				subreddit.name = updated_name
+			if posts_per_hour == -3:
+				if subreddit.name.startswith('u_'):
+					if subreddit.is_enabled:
+						count_subs = database.get_count_subscriptions_for_subreddit(subreddit)
+						log.warning(f"Enabled user subreddit returned server error: r/{subreddit.name} : {count_subs} : {get_blacklist_mute_message(subreddit.name)}")
+					else:
+						log.info(f"Non-enabled user subreddit returned server error, blacklisting")
+						subreddit.is_blacklisted = True
+				continue
 			if posts_per_hour == -2:
 				if not reddit.quarantine_opt_in(subreddit.name):
 					if subreddit.last_profiled is None or subreddit.last_profiled - timedelta(days=120) > utils.datetime_now():
