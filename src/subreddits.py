@@ -285,6 +285,8 @@ def scan_subreddit_group(database, reddit, subreddits, submission_ids_scanned):
 		error_string = "not found"
 	except prawcore.exceptions.Redirect:
 		error_string = "redirect"
+	except prawcore.exceptions.ServerError:
+		error_string = "servererror"
 	if error_string is not None:
 		if len(subreddit_names) == 1:
 			db_subreddit = database.get_subreddit(group_string)
