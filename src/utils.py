@@ -197,7 +197,7 @@ def str_bldr():
 def bldr_length(bldr):
 	length = 0
 	for item in bldr:
-		length += len(item)
+		length += len(item.encode('utf-8'))
 	return length
 
 
