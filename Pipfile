@@ -14,4 +14,3 @@ requests = "*"
 praw-wrapper = {editable = true, git = "https://github.com/Watchful1/PrawWrapper.git"}
 
 [requires]
-python_version = "3.9"
