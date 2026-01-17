@@ -42,7 +42,7 @@ class Notification(Base):
 			bldr.append(": ")
 
 			characters_available = 85 - utils.bldr_length(bldr)
-			if len(self.submission.title) > characters_available:
+			if len(self.submission.title.encode('utf-8')) > characters_available:
 				bldr.append(self.submission.title[:characters_available-3])
 				bldr.append("...")
 			else:
