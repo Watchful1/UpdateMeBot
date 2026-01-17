@@ -41,9 +41,10 @@ class Notification(Base):
 		if self.submission.title is not None:
 			bldr.append(": ")
 
+
 			characters_available = 85 - utils.bldr_length(bldr)
 			if len(self.submission.title.encode('utf-8')) > characters_available:
-				bldr.append(self.submission.title[:characters_available-3])
+				bldr.append(self.submission.title.encode('utf-8')[:characters_available-3].decode('utf-8', 'ignore'))
 				bldr.append("...")
 			else:
 				bldr.append(self.submission.title)
