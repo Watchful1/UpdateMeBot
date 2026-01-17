@@ -64,8 +64,8 @@ def send_queued_notifications(reddit, database, disable_notifications=False):
 				counters.errors.labels(type='api').inc()
 			elif result in [ReturnType.TOO_LONG]:
 				log.warning(f"Could not send message to user, something was too long: u/{notification.subscription.subscriber.name}")
-				log.warning(f"Subject: {(''.join(subject_bldr))}")
-				log.warning(f"Body: {(''.join(body_bldr))}")
+				log.warning(f"Subject of length {(utils.bldr_length(subject_bldr))}: {(''.join(subject_bldr))}")
+				log.warning(f"Body of length {(utils.bldr_length(body_bldr))}: {(''.join(body_bldr))}")
 				continue
 			else:
 				if notification.subscription.subscriber.first_failure is not None:
