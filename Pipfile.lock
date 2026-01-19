@@ -242,12 +242,12 @@
         },
         "prometheus-client": {
             "hashes": [
-                "sha256:287629d00b147a32dcb2be0b9df905da599b2d82f80377083ec8463309a4bb89",
-                "sha256:cde524a85bce83ca359cc837f28b8c0db5cac7aa653a588fd7e84ba061c329e7"
+                "sha256:190f1331e783cf21eb60bca559354e0a4d4378facecf78f5428c39b675d20d28",
+                "sha256:cca895342e308174341b2cbf99a56bef291fbc0ef7b9e5412a0f26d653ba7094"
             ],
             "index": "pypi",
-            "markers": "python_version >= '3.8'",
-            "version": "==0.20.0"
+            "markers": "python_version >= '3.9'",
+            "version": "==0.22.1"
         },
         "requests": {
             "hashes": [
