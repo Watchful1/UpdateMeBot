@@ -13,3 +13,7 @@ Comments with trigger words come from a separate ingest process (not in this rep
 ## Tech
 
 Python, SQLAlchemy on SQLite, and PRAW through [PrawWrapper](https://github.com/Watchful1/PrawWrapper), which also gives the pytest suite a fake Reddit to run against. Errors get posted to Discord with [DiscordLogging](https://github.com/Watchful1/DiscordLogging), and it exports Prometheus metrics.
+
+## License
+
+This code is published for reference. All rights reserved; please don't run your own copy of the bot.
