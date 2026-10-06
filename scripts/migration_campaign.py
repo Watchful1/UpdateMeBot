@@ -13,8 +13,10 @@ Two steps, both run on the bot server:
           anyone already done is skipped, transient failures are retried.
 
             python scripts/migration_campaign.py send UpdateMeBot campaign.csv sent.csv --dry-run 5
-            python scripts/migration_campaign.py send UpdateMeBot campaign.csv sent.csv --limit 1000
-            python scripts/migration_campaign.py send UpdateMeBot campaign.csv sent.csv
+            python scripts/migration_campaign.py send UpdateMeBot campaign.csv sent.csv --go --limit 1000
+            python scripts/migration_campaign.py send UpdateMeBot campaign.csv sent.csv --go
+
+          Without --go or --dry-run, send only reports how many are left.
 
 Who gets one (the decisions behind these are in the devvit-apps repo,
 docs/apps/updateme-migration-state.md and scripts/outreach/):
@@ -149,6 +151,9 @@ def send(args):
 			subject, body = migration_message.render(remaining, opted_out)
 			print(f"--- to u/{username}\nSubject: {subject}\n\n{body}\n")
 		return
+	if not args.go:
+		log.info("Nothing sent: pass --go to send for real, or --dry-run N to preview")
+		return
 
 	reddit = praw_wrapper.Reddit(args.user, prefix=args.prefix, user_agent="UpdateMeBot migration notice")
 	new_log = not os.path.exists(args.log)
@@ -211,6 +216,7 @@ if __name__ == "__main__":
 	s.add_argument("--limit", type=int, default=None, help="Send at most this many, then stop")
 	s.add_argument("--delay", type=float, default=0, help="Seconds to sleep between sends")
 	s.add_argument("--dry-run", type=int, default=0, metavar="N", help="Print N rendered messages, send nothing")
+	s.add_argument("--go", action="store_true", help="Actually send. Without it, send only reports what's left")
 
 	parsed = parser.parse_args()
 	build(parsed) if parsed.command == "build" else send(parsed)
