@@ -4,6 +4,7 @@ import prawcore.exceptions
 log = discord_logging.get_logger()
 
 import counters
+import migration
 from praw_wrapper.reddit import ReturnType
 import utils
 
@@ -45,7 +46,12 @@ def send_queued_notifications(reddit, database, disable_notifications=False):
 				notification.submission.id,
 				3)
 
-			body_bldr = utils.get_footer(notification.render_notification(submissions))
+			body_bldr = notification.render_notification(submissions)
+			notice = migration.get_notice(notification.submission.subreddit.name)
+			if notice is not None:
+				body_bldr.append("\n\n")
+				body_bldr.append(notice)
+			body_bldr = utils.get_footer(body_bldr)
 			subject_bldr = notification.render_subject()
 			result = reddit.send_message(notification.subscription.subscriber.name, ''.join(subject_bldr), ''.join(body_bldr), retry_seconds=300)
 			notification.submission.messages_sent += 1

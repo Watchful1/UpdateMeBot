@@ -23,6 +23,7 @@ import subreddits
 import notifications
 import utils
 import stats
+import migration
 
 
 database = None
@@ -72,6 +73,7 @@ if __name__ == "__main__":
 	reddit = praw_wrapper.Reddit(args.user, args.no_post, user_agent=static.USER_AGENT)
 	static.ACCOUNT_NAME = reddit.username
 	database = Database(debug=args.debug_db)
+	migration.init(praw_wrapper.reddit.get_config().get(args.user, "updateme_api_key", fallback=None))
 
 	ingest_database = None
 	if args.ingest_db:
@@ -118,6 +120,10 @@ if __name__ == "__main__":
 		except Exception as err:
 			utils.process_error(f"Error processing comments", err, traceback.format_exc())
 			errors += 1
+
+		# Its own error handling: a failed fetch keeps the last status, and never
+		# counts toward the error backoff.
+		migration.refresh()
 
 		try:
 			actions += notifications.send_queued_notifications(reddit, database, args.disable_notifications)

@@ -24,3 +24,13 @@ NEW_POST = "https://www.reddit.com/r/UpdateMeBot/comments/juh0f8/new_features_ti
 ABBREV_POST = "https://www.reddit.com/r/UpdateMeBot/comments/jyj02k/abbreviated_notifications_setting/"
 
 STAT_MINIMUM = 10
+
+# The Devvit migration notice, appended to notifications from subreddits that
+# haven't installed the new app (see migration.py). Wording pending admin
+# approval; {subreddit} is the post's subreddit name, {link} the announcement.
+MIGRATION_STATUS_URL = "https://reddit.watchful.gr/api/v1/updateme/migration-status"
+MIGRATION_POST = "https://www.reddit.com/r/UpdateMeBot/comments/1w0fnmb/uupdatemebot_is_moving_to_a_devvit_app/"
+MIGRATION_NOTICE = \
+	"**UpdateMeBot is moving to Reddit's developer platform soon, and r/{subreddit} hasn't installed it yet. " \
+	"If that doesn't change, notifications for posts in r/{subreddit} will stop.**"
+MIGRATION_INSTALL_ASK = "If you're a moderator of r/{subreddit}, the details explain how to install it."
