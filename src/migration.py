@@ -46,19 +46,25 @@ def set_status(installed, opted_out, fetched_at):
 	counters.objects.labels(type="migration_opted_out").set(len(_opted_out))
 
 
+def fetch_status(api_key):
+	"""(installed, opted_out) as lowercase name sets. Raises on any failure."""
+	response = requests.get(
+		static.MIGRATION_STATUS_URL,
+		headers={'Authorization': f"Bearer {api_key}", 'User-Agent': static.USER_AGENT},
+		timeout=10)
+	response.raise_for_status()
+	data = response.json()
+	return set(n.lower() for n in data['installed']), set(n.lower() for n in data['optedOut'])
+
+
 def refresh():
 	global _last_attempt
 	if _api_key is None or not utils.time_offset(_last_attempt, seconds=int(POLL_EVERY.total_seconds())):
 		return
 	_last_attempt = utils.datetime_now()
 	try:
-		response = requests.get(
-			static.MIGRATION_STATUS_URL,
-			headers={'Authorization': f"Bearer {_api_key}", 'User-Agent': static.USER_AGENT},
-			timeout=10)
-		response.raise_for_status()
-		data = response.json()
-		set_status(data['installed'], data['optedOut'], utils.datetime_now())
+		installed, opted_out = fetch_status(_api_key)
+		set_status(installed, opted_out, utils.datetime_now())
 		log.debug(f"Migration status: {len(_installed)} installed, {len(_opted_out)} opted out")
 	except Exception as err:
 		utils.process_error("Error fetching migration status, keeping the last one", err, traceback.format_exc())
