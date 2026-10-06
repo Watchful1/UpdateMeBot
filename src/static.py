@@ -27,10 +27,21 @@ STAT_MINIMUM = 10
 
 # The Devvit migration notice, appended to notifications from subreddits that
 # haven't installed the new app (see migration.py). Wording pending admin
-# approval; {subreddit} is the post's subreddit name, {link} the announcement.
+# approval. {subreddit} is the post's subreddit, {author} a profile's owner,
+# {link} the announcement post.
 MIGRATION_STATUS_URL = "https://reddit.watchful.gr/api/v1/updateme/migration-status"
 MIGRATION_POST = "https://www.reddit.com/r/UpdateMeBot/comments/1w0fnmb/uupdatemebot_is_moving_to_a_devvit_app/"
 MIGRATION_NOTICE = \
-	"**UpdateMeBot is moving to Reddit's developer platform soon, and r/{subreddit} hasn't installed it yet. " \
-	"If that doesn't change, notifications for posts in r/{subreddit} will stop.**"
-MIGRATION_INSTALL_ASK = "If you're a moderator of r/{subreddit}, the details explain how to install it."
+	"**Your notifications for r/{subreddit} will stop soon.** UpdateMeBot is moving to Reddit's developer " \
+	"platform. Unlike the current bot, apps on the platform only work in subreddits whose moderators have " \
+	"installed them, and r/{subreddit} hasn't yet. Moderators can install it from [here]({link})."
+# Moderators who opted out asked not to be pointed at again: no install ask,
+# and "hasn't" rather than "hasn't yet".
+MIGRATION_NOTICE_OPTED_OUT = \
+	"**Your notifications for r/{subreddit} will stop soon.** UpdateMeBot is moving to Reddit's developer " \
+	"platform. Unlike the current bot, apps on the platform only work in subreddits whose moderators have " \
+	"installed them, and r/{subreddit} hasn't. [Details]({link})"
+# Profiles can't install the app at all.
+MIGRATION_NOTICE_PROFILE = \
+	"**Your notifications for u/{author}'s profile posts will stop soon.** UpdateMeBot is moving to Reddit's " \
+	"developer platform, and apps on the platform can't be installed on user profiles. [Details]({link})"

@@ -39,8 +39,8 @@ def test_no_notice_for_installed_subreddit(database, reddit):
 def test_notice_with_install_ask_for_uninstalled_subreddit(database, reddit):
 	migration.set_status(["othersub"], [], utils.datetime_now())
 	body = send_one(database, reddit, "Subreddit1")
-	assert "r/Subreddit1 hasn't installed it yet" in body
-	assert "If you're a moderator of r/Subreddit1" in body
+	assert "**Your notifications for r/Subreddit1 will stop soon.**" in body
+	assert "r/Subreddit1 hasn't yet. Moderators can install it from [here](" in body
 	# Above the footer table, not inside or below it
 	assert body.index("developer platform") < body.index("|[^(Info)]")
 
@@ -48,15 +48,17 @@ def test_notice_with_install_ask_for_uninstalled_subreddit(database, reddit):
 def test_opted_out_subreddit_gets_notice_without_install_ask(database, reddit):
 	migration.set_status([], ["subreddit1"], utils.datetime_now())
 	body = send_one(database, reddit, "Subreddit1")
-	assert "hasn't installed it yet" in body
-	assert "moderator" not in body
+	assert "**Your notifications for r/Subreddit1 will stop soon.**" in body
+	assert "r/Subreddit1 hasn't. [Details](" in body
+	assert "can install it" not in body
 
 
-def test_profile_gets_notice_without_install_ask(database, reddit):
+def test_profile_gets_profile_notice(database, reddit):
 	migration.set_status([], [], utils.datetime_now())
 	body = send_one(database, reddit, "u_Author1")
-	assert "hasn't installed it yet" in body
-	assert "moderator" not in body
+	assert "**Your notifications for u/Author1's profile posts will stop soon.**" in body
+	assert "can't be installed on user profiles" in body
+	assert "can install it" not in body
 
 
 def test_stale_status_adds_no_notice(database, reddit):

@@ -71,11 +71,8 @@ def get_notice(subreddit_name):
 	if name in _installed:
 		return None
 
-	bldr = [static.MIGRATION_NOTICE.format(subreddit=subreddit_name)]
-	# Profiles can't install the app, and opted-out moderators asked not to be
-	# pointed at again.
-	if name not in _opted_out and not name.startswith("u_"):
-		bldr.append(" ")
-		bldr.append(static.MIGRATION_INSTALL_ASK.format(subreddit=subreddit_name))
-	bldr.append(f" [Details]({static.MIGRATION_POST})")
-	return ''.join(bldr)
+	if name.startswith("u_"):
+		return static.MIGRATION_NOTICE_PROFILE.format(author=subreddit_name[2:], link=static.MIGRATION_POST)
+	if name in _opted_out:
+		return static.MIGRATION_NOTICE_OPTED_OUT.format(subreddit=subreddit_name, link=static.MIGRATION_POST)
+	return static.MIGRATION_NOTICE.format(subreddit=subreddit_name, link=static.MIGRATION_POST)
