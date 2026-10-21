@@ -50,13 +50,14 @@ MIGRATION_NOTICE_PROFILE = \
 # migration_message.py) to subscribers in subreddits that haven't installed.
 MIGRATION_MESSAGE_SUBJECT_ONE = "Your UpdateMeBot notifications for r/{subreddit} will stop soon"
 MIGRATION_MESSAGE_SUBJECT_MANY = "Your UpdateMeBot notifications for r/{subreddit} and {others} will stop soon"
+# Agreed with the admins 2026-10-21: no install ask aimed at moderators, since
+# users must not be nudged into messaging them.
 MIGRATION_MESSAGE_BODY = \
-	"Hi! You're subscribed with UpdateMeBot to new posts in **{listed}**.\n\n" \
+	"Hi! You use UpdateMeBot to get notified about new posts in **{listed}**.\n\n" \
 	"UpdateMeBot is moving to Reddit's developer platform soon. Unlike the current bot, apps on the platform " \
 	"only work in subreddits whose moderators have installed them, and {which} {hasnt}. When the switch " \
 	"happens, your notifications for posts {there} will stop.\n\n" \
 	"Subscriptions in subreddits that have installed it will keep working, and you don't need to do anything " \
 	"for those.\n\n" \
-	"{install_ask}" \
-	"Questions or feedback? Comment on the [announcement post]({link})."
-MIGRATION_MESSAGE_INSTALL_ASK = "Moderators can install it from [here]({link}).\n\n"
+	"More details, and a place for questions: [the announcement post]({link}). " \
+	"Replies to this message aren't read by a person."

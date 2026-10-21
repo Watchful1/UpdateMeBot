@@ -21,8 +21,8 @@ def render(subreddits, opted_out):
 	else:
 		listed = f"{', '.join(shown[:-1])} and {shown[-1]}"
 
-	# Opted-out moderators asked not to be pointed at again: drop the "yet" and
-	# the install ask when every subreddit in the message opted out.
+	# Opted-out moderators asked not to be pointed at again: drop the "yet" when
+	# every subreddit in the message opted out.
 	all_opted_out = all(name.lower() in opted_out for name in subreddits)
 	single = len(subreddits) == 1
 	if single:
@@ -42,6 +42,5 @@ def render(subreddits, opted_out):
 		which=which,
 		hasnt=hasnt,
 		there=there,
-		install_ask="" if all_opted_out else static.MIGRATION_MESSAGE_INSTALL_ASK.format(link=static.MIGRATION_POST),
 		link=static.MIGRATION_POST)
 	return subject, body
