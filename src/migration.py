@@ -79,6 +79,4 @@ def get_notice(subreddit_name):
 
 	if name.startswith("u_"):
 		return static.MIGRATION_NOTICE_PROFILE.format(author=subreddit_name[2:], link=static.MIGRATION_POST)
-	if name in _opted_out:
-		return static.MIGRATION_NOTICE_OPTED_OUT.format(subreddit=subreddit_name, link=static.MIGRATION_POST)
 	return static.MIGRATION_NOTICE.format(subreddit=subreddit_name, link=static.MIGRATION_POST)

@@ -3,47 +3,63 @@ import migration_message
 
 
 def test_single_subreddit():
-	subject, body = migration_message.render(["nosleep"], set())
+	subject, body = migration_message.render(["nosleep"])
 	assert subject == "Your UpdateMeBot notifications for r/nosleep will stop soon"
 	assert body.startswith("Hi! You use UpdateMeBot to get notified about new posts in **r/nosleep**.")
-	assert "and r/nosleep hasn't yet. When the switch happens, your notifications for posts there will stop." in body
-	assert f"[the announcement post]({static.MIGRATION_POST})" in body
-	assert body.endswith("Replies to this message aren't read by a person.")
-	# Never an install ask: users mustn't be nudged towards messaging moderators.
-	assert "install it from" not in body
+	assert "only work in subreddits where the app is installed. When the switch happens, " \
+		"your notifications for posts in r/nosleep will stop." in body
+	assert body.endswith(
+		f"ask questions on [the announcement post]({static.MIGRATION_POST}). Replies sent to this message aren't read by a person.")
+
+
+def test_nothing_asks_the_reader_to_act():
+	_, body = migration_message.render(["nosleep"])
+	for phrase in ("moderator", "install it", "resubscribe"):
+		assert phrase not in body.lower()
 
 
 def test_two_and_three_subreddits_are_listed_in_full():
-	subject, body = migration_message.render(["A", "B"], set())
+	subject, body = migration_message.render(["A", "B"])
 	assert subject == "Your UpdateMeBot notifications for r/A and 1 other subreddit will stop soon"
 	assert "**r/A and r/B**" in body
-	assert "these subreddits haven't yet" in body
-	assert "notifications for posts in them will stop" in body
+	assert "your notifications for posts in these subreddits will stop" in body
 
-	subject, body = migration_message.render(["A", "B", "C"], set())
+	subject, body = migration_message.render(["A", "B", "C"])
 	assert subject == "Your UpdateMeBot notifications for r/A and 2 other subreddits will stop soon"
 	assert "**r/A, r/B and r/C**" in body
 
 
 def test_long_lists_are_capped():
-	subject, body = migration_message.render(["A", "B", "C", "D", "E"], set())
+	subject, body = migration_message.render(["A", "B", "C", "D", "E"])
 	assert subject == "Your UpdateMeBot notifications for r/A and 4 other subreddits will stop soon"
 	assert "**r/A, r/B, r/C and 2 more**" in body
 
 
-def test_all_opted_out_drops_yet():
-	subject, body = migration_message.render(["Quiet"], {"quiet"})
-	assert "r/Quiet hasn't. When" in body
-
-	subject, body = migration_message.render(["Quiet", "Other"], {"quiet", "other"})
-	assert "these subreddits haven't. When" in body
-
-
-def test_partly_opted_out_keeps_yet():
-	subject, body = migration_message.render(["Quiet", "Open"], {"quiet"})
-	assert "these subreddits haven't yet" in body
+def test_profiles_read_as_the_authors_profile():
+	subject, body = migration_message.render(["u_SomeAuthor"])
+	assert subject == "Your UpdateMeBot notifications for u/SomeAuthor's profile will stop soon"
+	assert "posts in u/SomeAuthor's profile will stop" in body
 
 
 def test_subject_fits_reddits_limit_with_the_longest_names():
-	subject, _ = migration_message.render(["a" * 21, "b" * 21], set())
+	subject, _ = migration_message.render(["a" * 21, "b" * 21])
 	assert len(subject) <= 100
+
+
+def test_modmail_with_usage():
+	subject, body = migration_message.render_modmail("HFY", 38439, 691915)
+	assert subject == "About UpdateMeBot in r/HFY"
+	assert body.startswith("Hi r/HFY mods,\n\nI'm u/Watchful1, and I run UpdateMeBot.")
+	assert "38,439 people are subscribed to authors in r/HFY, and in the last 90 days the bot sent " \
+		"691,915 notifications for posts in your sub." in body
+	assert f"the instructions are [here]({static.MIGRATION_POST})" in body
+	assert "just reply to this message" in body
+
+
+def test_modmail_drops_the_usage_clause_below_the_minimum():
+	_, body = migration_message.render_modmail("legaladvice", 2100, static.MODMAIL_MIN_NOTIFICATIONS - 1)
+	assert "2,100 people are subscribed to authors in r/legaladvice.\n\n" in body
+	assert "notifications for posts in your sub" not in body
+	assert "once the switch happens, their notifications will stop" in body
+	_, body = migration_message.render_modmail("legaladvice", 2100, static.MODMAIL_MIN_NOTIFICATIONS)
+	assert "notifications for posts in your sub" in body
