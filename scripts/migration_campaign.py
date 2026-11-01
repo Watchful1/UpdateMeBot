@@ -26,9 +26,10 @@ Installs keep happening during the send, so send re-fetches the install list
 every 10 minutes and drops newly installed subreddits from each message; a
 person left with none is skipped.
 
-The bot itself sends notifications with the same account. --prefix picks a
-separate OAuth app from praw.ini ({prefix}client_id etc.) so the two don't
-share one rate limit.
+The bot itself sends notifications with the same account, so send paces itself
+to --per-minute (50 by default, half the API limit) and leaves the bot the rest.
+--prefix picks a separate OAuth app from praw.ini ({prefix}client_id etc.) if
+the two should have separate rate limits instead.
 """
 import argparse
 import csv
@@ -125,6 +126,7 @@ def send(args):
 	installed, fetched_at = None, None
 	started, sent = time.perf_counter(), 0
 	batch = todo[:args.limit] if args.limit else todo
+	interval, next_send = 60 / args.per_minute, time.perf_counter()
 	try:
 		for username, subs in batch:
 			if fetched_at is None or datetime.utcnow() - fetched_at > REFRESH_EVERY:
@@ -142,6 +144,9 @@ def send(args):
 				result = "SKIPPED_ALL_INSTALLED"
 			else:
 				subject, body = migration_message.render(remaining)
+				# The bot shares this account's rate limit, so leave it the rest
+				time.sleep(max(0.0, next_send - time.perf_counter()))
+				next_send = max(next_send + interval, time.perf_counter())
 				result = reddit.send_message(username, subject, body, retry_seconds=300).name
 				sent += 1
 			log_writer.writerow([username, result, ";".join(remaining), datetime.utcnow().isoformat(timespec="seconds")])
@@ -152,8 +157,6 @@ def send(args):
 			if sent and sent % 100 == 0:
 				per_minute = sent / ((time.perf_counter() - started) / 60)
 				log.info(f"{sent:,} sent, {per_minute:.0f}/min, about {(len(batch) - sent) / per_minute / 60:.1f} hours left")
-			if args.delay:
-				time.sleep(args.delay)
 	finally:
 		log_file.close()
 		log.info(f"Stopped after sending {sent:,}")
@@ -175,7 +178,7 @@ if __name__ == "__main__":
 	s.add_argument("log", help="Results log, appended to; reruns skip anyone done in it")
 	s.add_argument("--prefix", default=None, help="praw.ini key prefix for a separate OAuth app")
 	s.add_argument("--limit", type=int, default=None, help="Send to at most this many of the remaining people, then stop")
-	s.add_argument("--delay", type=float, default=0, help="Seconds to sleep between sends")
+	s.add_argument("--per-minute", type=float, default=50, help="Most messages to send in a minute (default 50)")
 	s.add_argument("--dry-run", type=int, default=0, metavar="N", help="Print N rendered messages, send nothing")
 	s.add_argument("--go", action="store_true", help="Actually send. Without it, send only reports what's left")
 
