@@ -13,14 +13,23 @@ subreddits that sent a notification in the last 90 days, profiles excluded.
           happen; a rerun retries anything that didn't succeed.
 
             python scripts/migration_modmail.py send Watchful1 modmail.csv modmail-sent.csv --dry-run 3
+            python scripts/migration_modmail.py send Watchful1 modmail.csv modmail-sent.csv --go --limit 10
             python scripts/migration_modmail.py send Watchful1 modmail.csv modmail-sent.csv --go
 
 The install list comes from db-service, using updateme_api_key from the
 praw.ini section named by --key-section (UpdateMeBot by default).
+
+u/Watchful1 isn't whitelisted for bulk messaging like the bot is, so send goes
+slowly (--delay, 30 seconds by default) and backs off when Reddit pushes back.
+When Reddit asks it to wait, it waits that long plus a margin and retries; a
+second rate limit in a row, a wait longer than MAX_WAIT, or MAX_ERRORS_IN_A_ROW
+failures of any kind stop the run. Nothing is logged for the subreddit it
+stopped on, so a rerun picks up from there.
 """
 import argparse
 import csv
 import os
+import re
 import sys
 import time
 from datetime import datetime
@@ -31,11 +40,51 @@ import discord_logging
 
 log = discord_logging.init_logging(backup_count=20)
 
+import praw.exceptions
 import praw_wrapper
 
 import migration
 import migration_audience
 import migration_message
+
+MAX_WAIT = 15 * 60
+MAX_ERRORS_IN_A_ROW = 3
+RATELIMIT_WAIT = re.compile(r"(\d+) (millisecond|second|minute)", re.IGNORECASE)
+UNIT_SECONDS = {"millisecond": 0.001, "second": 1, "minute": 60}
+
+
+class Stop(Exception):
+	pass
+
+
+def ratelimit_wait(err):
+	"""Seconds Reddit asked to wait, or None if err isn't a rate limit."""
+	if not isinstance(err, praw.exceptions.RedditAPIException):
+		return None
+	for item in err.items:
+		if item.error_type == "RATELIMIT":
+			match = RATELIMIT_WAIT.search(item.message or "")
+			# No duration in the message: treat it as too long to wait out
+			if match is None:
+				return MAX_WAIT + 1
+			return int(match.group(1)) * UNIT_SECONDS[match.group(2).lower()]
+	return None
+
+
+def deliver(subreddit, subject, body):
+	"""'SUCCESS' or an error string. Waits out one rate limit; raises Stop on a second."""
+	for attempt in range(2):
+		try:
+			subreddit.message(subject=subject, message=body)
+			return "SUCCESS"
+		except Exception as err:
+			wait = ratelimit_wait(err)
+			if wait is None:
+				return f"ERROR {type(err).__name__}: {err}"
+			if attempt > 0 or wait > MAX_WAIT:
+				raise Stop(f"Rate limited sending to r/{subreddit.display_name}: {err}")
+			log.warning(f"Rate limited, waiting {wait + 60:.0f} seconds: {err}")
+			time.sleep(wait + 60)
 
 
 def api_key_for(section):
@@ -80,26 +129,36 @@ def send(args):
 
 	reddit = praw_wrapper.Reddit(args.user, user_agent="UpdateMeBot migration modmail").reddit
 	new_log = not os.path.exists(args.log)
+	sent, errors_in_a_row = 0, 0
 	with open(args.log, "a", newline="", encoding="utf-8") as log_file:
 		writer = csv.writer(log_file)
 		if new_log:
 			writer.writerow(["subreddit", "result", "time"])
-		for name, subscribers, notifications in todo:
-			if name.lower() in installed:
-				result = "SKIPPED_INSTALLED"
-			else:
-				subject, body = migration_message.render_modmail(name, subscribers, notifications)
-				try:
-					# Keyword arguments: PRAW 8 made subject and message keyword-only
-					reddit.subreddit(name).message(subject=subject, message=body)
-					result = "SUCCESS"
-				except Exception as err:
-					result = f"ERROR {type(err).__name__}: {err}"
-					log.warning(f"r/{name}: {result}")
-				time.sleep(args.delay)
-			writer.writerow([name, result, datetime.utcnow().isoformat(timespec="seconds")])
-			log_file.flush()
-	log.info("Done")
+		try:
+			for name, subscribers, notifications in todo:
+				if args.limit and sent >= args.limit:
+					log.info(f"Reached --limit {args.limit}")
+					break
+				if name.lower() in installed:
+					result = "SKIPPED_INSTALLED"
+				else:
+					if sent or errors_in_a_row:
+						time.sleep(args.delay)
+					subject, body = migration_message.render_modmail(name, subscribers, notifications)
+					result = deliver(reddit.subreddit(name), subject, body)
+					if result == "SUCCESS":
+						sent, errors_in_a_row = sent + 1, 0
+						log.info(f"{sent}: r/{name}")
+					else:
+						errors_in_a_row += 1
+						log.warning(f"r/{name}: {result}")
+				writer.writerow([name, result, datetime.utcnow().isoformat(timespec="seconds")])
+				log_file.flush()
+				if errors_in_a_row >= MAX_ERRORS_IN_A_ROW:
+					raise Stop(f"{errors_in_a_row} failures in a row, the account may be restricted")
+		except Stop as err:
+			log.error(f"Stopped: {err}")
+	log.info(f"Sent {sent} this run")
 
 
 if __name__ == "__main__":
@@ -116,7 +175,8 @@ if __name__ == "__main__":
 	s.add_argument("user", help="praw.ini section for the sending account (Watchful1)")
 	s.add_argument("csv", help="CSV from build")
 	s.add_argument("log", help="Results log, appended to; reruns skip anything already sent")
-	s.add_argument("--delay", type=float, default=3, help="Seconds to sleep between sends")
+	s.add_argument("--delay", type=float, default=30, help="Seconds to sleep between sends (default 30)")
+	s.add_argument("--limit", type=int, default=None, help="Send at most this many, then stop")
 	s.add_argument("--dry-run", type=int, default=0, metavar="N", help="Print N rendered messages, send nothing")
 	s.add_argument("--go", action="store_true", help="Actually send. Without it, send only reports what's left")
 
