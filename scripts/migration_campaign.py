@@ -133,11 +133,12 @@ def send(args):
 		log_writer.writerow(["username", "result", "subreddits", "time"])
 
 	installed, fetched_at = None, None
-	started, sent, failures_in_a_row = time.perf_counter(), 0, 0
+	started, attempts, failures_in_a_row = time.perf_counter(), 0, 0
+	counts = {"sent": 0, "failed": 0, "skipped": 0}
 	batch = todo[:args.limit] if args.limit else todo
 	interval, next_send = 60 / args.per_minute, time.perf_counter()
 	try:
-		for username, subs in batch:
+		for position, (username, subs) in enumerate(batch, 1):
 			if fetched_at is None or datetime.now(timezone.utc) - fetched_at > REFRESH_EVERY:
 				try:
 					installed, _ = migration.fetch_status(api_key)
@@ -157,27 +158,35 @@ def send(args):
 				time.sleep(max(0.0, next_send - time.perf_counter()))
 				next_send = max(next_send + interval, time.perf_counter())
 				result = deliver(reddit, username, subject, body)
-				sent += 1
+				attempts += 1
 			log_writer.writerow([username, result, ";".join(remaining), datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")])
 			log_file.flush()
-			if result in ("SUCCESS", "SKIPPED_ALL_INSTALLED"):
+			places = ", ".join(f"r/{name}" for name in remaining)
+			if result == "SUCCESS":
+				counts["sent"] += 1
 				failures_in_a_row = 0
+				log.info(f"{position:,}/{len(batch):,} ({counts['sent']:,} sent) u/{username}: sent for {places}")
+			elif result == "SKIPPED_ALL_INSTALLED":
+				counts["skipped"] += 1
+				failures_in_a_row = 0
+				log.info(f"{position:,}/{len(batch):,} ({counts['sent']:,} sent) u/{username}: skipped, every subreddit installed")
 			else:
+				counts["failed"] += 1
 				failures_in_a_row += 1
-				log.info(f"u/{username}: {result}")
+				log.warning(f"{position:,}/{len(batch):,} ({counts['sent']:,} sent) u/{username}: FAILED {result}")
 				if failures_in_a_row >= MAX_FAILURES_IN_A_ROW:
 					raise Stop(f"{failures_in_a_row} failures in a row")
-				if failures_in_a_row == sent and sent >= FIRST_FAILURES:
-					raise Stop(f"the first {sent} sends of this run all failed")
+				if failures_in_a_row == attempts and attempts >= FIRST_FAILURES:
+					raise Stop(f"the first {attempts} sends of this run all failed")
 
-			if sent and sent % 100 == 0:
-				per_minute = sent / ((time.perf_counter() - started) / 60)
-				log.info(f"{sent:,} attempted, {per_minute:.0f}/min, about {(len(batch) - sent) / per_minute / 60:.1f} hours left")
+			if attempts and attempts % 100 == 0 and result != "SKIPPED_ALL_INSTALLED":
+				per_minute = attempts / ((time.perf_counter() - started) / 60)
+				log.info(f"{per_minute:.0f}/min, about {(len(batch) - position) / per_minute / 60:.1f} hours left")
 	except Stop as err:
 		log.error(f"Stopped: {err}")
 	finally:
 		log_file.close()
-		log.info(f"Done after {sent:,} attempts")
+		log.info(f"Done: {counts['sent']:,} sent, {counts['failed']:,} failed, {counts['skipped']:,} skipped")
 
 
 if __name__ == "__main__":
