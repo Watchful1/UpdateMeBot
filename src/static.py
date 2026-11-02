@@ -31,7 +31,7 @@ STAT_MINIMUM = 10
 # {subreddit} is the post's subreddit, {author} a profile's owner, {link} the
 # announcement post.
 MIGRATION_STATUS_URL = "https://reddit.watchful.gr/api/v1/updateme/migration-status"
-MIGRATION_POST = "https://www.reddit.com/r/UpdateMeBot/comments/1w0fnmb/uupdatemebot_is_moving_to_a_devvit_app/"
+MIGRATION_POST = "https://www.reddit.com/r/UpdateMeBot/comments/1xlo20m/updatemebot_is_moving_to_devvit_part_2/"
 MIGRATION_NOTICE = \
 	"**Your notifications for r/{subreddit} will stop soon.** UpdateMeBot is moving to Reddit's developer " \
 	"platform. Unlike the current bot, apps on the platform only work in subreddits where the app is " \
