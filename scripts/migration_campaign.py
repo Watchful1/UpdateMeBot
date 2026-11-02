@@ -42,7 +42,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 import discord_logging
 
-log = discord_logging.init_logging(backup_count=20)
+log = discord_logging.init_logging(filename="migration_campaign.log")
 
 import praw_wrapper
 from praw_wrapper.reddit import ReturnType
