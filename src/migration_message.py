@@ -5,6 +5,7 @@ import static
 # to one subreddit. Kept free of I/O so the wording can be tested.
 
 NAMES_SHOWN = 3
+SUBJECT_LIMIT = 100
 
 
 def place(name):
@@ -29,9 +30,11 @@ def render(subreddits):
 		subject = static.MIGRATION_MESSAGE_SUBJECT_ONE.format(place=shown[0])
 		there = shown[0]
 	else:
-		others = len(subreddits) - 1
-		subject = static.MIGRATION_MESSAGE_SUBJECT_MANY.format(
-			place=shown[0], others=f"{others} other subreddit{'s' if others > 1 else ''}")
+		others = f"{len(subreddits) - 1} other subreddit{'s' if len(subreddits) > 2 else ''}"
+		subject = static.MIGRATION_MESSAGE_SUBJECT_MANY.format(place=shown[0], others=others)
+		# A long profile name with "'s profile" can push this past Reddit's limit
+		if len(subject) > SUBJECT_LIMIT:
+			subject = static.MIGRATION_MESSAGE_SUBJECT_MANY.format(place=f"u/{subreddits[0][2:]}", others=others)
 		there = "these subreddits"
 
 	body = static.MIGRATION_MESSAGE_BODY.format(places=places, there=there, link=static.MIGRATION_POST)

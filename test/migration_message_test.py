@@ -44,6 +44,20 @@ def test_profiles_read_as_the_authors_profile():
 def test_subject_fits_reddits_limit_with_the_longest_names():
 	subject, _ = migration_message.render(["a" * 21, "b" * 21])
 	assert len(subject) <= 100
+	subject, _ = migration_message.render(["a" * 21] + ["x"] * 99)
+	assert len(subject) <= 100
+
+
+def test_long_profile_name_is_shortened_in_the_subject_only():
+	subreddits = ["u_StreetOrganization54", "Incestconfessions", "LightningStories", "Erotica", "girlscontrolled"]
+	subject, body = migration_message.render(subreddits)
+	assert subject == "Your UpdateMeBot notifications for u/StreetOrganization54 and 4 other subreddits will stop soon"
+	assert "**u/StreetOrganization54's profile, r/Incestconfessions" in body
+	subject, _ = migration_message.render(["u_" + "a" * 20] + ["x"] * 99)
+	assert len(subject) <= 100
+	# Short profile names keep the full wording
+	subject, _ = migration_message.render(["u_Bob", "x"])
+	assert subject == "Your UpdateMeBot notifications for u/Bob's profile and 1 other subreddit will stop soon"
 
 
 def test_modmail_with_usage():
