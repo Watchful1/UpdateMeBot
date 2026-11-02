@@ -22,9 +22,9 @@ praw.ini section named by --key-section (UpdateMeBot by default).
 u/Watchful1 isn't whitelisted for bulk messaging like the bot is, so send goes
 slowly (--delay, 30 seconds by default) and backs off when Reddit pushes back.
 When Reddit asks it to wait, it waits that long plus a margin and retries; a
-second rate limit in a row, a wait longer than MAX_WAIT, or MAX_ERRORS_IN_A_ROW
-failures of any kind stop the run. Nothing is logged for the subreddit it
-stopped on, so a rerun picks up from there.
+second rate limit in a row, a wait longer than MAX_WAIT, a failure before any
+send in the run has gone through, or MAX_ERRORS_IN_A_ROW failures of any kind
+stop the run. A rerun picks up from where it stopped.
 """
 import argparse
 import csv
@@ -32,7 +32,7 @@ import os
 import re
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 
@@ -71,18 +71,20 @@ def ratelimit_wait(err):
 	return None
 
 
-def deliver(subreddit, subject, body):
+def deliver(reddit, subreddit, subject, body):
 	"""'SUCCESS' or an error string. Waits out one rate limit; raises Stop on a second."""
 	for attempt in range(2):
 		try:
-			subreddit.message(subject=subject, message=body)
+			# Reddit takes "r/name" as the recipient for modmail. Subreddit.message()
+			# sends "#name", which Reddit now rejects as a user that doesn't exist.
+			reddit.redditor(f"r/{subreddit}").message(subject=subject, message=body)
 			return "SUCCESS"
 		except Exception as err:
 			wait = ratelimit_wait(err)
 			if wait is None:
 				return f"ERROR {type(err).__name__}: {err}"
 			if attempt > 0 or wait > MAX_WAIT:
-				raise Stop(f"Rate limited sending to r/{subreddit.display_name}: {err}")
+				raise Stop(f"Rate limited sending to r/{subreddit}: {err}")
 			log.warning(f"Rate limited, waiting {wait + 60:.0f} seconds: {err}")
 			time.sleep(wait + 60)
 
@@ -129,31 +131,35 @@ def send(args):
 
 	reddit = praw_wrapper.Reddit(args.user, user_agent="UpdateMeBot migration modmail").reddit
 	new_log = not os.path.exists(args.log)
-	sent, errors_in_a_row = 0, 0
+	sent, attempts, errors_in_a_row = 0, 0, 0
 	with open(args.log, "a", newline="", encoding="utf-8") as log_file:
 		writer = csv.writer(log_file)
 		if new_log:
 			writer.writerow(["subreddit", "result", "time"])
 		try:
 			for name, subscribers, notifications in todo:
-				if args.limit and sent >= args.limit:
+				if args.limit and attempts >= args.limit:
 					log.info(f"Reached --limit {args.limit}")
 					break
 				if name.lower() in installed:
 					result = "SKIPPED_INSTALLED"
 				else:
-					if sent or errors_in_a_row:
+					if attempts:
 						time.sleep(args.delay)
+					attempts += 1
 					subject, body = migration_message.render_modmail(name, subscribers, notifications)
-					result = deliver(reddit.subreddit(name), subject, body)
+					result = deliver(reddit, name, subject, body)
 					if result == "SUCCESS":
 						sent, errors_in_a_row = sent + 1, 0
 						log.info(f"{sent}: r/{name}")
 					else:
 						errors_in_a_row += 1
 						log.warning(f"r/{name}: {result}")
-				writer.writerow([name, result, datetime.utcnow().isoformat(timespec="seconds")])
+				writer.writerow([name, result, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")])
 				log_file.flush()
+				# Failing before anything has gone through means the sending itself is broken
+				if errors_in_a_row and not sent:
+					raise Stop("the first send of this run failed")
 				if errors_in_a_row >= MAX_ERRORS_IN_A_ROW:
 					raise Stop(f"{errors_in_a_row} failures in a row, the account may be restricted")
 		except Stop as err:
@@ -176,7 +182,7 @@ if __name__ == "__main__":
 	s.add_argument("csv", help="CSV from build")
 	s.add_argument("log", help="Results log, appended to; reruns skip anything already sent")
 	s.add_argument("--delay", type=float, default=30, help="Seconds to sleep between sends (default 30)")
-	s.add_argument("--limit", type=int, default=None, help="Send at most this many, then stop")
+	s.add_argument("--limit", type=int, default=None, help="Try at most this many subreddits, then stop")
 	s.add_argument("--dry-run", type=int, default=0, metavar="N", help="Print N rendered messages, send nothing")
 	s.add_argument("--go", action="store_true", help="Actually send. Without it, send only reports what's left")
 
