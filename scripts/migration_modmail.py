@@ -22,14 +22,17 @@ praw.ini section named by --key-section (UpdateMeBot by default).
 u/Watchful1 isn't whitelisted for bulk messaging like the bot is, so send goes
 slowly (--delay, 30 seconds by default) and backs off when Reddit pushes back.
 When Reddit asks it to wait, it waits that long plus a margin and retries; a
-second rate limit in a row, a wait longer than MAX_WAIT, a failure before any
-send in the run has gone through, or MAX_ERRORS_IN_A_ROW failures of any kind
-stop the run. A rerun picks up from where it stopped.
+second rate limit in a row, a wait longer than 15 minutes, a failure before
+any send in the run has gone through, or MAX_ERRORS_IN_A_ROW failures of any
+kind stop the run. A rerun picks up from where it stopped.
+
+Reddit takes "r/name" as the recipient for a subreddit's modmail. PRAW's
+Subreddit.message() sends "#name", which Reddit now rejects as a user that
+doesn't exist.
 """
 import argparse
 import csv
 import os
-import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -40,53 +43,14 @@ import discord_logging
 
 log = discord_logging.init_logging(filename="migration_modmail.log")
 
-import praw.exceptions
 import praw_wrapper
 
 import migration
 import migration_audience
 import migration_message
+from migration_send import Stop, deliver
 
-MAX_WAIT = 15 * 60
 MAX_ERRORS_IN_A_ROW = 3
-RATELIMIT_WAIT = re.compile(r"(\d+) (millisecond|second|minute)", re.IGNORECASE)
-UNIT_SECONDS = {"millisecond": 0.001, "second": 1, "minute": 60}
-
-
-class Stop(Exception):
-	pass
-
-
-def ratelimit_wait(err):
-	"""Seconds Reddit asked to wait, or None if err isn't a rate limit."""
-	if not isinstance(err, praw.exceptions.RedditAPIException):
-		return None
-	for item in err.items:
-		if item.error_type == "RATELIMIT":
-			match = RATELIMIT_WAIT.search(item.message or "")
-			# No duration in the message: treat it as too long to wait out
-			if match is None:
-				return MAX_WAIT + 1
-			return int(match.group(1)) * UNIT_SECONDS[match.group(2).lower()]
-	return None
-
-
-def deliver(reddit, subreddit, subject, body):
-	"""'SUCCESS' or an error string. Waits out one rate limit; raises Stop on a second."""
-	for attempt in range(2):
-		try:
-			# Reddit takes "r/name" as the recipient for modmail. Subreddit.message()
-			# sends "#name", which Reddit now rejects as a user that doesn't exist.
-			reddit.redditor(f"r/{subreddit}").message(subject=subject, message=body)
-			return "SUCCESS"
-		except Exception as err:
-			wait = ratelimit_wait(err)
-			if wait is None:
-				return f"ERROR {type(err).__name__}: {err}"
-			if attempt > 0 or wait > MAX_WAIT:
-				raise Stop(f"Rate limited sending to r/{subreddit}: {err}")
-			log.warning(f"Rate limited, waiting {wait + 60:.0f} seconds: {err}")
-			time.sleep(wait + 60)
 
 
 def api_key_for(section):
@@ -148,7 +112,7 @@ def send(args):
 						time.sleep(args.delay)
 					attempts += 1
 					subject, body = migration_message.render_modmail(name, subscribers, notifications)
-					result = deliver(reddit, name, subject, body)
+					result = deliver(reddit, f"r/{name}", subject, body)
 					if result == "SUCCESS":
 						sent, errors_in_a_row = sent + 1, 0
 						log.info(f"{sent}: r/{name}")

@@ -1,6 +1,6 @@
 """The one-off bulk message telling people their notifications will stop.
 
-Two steps, both run on the bot server:
+Two steps, run from the bot's folder on any machine with its praw.ini:
 
   build   Reads the database, the bot's logs and the live install list, and
           writes one row per person to message, highest usage first. Safe
@@ -10,7 +10,7 @@ Two steps, both run on the bot server:
 
   send    Works through that CSV, top down, as the bot account. Every result is
           appended to the log as it happens, so it can be stopped with ctrl-c and
-          rerun: anyone already done is skipped, transient failures are retried.
+          rerun: anyone done is skipped, and any failure not in FINAL is retried.
 
             python scripts/migration_campaign.py send UpdateMeBot campaign.csv sent.csv --dry-run 5
             python scripts/migration_campaign.py send UpdateMeBot campaign.csv sent.csv --go --limit 10000
@@ -30,13 +30,18 @@ The bot itself sends notifications with the same account, so send paces itself
 to --per-minute (50 by default, half the API limit) and leaves the bot the rest.
 --prefix picks a separate OAuth app from praw.ini ({prefix}client_id etc.) if
 the two should have separate rate limits instead.
+
+Failures that are about one person (a deleted account, someone who blocked the
+bot) are expected. A run of them is not, so send stops after
+MAX_FAILURES_IN_A_ROW in a row, or if the first few of a run all fail. Rate
+limits are waited out once, as in migration_send.
 """
 import argparse
 import csv
 import os
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 
@@ -45,15 +50,19 @@ import discord_logging
 log = discord_logging.init_logging(filename="migration_campaign.log")
 
 import praw_wrapper
-from praw_wrapper.reddit import ReturnType
 
 import migration
 import migration_audience
 import migration_message
+from migration_send import Stop, deliver
 
 REFRESH_EVERY = timedelta(minutes=10)
-# Retried on a rerun. Anything else is final: sent, or never deliverable.
-TRANSIENT = {ReturnType.SERVER_ERROR, ReturnType.NOTHING_RETURNED, ReturnType.SOMETHING_IS_BROKEN, ReturnType.RATELIMIT}
+# Skipped on a rerun: sent, or never deliverable to that person. Anything else is retried.
+FINAL = {
+	"SUCCESS", "SKIPPED_ALL_INSTALLED", "USER_DOESNT_EXIST", "INVALID_USER", "NOT_WHITELISTED_BY_USER_MESSAGE",
+	"PM_MODERATOR_RESTRICTION"}
+MAX_FAILURES_IN_A_ROW = 10
+FIRST_FAILURES = 3
 
 
 def api_key_for(user):
@@ -89,7 +98,7 @@ def load_done(log_path):
 	if os.path.exists(log_path):
 		with open(log_path, newline="", encoding="utf-8") as fh:
 			for row in csv.DictReader(fh):
-				if row["result"] not in {r.name for r in TRANSIENT}:
+				if row["result"] in FINAL:
 					done.add(row["username"].lower())
 	return done
 
@@ -116,7 +125,7 @@ def send(args):
 		log.info("Nothing sent: pass --go to send for real, or --dry-run N to preview")
 		return
 
-	reddit = praw_wrapper.Reddit(args.user, prefix=args.prefix, user_agent="UpdateMeBot migration notice")
+	reddit = praw_wrapper.Reddit(args.user, prefix=args.prefix, user_agent="UpdateMeBot migration notice").reddit
 	new_log = not os.path.exists(args.log)
 	log_file = open(args.log, "a", newline="", encoding="utf-8")
 	log_writer = csv.writer(log_file)
@@ -124,20 +133,20 @@ def send(args):
 		log_writer.writerow(["username", "result", "subreddits", "time"])
 
 	installed, fetched_at = None, None
-	started, sent = time.perf_counter(), 0
+	started, sent, failures_in_a_row = time.perf_counter(), 0, 0
 	batch = todo[:args.limit] if args.limit else todo
 	interval, next_send = 60 / args.per_minute, time.perf_counter()
 	try:
 		for username, subs in batch:
-			if fetched_at is None or datetime.utcnow() - fetched_at > REFRESH_EVERY:
+			if fetched_at is None or datetime.now(timezone.utc) - fetched_at > REFRESH_EVERY:
 				try:
 					installed, _ = migration.fetch_status(api_key)
-					fetched_at = datetime.utcnow()
+					fetched_at = datetime.now(timezone.utc)
 				except Exception as err:
 					if installed is None:
 						raise
 					log.warning(f"Couldn't refresh the install list, using the last one: {err}")
-					fetched_at = datetime.utcnow()
+					fetched_at = datetime.now(timezone.utc)
 
 			remaining = [s for s in subs if s.lower() not in installed]
 			if not remaining:
@@ -147,19 +156,28 @@ def send(args):
 				# The bot shares this account's rate limit, so leave it the rest
 				time.sleep(max(0.0, next_send - time.perf_counter()))
 				next_send = max(next_send + interval, time.perf_counter())
-				result = reddit.send_message(username, subject, body, retry_seconds=300).name
+				result = deliver(reddit, username, subject, body)
 				sent += 1
-			log_writer.writerow([username, result, ";".join(remaining), datetime.utcnow().isoformat(timespec="seconds")])
+			log_writer.writerow([username, result, ";".join(remaining), datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")])
 			log_file.flush()
-			if result not in ("SUCCESS", "SKIPPED_ALL_INSTALLED"):
+			if result in ("SUCCESS", "SKIPPED_ALL_INSTALLED"):
+				failures_in_a_row = 0
+			else:
+				failures_in_a_row += 1
 				log.info(f"u/{username}: {result}")
+				if failures_in_a_row >= MAX_FAILURES_IN_A_ROW:
+					raise Stop(f"{failures_in_a_row} failures in a row")
+				if failures_in_a_row == sent and sent >= FIRST_FAILURES:
+					raise Stop(f"the first {sent} sends of this run all failed")
 
 			if sent and sent % 100 == 0:
 				per_minute = sent / ((time.perf_counter() - started) / 60)
-				log.info(f"{sent:,} sent, {per_minute:.0f}/min, about {(len(batch) - sent) / per_minute / 60:.1f} hours left")
+				log.info(f"{sent:,} attempted, {per_minute:.0f}/min, about {(len(batch) - sent) / per_minute / 60:.1f} hours left")
+	except Stop as err:
+		log.error(f"Stopped: {err}")
 	finally:
 		log_file.close()
-		log.info(f"Stopped after sending {sent:,}")
+		log.info(f"Done after {sent:,} attempts")
 
 
 if __name__ == "__main__":
